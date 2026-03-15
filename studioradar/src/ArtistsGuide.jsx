@@ -4,6 +4,7 @@ import {
   MapPin, Calendar, Music, CreditCard, ArrowLeft, ArrowRight,
   CheckCircle2, Radio, Mic, Headphones, Zap, ChevronDown, Play
 } from 'lucide-react';
+import PaymentOverlay from './components/PaymentOverlay';
 
 // ─── Radar mini background (same palette, smaller) ───────────────
 const MiniRadar = () => (
@@ -34,63 +35,6 @@ const MiniRadar = () => (
     <div className="absolute inset-0 bg-gradient-to-b from-[#050505] via-transparent to-[#050505]/80"/>
   </div>
 );
-
-// ─── Payment Overlay Component ─────────────────────────────
-const PaymentOverlay = ({ status, onClose }) => {
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#050505]/95 backdrop-blur-2xl animate-in fade-in duration-500">
-      <div className="text-center p-8 max-w-sm w-full relative">
-        {status === 'processing' ? (
-          <div className="flex flex-col items-center">
-            <div className="relative w-24 h-24 mb-8">
-              <div className="absolute inset-0 rounded-full border border-accent/20 animate-ping opacity-20"/>
-              <div className="absolute inset-2 rounded-full border border-accent/40 animate-[ping_1.5s_linear_infinite] opacity-30"/>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <svg viewBox="0 0 40 40" className="w-16 h-16">
-                  <path 
-                    d="M5 20h4l2-6 4 12 4-16 4 10 2-4h6" 
-                    fill="none" 
-                    stroke="url(#pulse-gradient)" 
-                    strokeWidth="2" 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round"
-                    className="sound-signal-line"
-                  />
-                  <defs>
-                    <linearGradient id="pulse-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                      <stop offset="0%" stopColor="#8A2BE2" />
-                      <stop offset="50%" stopColor="#00F0FF" />
-                      <stop offset="100%" stopColor="#8A2BE2" />
-                    </linearGradient>
-                  </defs>
-                </svg>
-              </div>
-            </div>
-            <h3 className="font-heading font-bold text-2xl text-white mb-2 tracking-wide">Procesando Pago</h3>
-            <p className="font-ui text-sm text-text/50">Cifrando tu conexión con el estudio...</p>
-          </div>
-        ) : (
-          <div className="flex flex-col items-center animate-in zoom-in-95 duration-500">
-            <div className="w-20 h-20 rounded-full bg-green-500/20 border border-green-500/40 flex items-center justify-center mb-8 shadow-[0_0_40px_rgba(34,197,94,0.3)]">
-              <CheckCircle2 className="w-10 h-10 text-green-400" />
-            </div>
-            <h3 className="font-heading font-bold text-3xl text-white mb-4 tracking-tight">¡Reserva Confirmada!</h3>
-            <p className="font-ui text-sm text-text/60 mb-10 leading-relaxed text-balance">
-              Tu sesión en <span className="text-white">Neon Room</span> está lista. Hemos enviado el boleto digital a tu correo.
-            </p>
-            <button 
-              onClick={onClose}
-              className="w-full py-4 bg-white text-[#050505] rounded-xl font-ui font-bold text-sm uppercase tracking-widest hover:bg-white/90 transition-all font-heading"
-            >
-              Cerrar y Volver
-            </button>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
-
 // ─── Steps data ───────────────────────────────────────────────────
 const STEPS = [
   {

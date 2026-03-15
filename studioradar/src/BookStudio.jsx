@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MapPin, Calendar, Clock, ArrowLeft, ArrowRight, Activity, CreditCard, ShieldCheck, Search, Navigation, ChevronLeft, ChevronRight } from 'lucide-react';
+import { MapPin, Calendar, Clock, ArrowLeft, ArrowRight, Activity, CreditCard, ShieldCheck, Search, Navigation, ChevronLeft, ChevronRight, Check } from 'lucide-react';
+import PaymentOverlay from './components/PaymentOverlay';
 
 const Button = ({ children, className = '', variant = 'primary', ...props }) => {
   const base = "inline-flex items-center justify-center font-ui text-sm uppercase tracking-widest transition-all duration-300 ease-out active:scale-95 active:duration-75 rounded-lg";
@@ -27,6 +28,7 @@ export default function BookStudio() {
   const [artistName, setArtistName] = useState('');
   const [companions, setCompanions] = useState([]);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [paymentState, setPaymentState] = useState(null); // null, 'processing', 'success'
 
   // Pan & Zoom state
   const [mapScale, setMapScale] = useState(1);
@@ -188,6 +190,11 @@ export default function BookStudio() {
     }, 1500);
   };
 
+  const handleStartPayment = () => {
+    setPaymentState('processing');
+    setTimeout(() => setPaymentState('success'), 3000);
+  };
+
   useEffect(() => {
     // Auto start scan on mount
     handleScanLocation();
@@ -212,26 +219,24 @@ export default function BookStudio() {
         className="absolute inset-0 z-0 origin-center transition-transform duration-75"
         style={{ transform: `translate(${mapOffset.x}px, ${mapOffset.y}px) scale(${mapScale})` }}
       >
-        {/* Background image */}
-        <div 
-          className="absolute inset-0 opacity-40"
-          style={{
-            backgroundImage: "url('https://images.unsplash.com/photo-1510006950785-50e50f38fa61?auto=format&fit=crop&q=80&w=2000&sat=-100&bri=-30')", 
-            backgroundSize: 'cover', 
-            backgroundPosition: 'center'
-          }}
-        ></div>
-        <div className="absolute inset-0 bg-[#050505]/70 mix-blend-multiply"></div>
+        {/* Center Guide Rings */}
+        {[10, 20, 30, 40, 50, 60, 70, 80].map((r, i) => (
+          <div 
+            key={i}
+            className="absolute top-1/2 left-1/2 lg:left-[30%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/[0.03] pointer-events-none"
+            style={{ width: `${r * 4}vmax`, height: `${r * 4}vmax` }}
+          ></div>
+        ))}
         
         {/* Sweeping Conic Gradient */}
         <div className="absolute top-1/2 left-1/2 lg:left-[30%] -translate-x-1/2 -translate-y-1/2 w-[200vmax] h-[200vmax] opacity-60 pointer-events-none">
-          <div className="w-full h-full bg-[conic-gradient(from_0deg_at_50%_50%,rgba(138,43,226,0)_0%,rgba(138,43,226,0.3)_100%)] animate-[spin_4s_linear_infinite] rounded-full border-r-[3px] border-accent/80"></div>
+          <div className="w-full h-full bg-[conic-gradient(from_0deg_at_50%_50%,rgba(138,43,226,0)_0%,rgba(138,43,226,0.2)_100%)] animate-[spin_6s_linear_infinite] rounded-full"></div>
         </div>
 
-        {/* Rings */}
-        <div className="absolute top-1/2 left-1/2 lg:left-[30%] -translate-x-1/2 -translate-y-1/2 w-[80vmax] h-[80vmax] rounded-full border border-accent/10 pointer-events-none"></div>
-        <div className="absolute top-1/2 left-1/2 lg:left-[30%] -translate-x-1/2 -translate-y-1/2 w-[50vmax] h-[50vmax] rounded-full border border-accent/20 pointer-events-none"></div>
-        <div className="absolute top-1/2 left-1/2 lg:left-[30%] -translate-x-1/2 -translate-y-1/2 w-[20vmax] h-[20vmax] rounded-full border border-accent/30 pointer-events-none"></div>
+        {/* Vinyl Grooves Effect */}
+        <div className="absolute top-1/2 left-1/2 lg:left-[30%] -translate-x-1/2 -translate-y-1/2 w-[180vmax] h-[180vmax] rounded-full pointer-events-none opacity-20"
+             style={{ background: 'repeating-radial-gradient(circle at 50% 50%, transparent 0px, transparent 1px, rgba(255,255,255,0.05) 1.5px, transparent 2px)' }}>
+        </div>
 
         {/* Center Pin */}
         <div className="absolute top-1/2 left-1/2 lg:left-[30%] -translate-x-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-white shadow-[0_0_20px_#ffffff]">
@@ -239,7 +244,7 @@ export default function BookStudio() {
         </div>
 
         {/* Grid Overlay */}
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none z-0"></div>
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(138,43,226,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(138,43,226,0.03)_1px,transparent_1px)] bg-[size:60px_60px] pointer-events-none z-0"></div>
      
         {/* STUDIO PINS */}
         {studios.map((studio, idx) => {
@@ -518,20 +523,25 @@ export default function BookStudio() {
                     </div>
                  </div>
 
-                 <Button 
-                   className={`w-full py-4 lg:py-5 flex justify-center gap-2 text-base lg:text-lg ${(!artistName.trim()) ? 'opacity-50 cursor-not-allowed' : 'shadow-[0_0_20px_rgba(138,43,226,0.5)]'}`} 
-                   onClick={() => alert(`¡Integración de Pago Finalizada!\nEstudio: ${selectedStudio.name}\nArtista: ${artistName}\nInvitados: ${companions.length}`)}
-                   disabled={!artistName.trim()}
-                 >
-                   <CreditCard className="w-5 h-5" /> 
-                   {artistName.trim() ? 'Confirmar Reserva' : 'Falta Nombre Artista'}
-                 </Button>
+                  <Button 
+                    className={`w-full py-4 lg:py-5 flex justify-center gap-2 text-base lg:text-lg ${(!artistName.trim()) ? 'opacity-50 cursor-not-allowed' : 'shadow-[0_0_20px_rgba(138,43,226,0.5)]'}`} 
+                    onClick={handleStartPayment}
+                    disabled={!artistName.trim()}
+                  >
+                    <CreditCard className="w-5 h-5" /> 
+                    {artistName.trim() ? 'Confirmar Reserva' : 'Falta Nombre Artista'}
+                  </Button>
               </div>
             )}
-
           </div>
         </div>
       </div>
+
+      <PaymentOverlay 
+        status={paymentState} 
+        onClose={() => { setPaymentState(null); navigate('/'); }} 
+        studioName={selectedStudio?.name}
+      />
 
       <style>{`
         @keyframes fade-in {
@@ -543,11 +553,3 @@ export default function BookStudio() {
   );
 }
 
-// simple Check icon component if lucide check is imported but unused or to replace it.
-function Check({ className }) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <polyline points="20 6 9 17 4 12"></polyline>
-    </svg>
-  );
-}

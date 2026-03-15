@@ -66,7 +66,7 @@ const Navbar = () => {
         <div className="hidden md:flex items-center gap-8 font-ui text-sm text-text/80">
           <a href="#studios" className="hover:text-accent transition-colors">Studios</a>
           <a href="#workflow" className="hover:text-accent transition-colors">Sessions</a>
-          <Link to="/producers" className="hover:text-accent transition-colors">Artists</Link>
+          <Link to="/artists" className="hover:text-accent transition-colors">Artistas</Link>
           <Link to="/beats" className="hover:text-accent transition-colors font-bold text-white flex items-center gap-1"><ShoppingCart className="w-3 h-3"/> Beats Market</Link>
         </div>
 
