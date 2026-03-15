@@ -16,7 +16,8 @@ import {
   Activity, 
   Zap,
   Disc3,
-  Search
+  Search,
+  ShoppingCart
 } from 'lucide-react';
 
 gsap.registerPlugin(ScrollTrigger);
@@ -65,8 +66,8 @@ const Navbar = () => {
         <div className="hidden md:flex items-center gap-8 font-ui text-sm text-text/80">
           <a href="#studios" className="hover:text-accent transition-colors">Studios</a>
           <a href="#workflow" className="hover:text-accent transition-colors">Sessions</a>
-          <a href="#community" className="hover:text-accent transition-colors">Artists</a>
-          <a href="#beats" className="hover:text-accent transition-colors">Beats</a>
+          <Link to="/producers" className="hover:text-accent transition-colors">Artists</Link>
+          <Link to="/beats" className="hover:text-accent transition-colors font-bold text-white flex items-center gap-1"><ShoppingCart className="w-3 h-3"/> Beats Market</Link>
         </div>
 
         <Link to="/book-studio">
@@ -377,13 +378,17 @@ const Commerce = () => {
                   </div>
                   <div className="flex items-center gap-4">
                     <span className="font-ui font-bold text-xl text-white">{tier.price}</span>
-                    <button className="w-10 h-10 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors">
+                    <Link to="/beats" className="w-10 h-10 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors">
                       <ArrowRight className="w-4 h-4" />
-                    </button>
+                    </Link>
                   </div>
                 </div>
               ))}
             </div>
+            
+            <Link to="/beats" className="w-full mt-6 block">
+              <Button className="w-full" variant="secondary">Explorar Mercado de Beats</Button>
+            </Link>
           </div>
 
         </div>
@@ -453,10 +458,10 @@ const Footer = () => {
           <div>
             <h4 className="font-heading font-semibold text-white mb-4">Platform</h4>
             <ul className="space-y-2 font-ui text-sm text-text/60">
-              <li><a href="#" className="hover:text-accent transition-colors">Book Studios</a></li>
-              <li><a href="#" className="hover:text-accent transition-colors">Browse Beats</a></li>
+              <li><Link to="/book-studio" className="hover:text-accent transition-colors">Book Studios</Link></li>
+              <li><Link to="/beats" className="hover:text-accent transition-colors">Browse Beats</Link></li>
               <li><a href="#" className="hover:text-accent transition-colors">Pricing</a></li>
-              <li><a href="#" className="hover:text-accent transition-colors">Producers</a></li>
+              <li><Link to="/producers" className="hover:text-accent transition-colors">Producers</Link></li>
             </ul>
           </div>
 

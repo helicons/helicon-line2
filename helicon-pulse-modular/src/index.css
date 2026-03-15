@@ -1,0 +1,44 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-background text-text font-sans antialiased overflow-hidden selection:bg-accent selection:text-white;
+    background-image: 
+      radial-gradient(circle at 50% 0%, rgba(138, 43, 226, 0.15) 0%, transparent 50%),
+      radial-gradient(circle at 100% 100%, rgba(0, 240, 255, 0.1) 0%, transparent 50%);
+  }
+}
+
+@layer components {
+  /* Glassmorphism panels for Cyberpunk Serum look */
+  .glass-panel {
+    @apply bg-surface/50 backdrop-blur-md border border-white/10 shadow-lg;
+  }
+  
+  .glass-panel-active {
+    @apply bg-surface/70 backdrop-blur-xl border border-accent/40 shadow-glow-violet;
+  }
+
+  /* Custom Scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-white/20 rounded-full;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-accent/60;
+  }
+}
+
+/* Hardcoded utilities for SVG Knobs to prevent text selection while dragging */
+.knob-container {
+  touch-action: none;
+  user-select: none;
+}
