@@ -178,7 +178,6 @@ const STEPS = [
           <div>
             <span className="font-ui text-[9px] text-accent uppercase tracking-widest block mb-0.5">Boleto de Sesión</span>
             <span className="font-heading font-bold text-white text-sm">Neon Room · 22:00</span>
-            <span className="font-ui text-[8px] text-text/40 block mt-0.5">DISPONIBLE: 18:00 - 05:00</span>
           </div>
           <div className={`text-[10px] font-ui px-2 py-1 rounded-full border transition-all ${active ? 'border-green-500/40 text-green-400 bg-green-500/10' : 'border-white/10 text-white/30'}`}>
             {active ? '✓ ACTIVO' : 'PENDIENTE'}
