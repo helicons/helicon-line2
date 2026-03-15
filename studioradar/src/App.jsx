@@ -80,6 +80,163 @@ const Navbar = () => {
   );
 };
 
+// -------------------------------------------------------------
+// RADAR BACKGROUND — Vinyl Record + Studio Nodes
+// -------------------------------------------------------------
+const STUDIO_NODES = [
+  { id: 1, name: 'Neon Room',  x: 30, y: 30, accent: false, dist: '~1.2 km' },
+  { id: 2, name: 'The Vault',  x: 74, y: 28, accent: true,  dist: '~2.8 km' },
+  { id: 3, name: '808 Suite',  x: 65, y: 73, accent: false, dist: '~4.5 km' },
+];
+
+function useWindowWidth() {
+  const [width, setWidth] = React.useState(() =>
+    typeof window !== 'undefined' ? window.innerWidth : 1024
+  );
+  React.useEffect(() => {
+    const handleResize = () => setWidth(window.innerWidth);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+  return width;
+}
+
+const RadarBackground = () => {
+  const cx = 50, cy = 50;
+  const width = useWindowWidth();
+  const isMobile = width < 768;
+  // On mobile: smaller grooves & reduced node decorations
+  const grooves = isMobile
+    ? [5, 9, 14, 19, 25, 31]
+    : [6, 11, 16.5, 22, 27.5, 33, 38, 43];
+
+  return (
+    <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none select-none" aria-hidden>
+      <svg
+        viewBox="0 0 100 100"
+        preserveAspectRatio="xMidYMid slice"
+        className="absolute inset-0 w-full h-full"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <defs>
+          <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="0.4" result="blur" />
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+          <filter id="glow-strong" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="0.8" result="blur" />
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+
+        {/* ── Crosshair Lines ── */}
+        <line x1="0" y1={cy} x2="100" y2={cy} stroke="rgba(255,255,255,0.04)" strokeWidth="0.1" />
+        <line x1={cx} y1="0" x2={cx} y2="100" stroke="rgba(255,255,255,0.04)" strokeWidth="0.1" />
+
+        {/* ── Vinyl Grooves ── */}
+        {grooves.map((r, i) => (
+          <circle key={`groove-${i}`} cx={cx} cy={cy} r={r}
+            fill="none"
+            stroke={`rgba(255,255,255,${0.05 + i * 0.015})`}
+            strokeWidth={isMobile ? '0.2' : '0.15'}
+          />
+        ))}
+
+        {/* ── Center Spindle ── */}
+        <circle cx={cx} cy={cy} r="1.2" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="0.15" />
+        <circle cx={cx} cy={cy} r="0.4" fill="rgba(255,255,255,0.6)" />
+
+        {/* ── Connection Lines ── */}
+        {STUDIO_NODES.map((a, i) =>
+          STUDIO_NODES.slice(i + 1).map(b => (
+            <line key={`conn-${a.id}-${b.id}`}
+              x1={a.x} y1={a.y} x2={b.x} y2={b.y}
+              stroke="rgba(255,255,255,0.05)"
+              strokeWidth="0.12"
+              strokeDasharray="0.6 0.4"
+            />
+          ))
+        )}
+
+        {/* ── Studio Nodes ── */}
+        {STUDIO_NODES.map(node => {
+          const pinColor  = node.accent ? 'rgba(0,122,255,0.95)' : 'rgba(255,255,255,0.9)';
+          const pingColor = node.accent ? 'rgba(0,122,255,0.5)'  : 'rgba(138,43,226,0.4)';
+          // Mobile: tighten vertical spacing
+          const labelY    = isMobile ? node.y - 2.6 : node.y - 3.4;
+          const distY     = isMobile ? node.y + 1.6 : node.y + 2;
+          const nameFontSize  = isMobile ? '1.1' : '1.5';
+          const distFontSize  = isMobile ? '0.85' : '1.1';
+          const pinScale      = isMobile ? 0.07 : 0.1;
+          const pinOffsetX    = isMobile ? node.x - 0.84 : node.x - 1.2;
+          const pinOffsetY    = isMobile ? node.y - 1.96 : node.y - 2.8;
+
+          return (
+            <g key={node.id} style={{ animation: `node-float ${3 + node.id * 0.5}s ease-in-out infinite` }}>
+              {/* Ping ring */}
+              <circle cx={node.x} cy={node.y} r={isMobile ? '1.1' : '1.6'}
+                fill="none" stroke={pingColor} strokeWidth="0.15"
+                style={{ animation: `node-ping ${2 + node.id * 0.3}s ease-in-out infinite`, transformOrigin: `${node.x}px ${node.y}px` }}
+              />
+              {/* Location Pin */}
+              <g transform={`translate(${pinOffsetX}, ${pinOffsetY}) scale(${pinScale})`} filter="url(#glow-strong)">
+                <path d="M12 0C7.03 0 3 4.03 3 9c0 6.75 9 15 9 15s9-8.25 9-15c0-4.97-4.03-9-9-9zm0 12.75c-2.07 0-3.75-1.68-3.75-3.75S9.93 5.25 12 5.25s3.75 1.68 3.75 3.75-1.68 3.75-3.75 3.75z"
+                  fill={pinColor} />
+              </g>
+              {/* Studio Name */}
+              <text x={node.x} y={labelY} textAnchor="middle"
+                fill="rgba(255,255,255,0.7)"
+                fontSize={nameFontSize}
+                fontFamily="'Space Mono',monospace"
+                letterSpacing="0.06"
+              >{node.name}</text>
+              {/* Distance — hide on very small screens */}
+              {!isMobile && (
+                <text x={node.x} y={distY} textAnchor="middle"
+                  fill="rgba(255,255,255,0.35)"
+                  fontSize={distFontSize}
+                  fontFamily="'Space Mono',monospace"
+                  letterSpacing="0.04"
+                >{node.dist}</text>
+              )}
+            </g>
+          );
+        })}
+      </svg>
+
+      {/* ── Rotating Sweep Arm ── */}
+      <div className="absolute" style={{ top: 0, left: 0, width: '100%', height: '100%', animation: 'radar-spin 8s linear infinite' }}>
+        <div style={{
+          position: 'absolute',
+          top: '50%', left: '50%',
+          width: isMobile ? '40%' : '45%', height: '1px',
+          transformOrigin: '0% 50%',
+          background: 'linear-gradient(90deg, rgba(138,43,226,0.7), rgba(138,43,226,0))',
+          boxShadow: '0 0 8px rgba(138,43,226,0.5)',
+          animation: 'sweep-glow 4s ease-in-out infinite',
+        }} />
+      </div>
+
+      {/* ── Expanding Pulse Waves ── */}
+      {[0, 1.3, 2.6].map((delay, i) => (
+        <div key={`pulse-${i}`} className="absolute rounded-full border pointer-events-none"
+          style={{
+            top: '50%', left: '50%',
+            width: isMobile ? '70%' : '86%', height: isMobile ? '70%' : '86%',
+            borderColor: 'rgba(138,43,226,0.12)',
+            borderWidth: '1px',
+            animation: `radar-pulse 4s ease-out ${delay}s infinite`,
+          }}
+        />
+      ))}
+
+      {/* ── Edge gradients ── */}
+      <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-transparent to-[#050505]/60" />
+      <div className="absolute inset-0 bg-gradient-to-r from-[#050505]/40 via-transparent to-[#050505]/50" />
+    </div>
+  );
+};
+
 const Hero = () => {
   const heroRef = useRef(null);
 
@@ -104,16 +261,6 @@ const Hero = () => {
 
   return (
     <section ref={heroRef} className="relative h-[100dvh] flex flex-col items-center justify-center overflow-hidden">
-      {/* Background with Dark Gradient Overlay */}
-      <div className="absolute inset-0 z-0 pointer-events-none">
-        <img 
-          src="https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?auto=format&fit=crop&q=80&w=2070" 
-          alt="Dark Recording Studio" 
-          className="w-full h-full object-cover opacity-20 scale-105"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#050505]/90 via-[#050505]/60 to-transparent"></div>
-      </div>
-
       <div className="relative z-10 text-center max-w-5xl px-6 flex flex-col items-center">
         <div className="inline-flex items-center gap-2 px-3 py-1 mb-8 rounded-full bg-white/5 border border-white/10 text-accent font-ui text-xs tracking-widest backdrop-blur-md hero-text">
           <span className="w-2 h-2 rounded-full bg-accent animate-pulse"></span>
@@ -121,8 +268,8 @@ const Hero = () => {
         </div>
         
         <h1 className="font-heading font-bold text-6xl md:text-8xl lg:text-9xl leading-[0.9] tracking-tight mb-6 relative z-10 text-center w-full">
-          <div className="overflow-hidden"><div className="hero-text text-white drop-shadow-[0_10px_20px_rgba(0,0,0,0.8)]">Del Beat</div></div>
-          <div className="overflow-hidden"><div className="hero-text text-accent glow-purple drop-shadow-[0_10px_30px_rgba(138,43,226,0.4)]">a Tu Canción.</div></div>
+          <div className="overflow-hidden"><div className="hero-text text-white drop-shadow-[0_10px_20px_rgba(0,0,0,0.8)]">Del Studio</div></div>
+          <div className="overflow-hidden"><div className="hero-text text-accent glow-purple drop-shadow-[0_10px_30px_rgba(138,43,226,0.4)]">al Estadio.</div></div>
         </h1>
         
         <p className="hero-sub font-ui text-lg md:text-xl text-text/80 max-w-2xl mb-10 leading-relaxed">
@@ -494,18 +641,8 @@ const Footer = () => {
 function App() {
   return (
     <div className="min-h-screen relative antialiased bg-[#050505]">
-      {/* GLOBAL 3D RADAR BACKGROUND */}
-      <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none flex items-center justify-center">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[150vw] h-[150vw] md:w-[120vw] md:h-[120vw] perspective-[2000px] opacity-25 mix-blend-screen">
-          <div className="w-full h-full absolute inset-0" style={{ transform: 'rotateX(60deg) translateZ(-100px)' }}>
-            <div className="absolute inset-0 m-auto w-[15%] h-[15%] rounded-full border-[2px] border-accent animate-[ping_4s_cubic-bezier(0,0,0.2,1)_infinite] shadow-[0_0_50px_rgba(138,43,226,0.8)]"></div>
-            <div className="absolute inset-0 m-auto w-[30%] h-[30%] rounded-full border-[1.5px] border-accent/60 animate-[ping_4s_cubic-bezier(0,0,0.2,1)_infinite_1.3s]"></div>
-            <div className="absolute inset-0 m-auto w-[60%] h-[60%] rounded-full border border-accent/20 animate-[ping_4s_cubic-bezier(0,0,0.2,1)_infinite_2.6s]"></div>
-            <div className="absolute inset-0 m-auto w-[100%] h-[100%] rounded-full bg-[conic-gradient(from_0deg_at_50%_50%,rgba(138,43,226,0)_0%,rgba(138,43,226,0.3)_100%)] animate-[spin_8s_linear_infinite] border-r-[3px] border-accent"></div>
-            <div className="absolute inset-0 m-auto w-4 h-4 bg-accent rounded-full shadow-[0_0_60px_rgba(138,43,226,1)] animate-pulse"></div>
-          </div>
-        </div>
-      </div>
+      {/* GLOBAL VINYL RADAR BACKGROUND */}
+      <RadarBackground />
 
       <div className="relative z-10 w-full">
         <Navbar />
