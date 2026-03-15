@@ -120,7 +120,7 @@ export default function BookStudio() {
 
   const studios = [
     { 
-      id: 1, name: "Neon Room", location: "Vallecas, Madrid", price: 20, specs: "15m² • Monitores Yamaha HS8 • Interfaz Apollo Twin",
+      id: 1, name: "Neon Room", location: "Vallecas, Madrid", price: 20, hours: "18:00 - 06:00", specs: "15m² • Monitores Yamaha HS8 • Interfaz Apollo Twin",
       image: "https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?auto=format&fit=crop&q=80&w=400", 
       images: [
         "https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?auto=format&fit=crop&q=80&w=600",
@@ -129,7 +129,7 @@ export default function BookStudio() {
       ]
     },
     { 
-      id: 2, name: "The Vault", location: "Torrejón, Madrid", price: 25, specs: "22m² • Monitores Focal Shape • Micro C414 XLII • Previo Neve",
+      id: 2, name: "The Vault", location: "Torrejón, Madrid", price: 25, hours: "10:00 - 02:00", specs: "22m² • Monitores Focal Shape • Micro C414 XLII • Previo Neve",
       image: "https://images.unsplash.com/photo-1599696848652-f0ff23bc911f?auto=format&fit=crop&q=80&w=400", 
       images: [
         "https://images.unsplash.com/photo-1599696848652-f0ff23bc911f?auto=format&fit=crop&q=80&w=600",
@@ -138,7 +138,7 @@ export default function BookStudio() {
       ]
     },
     { 
-      id: 3, name: "808 Suite", location: "Centro, Madrid", price: 35, specs: "35m² • Monitores Genelec • Consola SSL • Micros U87/Sony C800",
+      id: 3, name: "808 Suite", location: "Centro, Madrid", price: 35, hours: "24 / 7", specs: "35m² • Monitores Genelec • Consola SSL • Micros U87/Sony C800",
       image: "https://plus.unsplash.com/premium_photo-1681335029094-846c770c06ae?auto=format&fit=crop&q=80&w=400", 
       images: [
         "https://plus.unsplash.com/premium_photo-1681335029094-846c770c06ae?auto=format&fit=crop&q=80&w=600",
@@ -371,7 +371,10 @@ export default function BookStudio() {
                 </div>
 
                 <div className="flex justify-between items-center mb-3 lg:mb-4">
-                  <h1 className="font-heading font-bold text-base lg:text-xl text-white">Disponibilidad (Hoy)</h1>
+                  <div className="flex flex-col">
+                    <h1 className="font-heading font-bold text-base lg:text-xl text-white">Disponibilidad (Hoy)</h1>
+                    <span className="font-ui text-[10px] text-text/40 tracking-wider">Horario: {selectedStudio.hours}</span>
+                  </div>
                   <span className="font-ui text-[9px] lg:text-[10px] text-accent border border-accent/20 bg-accent/10 px-2 py-1 rounded">MADRID</span>
                 </div>
                 
@@ -452,9 +455,15 @@ export default function BookStudio() {
                     <div className="flex justify-between items-end mb-2 lg:mb-3 border-b border-white/5 pb-2 lg:pb-3">
                       <div>
                         <span className="block font-ui text-[9px] lg:text-[10px] text-accent mb-0.5 uppercase tracking-widest">Estudio</span>
-                        <span className="font-heading font-bold text-lg lg:text-xl text-white">{selectedStudio.name}</span>
+                        <div className="flex items-baseline gap-2">
+                          <span className="font-heading font-bold text-lg lg:text-xl text-white">{selectedStudio.name}</span>
+                          <span className="font-ui text-[9px] px-1.5 py-0.5 border border-accent/30 rounded text-accent/80 uppercase">Disponibilidad: {selectedStudio.hours}</span>
+                        </div>
                       </div>
-                      <span className="font-ui text-sm text-text/50">{selectedTime}</span>
+                      <div className="text-right">
+                        <span className="block font-ui text-[9px] lg:text-[10px] text-text/40 uppercase tracking-widest">Hora Elegida</span>
+                        <span className="font-ui text-sm text-white font-bold">{selectedTime}</span>
+                      </div>
                     </div>
 
                     <div className="space-y-1 font-ui text-[11px] lg:text-xs text-text/60 leading-relaxed mb-3 lg:mb-4">
