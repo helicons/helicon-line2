@@ -46,3 +46,29 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #8A2BE2; 
 }
+
+/* ── Radar Animations ── */
+@keyframes radar-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes radar-pulse {
+  0%   { transform: translate(-50%, -50%) scale(0.15); opacity: 0.5; }
+  100% { transform: translate(-50%, -50%) scale(1);    opacity: 0; }
+}
+
+@keyframes node-ping {
+  0%, 100% { transform: scale(1); opacity: 0.7; }
+  50%      { transform: scale(1.8); opacity: 0; }
+}
+
+@keyframes node-float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-4px); }
+}
+
+@keyframes sweep-glow {
+  0%, 100% { opacity: 0.6; }
+  50%      { opacity: 1; }
+}
