@@ -28,7 +28,7 @@ export default function BookStudio() {
   const [isScanning, setIsScanning] = useState(false);
   const [selectedStudio, setSelectedStudio] = useState(null);
   const [selectedTime, setSelectedTime] = useState(null);
-  const [selectedCategory, setSelectedCategory] = useState(null); 
+  const [selectedCategory, setSelectedCategory] = useState(null);
   const [hoursCount, setHoursCount] = useState(1);
   const [artistName, setArtistName] = useState('');
   const [companions, setCompanions] = useState([]);
@@ -69,7 +69,7 @@ export default function BookStudio() {
     const dx = e.clientX - startPos.current.x;
     const dy = e.clientY - startPos.current.y;
     const dist = Math.sqrt(dx * dx + dy * dy);
-    
+
     if (dist > DRAG_THRESHOLD) {
       setHasMoved(true);
       setIsDragging(true);
@@ -152,9 +152,9 @@ export default function BookStudio() {
           .from('studio_services')
           .select('*')
           .eq('studio_id', selectedStudio.id);
-        
+
         if (error) throw error;
-        
+
         if (!data || data.length === 0) {
           setStudioServices([
             { id: 'rental', name: 'Studio Rental (Booth Only)', description: 'Espacio privado sin asistencia técnica.', additional_price: 0 },
@@ -241,163 +241,275 @@ export default function BookStudio() {
   }, []);
 
   return (
-    <div 
-      className="min-h-screen relative flex items-stretch lg:items-center justify-center overflow-hidden bg-[#050505]"
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
-      onWheel={handleWheel}
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
-      style={{ cursor: isDragging ? 'grabbing' : 'grab', touchAction: 'none' }}
+    <div
+      className="min-h-screen bg-[#050505] flex flex-col md:flex-row overflow-hidden relative"
     >
-      
-      {/* MAP LAYER */}
-      <div 
-        className="absolute inset-0 z-0 origin-center transition-transform duration-75"
-        style={{ transform: `translate(${mapOffset.x}px, ${mapOffset.y}px) scale(${mapScale})` }}
+      {/* MAP AREA / RADAR AREA */}
+      <div
+        className="flex-1 relative h-[50vh] md:h-screen overflow-hidden bg-[#050505]"
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onWheel={handleWheel}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        style={{ cursor: isDragging ? 'grabbing' : 'grab', touchAction: 'none' }}
       >
-        <div className="absolute inset-0 bg-[#050505]/70 mix-blend-multiply"></div>
-        <div className="absolute top-1/2 left-1/2 lg:left-[30%] -translate-x-1/2 -translate-y-1/2 w-[200vmax] h-[200vmax] opacity-60 pointer-events-none">
-          <div className="w-full h-full bg-[conic-gradient(from_0deg_at_50%_50%,rgba(138,43,226,0)_0%,rgba(138,43,226,0.3)_100%)] animate-[spin_4s_linear_infinite] rounded-full border-r-[3px] border-accent/80"></div>
-        </div>
-        <div className="absolute top-1/2 left-1/2 lg:left-[30%] -translate-x-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-white shadow-[0_0_20px_#ffffff]">
-          <div className="absolute inset-0 bg-white rounded-full animate-ping opacity-60"></div>
+        <div
+          className="absolute inset-0 z-0 origin-center transition-transform duration-75"
+          style={{ transform: `translate(${mapOffset.x}px, ${mapOffset.y}px) scale(${mapScale})` }}
+        >
+          <div className="absolute inset-0 bg-[#050505]/70 mix-blend-multiply"></div>
+          <div className="absolute top-1/2 left-1/2 lg:left-[30%] -translate-x-1/2 -translate-y-1/2 w-[200vmax] h-[200vmax] opacity-60 pointer-events-none">
+            <div className="w-full h-full bg-[conic-gradient(from_0deg_at_50%_50%,rgba(138,43,226,0)_0%,rgba(138,43,226,0.3)_100%)] animate-[spin_4s_linear_infinite] rounded-full border-r-[3px] border-accent/80"></div>
+          </div>
+          <div className="absolute top-1/2 left-1/2 lg:left-[30%] -translate-x-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-white shadow-[0_0_20px_#ffffff]">
+            <div className="absolute inset-0 bg-white rounded-full animate-ping opacity-60"></div>
+          </div>
+
+          {studios.map((studio, idx) => {
+            const positions = [
+              { top: '30%', left: '40%' },
+              { top: '25%', left: '70%' },
+              { top: '65%', left: '30%' },
+            ];
+            const isSelected = selectedStudio?.id === studio.id;
+            const pos = positions[idx % positions.length];
+            return (
+              <button
+                key={studio.id}
+                onClick={() => { if (!hasMoved) { setSelectedStudio(studio); setStep(2); setSelectedTime(null); } }}
+                className={`absolute z-10 -translate-x-1/2 -translate-y-1/2 transition-all duration-300 ${isSelected ? 'scale-125 z-20' : 'hover:scale-110'}`}
+                style={{ top: pos.top, left: pos.left }}
+              >
+                <div className="relative flex items-center justify-center">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 shadow-[0_0_20px_rgba(0,0,0,0.5)] hardware-shadow ${isSelected ? 'bg-accent border-white' : 'bg-[#0A0A0A] border-accent'}`}>
+                    <MapPin className={`w-5 h-5 ${isSelected ? 'text-white' : 'text-accent'}`} />
+                  </div>
+                  {isSelected && (
+                    <div className="absolute -inset-2 bg-accent/30 rounded-full animate-ping -z-10"></div>
+                  )}
+
+                  <div className={`absolute top-12 whitespace-nowrap bg-[#050505]/90 backdrop-blur px-3 py-1 rounded-md border font-mono text-xs shadow-xl pointer-events-none transition-all ${isSelected ? 'border-accent text-white scale-110' : 'border-white/10 text-white/70'}`}>
+                    {studio.name} <span className="text-accent ml-1">{studio.price_per_hour}€/h</span>
+                  </div>
+                </div>
+              </button>
+            );
+          })}
         </div>
 
-        {studios.map((studio, idx) => {
-          const positions = [
-            { top: '30%', left: '25%', labelPos: 'left-8 top-1/2 -translate-y-1/2' },
-            { top: '25%', left: '50%', labelPos: 'right-8 top-1/2 -translate-y-1/2 text-right', justify: 'items-end' },
-            { top: '65%', left: '20%', labelPos: 'left-8 top-1/2 -translate-y-1/2' },
-          ];
-          const isSelected = selectedStudio?.id === studio.id;
-          const pos = positions[idx % positions.length];
-          return (
-            <div 
-              key={studio.id}
-              className={`absolute cursor-pointer flex flex-col ${pos.justify || 'items-start'} justify-center pointer-events-auto`}
-              style={{ top: pos.top, left: pos.left }}
-              onClick={() => { if (!hasMoved) { setSelectedStudio(studio); setStep(2); } }}
-            >
-              <div className="relative group">
-                 <div className={`relative w-6 h-6 rounded-full transition-all duration-300 z-10 flex items-center justify-center border border-white/20 ${isSelected ? 'bg-accent shadow-[0_0_40px_rgba(138,43,226,1)] scale-150' : 'bg-[#0A0A0A]'}`}>
-                    <div className={`w-2 h-2 rounded-full ${isSelected ? 'bg-white' : 'bg-accent'}`}></div>
-                 </div>
-              </div>
-              <div className={`lg:block absolute ${pos.labelPos} w-52 bg-[#050505]/90 backdrop-blur-xl rounded-xl border p-3 transition-all duration-300 ${isSelected ? 'border-accent shadow-[0_0_30px_rgba(138,43,226,0.6)]' : 'border-white/10 opacity-60'}`}>
-                <h3 className="font-heading font-bold text-base text-white mb-1">{studio.name}</h3>
-                <span className="font-ui font-bold text-accent text-sm">{studio.price_per_hour}€<span className="text-[10px] text-white/50 font-normal">/h</span></span>
-              </div>
-            </div>
-          );
-        })}
+        {/* Radar Overlay Info */}
+        <div className="absolute top-8 left-8 hidden md:block z-20">
+          <button onClick={() => navigate('/')} className="flex items-center gap-2 bg-[#050505]/80 backdrop-blur border border-white/10 px-4 py-2 rounded-full font-ui text-sm hover:bg-white/5 transition-colors shadow-lg">
+            <ArrowLeft className="w-4 h-4 text-accent" /> Volver al Inicio
+          </button>
+        </div>
+
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 md:bottom-8 md:translate-x-0 md:left-8 bg-black/60 backdrop-blur-md border border-white/10 px-4 py-2 rounded-full font-mono text-[10px] text-accent uppercase tracking-widest flex items-center gap-2 z-10">
+          <div className="w-2 h-2 rounded-full bg-accent animate-pulse"></div>
+          Scanning Area: {userLocation || 'Madrid'}
+        </div>
       </div>
 
-      {/* INTERFACE */}
-      <div className="relative z-20 w-full min-h-screen flex flex-col pt-10 pb-8 px-6 max-w-7xl mx-auto pointer-events-none">
-        
-        <div className="flex items-center justify-between mb-8 pointer-events-auto">
-          <button onClick={() => navigate('/')} className="flex items-center gap-2 text-text/60 hover:text-white font-ui text-sm bg-[#050505]/50 backdrop-blur-md py-2 px-4 rounded-full border border-white/10">
-            <ArrowLeft className="w-4 h-4" /> Salir del Radar
-          </button>
-          <div className="bg-[#050505]/50 backdrop-blur-md py-2 px-5 rounded-full border border-white/10 flex items-center gap-2">
-            <span className="relative flex h-3 w-3"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75"></span><span className="relative inline-flex rounded-full h-3 w-3 bg-accent"></span></span>
-            <span className="font-ui text-xs tracking-widest text-white/80 uppercase">Radar Activo</span>
-          </div>
-        </div>
+      {/* SIDEBAR INTERFACE */}
+      <div className="w-full md:w-[450px] bg-surface h-[50vh] md:h-screen flex flex-col border-l border-white/5 shadow-2xl relative z-20 overflow-y-auto">
 
-        <div className="flex flex-grow items-start justify-end pointer-events-none">
-          <div className="booking-panel w-[450px] flex flex-col gap-4 pointer-events-auto">
-            
-            {!selectedStudio ? (
-              <div className="glass-panel p-8 rounded-3xl border border-white/10 flex flex-col items-center text-center animate-[fade-in_0.5s_ease-out]">
-                <Activity className="w-12 h-12 text-accent mb-4 animate-pulse" />
-                <h2 className="font-heading font-bold text-2xl text-white mb-2">Selecciona un Estudio</h2>
-                <p className="font-ui text-sm text-text/50">Toca un punto en el radar para comenzar tu reserva.</p>
+        <div className="p-6 md:p-8 flex flex-col min-h-full">
+          {!selectedStudio ? (
+            <div className="flex-1 flex flex-col items-center justify-center text-center animate-[fade-in_0.5s_ease-out]">
+              <div className="w-20 h-20 rounded-full border border-accent/20 flex items-center justify-center mb-6 bg-accent/5">
+                <Activity className="w-10 h-10 text-accent animate-pulse" />
               </div>
-            ) : step === 2 ? (
-              <div className="glass-panel p-6 rounded-3xl border border-accent/20 flex flex-col animate-[fade-in_0.3s_ease-out]">
-                <div className="flex items-center gap-3 mb-6 pb-4 border-b border-white/5">
-                  <button onClick={() => setSelectedStudio(null)} className="text-text/50 hover:text-white"><ArrowLeft className="w-5 h-5"/></button>
-                  <h3 className="font-heading font-bold text-lg text-white">Tipo de Sesión</h3>
+              <h2 className="font-heading text-2xl font-bold text-white mb-2">Reserva de Estudio</h2>
+              <p className="font-mono text-sm text-text/50 max-w-[250px]">Toca un punto en el radar para comenzar tu sesión.</p>
+              <div className="mt-8 flex gap-2">
+                <div className="w-2 h-2 rounded-full bg-accent animate-bounce"></div>
+                <div className="w-2 h-2 rounded-full bg-accent animate-bounce [animation-delay:-0.15s]"></div>
+                <div className="w-2 h-2 rounded-full bg-accent animate-bounce [animation-delay:-0.3s]"></div>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-6 flex-1 animate-[fade-in_0.3s_ease-out]">
+
+              {/* Studio Header Image Section */}
+              <div className="rounded-2xl overflow-hidden h-48 relative border border-white/5 shadow-xl">
+                <img
+                  src={selectedStudio.image_url || 'https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?auto=format&fit=crop&q=80&w=500'}
+                  alt={selectedStudio.name}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A] via-transparent to-transparent"></div>
+                <button
+                  onClick={() => setSelectedStudio(null)}
+                  className="absolute top-4 left-4 w-8 h-8 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center text-white hover:bg-accent transition-colors"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                </button>
+                <div className="absolute bottom-4 left-4">
+                  <h3 className="font-heading text-2xl font-bold text-white">{selectedStudio.name}</h3>
+                  <div className="font-mono text-[10px] text-accent flex items-center gap-1 uppercase tracking-widest mt-1">
+                    <MapPin className="w-3 h-3" /> {selectedStudio.location || 'Madrid'}
+                  </div>
                 </div>
-                <div className="space-y-3 mb-6">
-                  {studioServices.map((cat) => (
-                    <button 
-                      key={cat.id} onClick={() => setSelectedCategory(cat.id)}
-                      className={`w-full p-4 rounded-xl border text-left transition-all ${selectedCategory === cat.id ? 'bg-accent/10 border-accent' : 'bg-[#050505]/50 border-white/10'}`}
+              </div>
+
+              {step === 2 && (
+                <div className="flex flex-col flex-1">
+                  <div className="font-mono text-[10px] text-text/50 uppercase tracking-widest mb-4 border-b border-white/5 pb-2">
+                    Selecciona el Tipo de Sesión
+                  </div>
+                  <div className="space-y-3 mb-8">
+                    {studioServices.map((cat) => (
+                      <button
+                        key={cat.id} onClick={() => setSelectedCategory(cat.id)}
+                        className={`w-full p-4 rounded-xl border text-left transition-all ${selectedCategory === cat.id ? 'bg-accent/10 border-accent shadow-[0_0_15px_rgba(138,43,226,0.1)]' : 'bg-white/5 border-white/5 hover:border-white/20'}`}
+                      >
+                        <div className="flex justify-between items-start mb-1">
+                          <span className="font-heading font-bold text-white">{cat.name}</span>
+                          <span className="font-mono text-xs text-accent font-bold">{cat.is_package ? `${cat.package_price}€` : `+${cat.additional_price}€/h`}</span>
+                        </div>
+                        <p className="font-ui text-[11px] text-text/50">{cat.description}</p>
+                      </button>
+                    ))}
+                  </div>
+                  <div className="mt-auto">
+                    <button
+                      onClick={() => setStep(3)}
+                      disabled={!selectedCategory}
+                      className="w-full py-4 rounded-xl bg-accent text-white font-mono font-bold uppercase tracking-widest hover:bg-[#9d3df2] transition-all disabled:opacity-50"
                     >
-                      <div className="flex justify-between items-start">
-                        <span className="font-heading font-bold text-white">{cat.name}</span>
-                        <span className="font-ui text-xs text-accent font-bold">{cat.is_package ? `${cat.package_price}€` : `+${cat.additional_price}€/h`}</span>
-                      </div>
-                      <p className="font-ui text-[11px] text-text/50">{cat.description}</p>
+                      Continuar <ArrowRight className="inline ml-2 w-4 h-4" />
                     </button>
-                  ))}
+                  </div>
                 </div>
-                <Button onClick={() => setStep(3)} disabled={!selectedCategory}>Siguiente <ArrowRight className="ml-2 w-4 h-4" /></Button>
-              </div>
-            ) : step === 3 ? (
-              <div className="glass-panel p-6 rounded-3xl border border-accent/20 flex flex-col animate-[fade-in_0.3s_ease-out]">
-                <div className="flex items-center gap-3 mb-6">
-                  <button onClick={() => setStep(2)} className="text-text/50 hover:text-white"><ArrowLeft className="w-5 h-5"/></button>
-                  <h3 className="font-heading font-bold text-lg text-white">Identificación</h3>
-                </div>
-                <div className="space-y-4 mb-6">
-                  <input type="text" value={artistName} onChange={e => setArtistName(e.target.value)} placeholder="Nombre Artístico *" className="w-full bg-[#050505]/80 border border-white/10 rounded-xl py-3 px-4 text-white outline-none focus:border-accent" />
-                  <div className="flex justify-between items-center"><span className="text-xs text-text/50">Invitados (Máx 3)</span><button onClick={() => setCompanions([...companions, ''])} disabled={companions.length >= 3} className="text-accent text-xs font-bold">+ Añadir</button></div>
-                  {companions.map((comp, i) => (
-                    <div key={i} className="flex gap-2">
-                      <input type="text" value={comp} onChange={e => { const n = [...companions]; n[i] = e.target.value; setCompanions(n); }} placeholder={`Invitado ${i+1}`} className="w-full bg-[#050505]/80 border border-white/10 rounded-xl py-2 px-3 text-xs text-white outline-none focus:border-accent" />
-                      <button onClick={() => setCompanions(companions.filter((_, idx) => idx !== i))} className="text-red-500 px-2">✕</button>
+              )}
+
+              {step === 3 && (
+                <div className="flex flex-col flex-1">
+                  <button onClick={() => setStep(2)} className="flex items-center gap-2 text-text/50 hover:text-white font-mono text-xs mb-6 transition-colors">
+                    <ArrowLeft className="w-3 h-3" /> Volver a sesiones
+                  </button>
+                  <h3 className="font-heading text-xl font-bold text-white mb-6">Datos de la Sesión</h3>
+                  <div className="space-y-6">
+                    <div>
+                      <label className="font-mono text-[10px] text-text/50 uppercase tracking-widest block mb-2">Nombre Artístico *</label>
+                      <input
+                        type="text"
+                        value={artistName}
+                        onChange={e => setArtistName(e.target.value)}
+                        placeholder="EJ. KAEL"
+                        className="w-full bg-white/5 border border-white/10 rounded-xl py-4 px-4 text-white outline-none focus:border-accent transition-colors font-mono"
+                      />
                     </div>
-                  ))}
-                </div>
-                <Button onClick={() => setStep(4)} disabled={!artistName.trim()}>Elegir Horario <Calendar className="ml-2 w-4 h-4" /></Button>
-              </div>
-            ) : step === 4 ? (
-              <div className="fixed inset-0 z-[100] flex items-center justify-center p-10 animate-[fade-in_0.3s_ease-out]">
-                <div className="absolute inset-0 bg-[#050505]/95 backdrop-blur-xl" onClick={() => setStep(3)}></div>
-                <div className="relative w-full max-w-5xl h-[80vh] bg-[#0A0A0A] rounded-3xl border border-white/10 shadow-[0_0_50px_rgba(138,43,226,0.2)] overflow-hidden flex flex-col">
-                  <div className="flex items-center justify-between p-6 border-b border-white/5">
-                    <div className="flex items-center gap-4">
-                      <button onClick={() => setStep(3)} className="w-10 h-10 flex items-center justify-center rounded-full bg-white/5 border border-white/10 text-white"><ArrowLeft className="w-5 h-5" /></button>
-                      <h3 className="font-heading font-bold text-xl text-white">Reserva tu Sesión</h3>
+                    <div>
+                      <div className="flex justify-between items-center mb-2">
+                        <label className="font-mono text-[10px] text-text/50 uppercase tracking-widest">Invitados (Máx 3)</label>
+                        <button onClick={() => setCompanions([...companions, ''])} disabled={companions.length >= 3} className="text-accent text-[10px] font-bold uppercase tracking-wider">+ Añadir</button>
+                      </div>
+                      <div className="space-y-3">
+                        {companions.map((comp, i) => (
+                          <div key={i} className="flex gap-2">
+                            <input
+                              type="text"
+                              value={comp}
+                              onChange={e => { const n = [...companions]; n[i] = e.target.value; setCompanions(n); }}
+                              placeholder={`Invitado ${i + 1}`}
+                              className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-xs text-white outline-none focus:border-accent font-mono"
+                            />
+                            <button onClick={() => setCompanions(companions.filter((_, idx) => idx !== i))} className="text-red-500/50 hover:text-red-500 px-2 transition-colors">✕</button>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                    <button onClick={() => setStep(5)} className="bg-white/10 px-5 py-2.5 rounded-full text-white font-ui text-xs">Saltar Pago</button>
                   </div>
-                  <div className="flex-grow">
-                    <Cal 
-                      onAnyEvent={(e) => { if (e.data.type === "bookingSuccessful") { setBookingInfo(e.data.data); setTimeout(() => setStep(5), 1500); } }}
-                      calLink={selectedStudio?.cal_link?.includes('cal.com/') ? selectedStudio.cal_link.split('cal.com/')[1] : (selectedStudio?.cal_link || "your-username/default")}
-                      style={{width:"100%", height:"100%"}}
-                      config={{ name: artistName, theme: "dark", themeColor: "#8A2BE2" }}
-                    />
+                  <div className="mt-auto pt-8">
+                    <button
+                      onClick={() => setStep(4)}
+                      disabled={!artistName.trim()}
+                      className="w-full py-4 rounded-xl bg-accent text-white font-mono font-bold uppercase tracking-widest hover:bg-[#9d3df2] transition-all disabled:opacity-50 shadow-lg"
+                    >
+                      Elegir Horario <Calendar className="inline ml-2 w-4 h-4" />
+                    </button>
                   </div>
                 </div>
-              </div>
-            ) : step === 5 ? (
-              <div className="glass-panel p-6 rounded-3xl border border-accent/20 flex flex-col animate-[fade-in_0.3s_ease-out]">
-                <h3 className="font-heading font-bold text-lg text-white mb-6">Resumen de Reserva</h3>
-                <div className="bg-[#050505]/60 rounded-2xl border border-white/5 p-4 mb-6 space-y-4">
-                  <div className="flex justify-between border-b border-white/5 pb-4">
-                    <div><span className="text-accent text-[10px] uppercase">{selectedStudio.name}</span><h4 className="text-white font-bold">{studioServices.find(c => c.id === selectedCategory)?.name}</h4></div>
-                    <span className="text-white font-bold text-2xl font-heading">{calculateTotal()}€</span>
+              )}
+
+              {step === 4 && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-10 animate-[fade-in_0.3s_ease-out]">
+                  <div className="absolute inset-0 bg-[#050505]/95 backdrop-blur-xl" onClick={() => setStep(3)}></div>
+                  <div className="relative w-full max-w-5xl h-[90vh] bg-[#0A0A0A] rounded-3xl border border-white/10 shadow-2xl overflow-hidden flex flex-col">
+                    <div className="flex items-center justify-between p-6 border-b border-white/5">
+                      <div className="flex items-center gap-4">
+                        <button onClick={() => setStep(3)} className="w-10 h-10 flex items-center justify-center rounded-full bg-white/5 border border-white/10 text-white hover:bg-accent"><ArrowLeft className="w-5 h-5" /></button>
+                        <h3 className="font-heading font-bold text-xl text-white">Reserva tu Sesión</h3>
+                      </div>
+                      <button onClick={() => setStep(5)} className="bg-white/10 px-5 py-2.5 rounded-full text-white font-ui text-xs hover:bg-white/20">Saltar al Resumen</button>
+                    </div>
+                    <div className="flex-grow">
+                      <Cal
+                        onAnyEvent={(e) => { if (e.data.type === "bookingSuccessful") { setBookingInfo(e.data.data); setTimeout(() => setStep(5), 1500); } }}
+                        calLink={selectedStudio?.cal_link?.includes('cal.com/') ? selectedStudio.cal_link.split('cal.com/')[1] : (selectedStudio?.cal_link || "your-username/default")}
+                        style={{ width: "100%", height: "100%" }}
+                        config={{ name: artistName, theme: "dark", themeColor: "#8A2BE2" }}
+                      />
+                    </div>
                   </div>
-                  {bookingInfo && <p className="text-[10px] text-text/40 font-mono">ID Cal.com: {bookingInfo.bookingId}</p>}
                 </div>
-                <Button onClick={handlePayment} disabled={isPaying}>{isPaying ? 'Procesando...' : 'Confirmar y Pagar'}</Button>
-              </div>
-            ) : step === 6 ? (
-              <div className="glass-panel p-8 rounded-3xl border border-green-500/30 flex flex-col items-center text-center animate-[fade-in_0.5s_ease-out]">
-                <ShieldCheck className="w-16 h-16 text-green-500 mb-6" />
-                <h2 className="text-white font-bold text-2xl mb-2">¡Reserva Confirmada!</h2>
-                <Button onClick={() => navigate('/')} variant="secondary" className="w-full mt-4">Ir al Inicio</Button>
-              </div>
-            ) : null}
-          </div>
+              )}
+
+              {step === 5 && (
+                <div className="flex flex-col flex-1">
+                  <h3 className="font-heading text-xl font-bold text-white mb-6">Resumen de Reserva</h3>
+                  <div className="bg-white/5 rounded-2xl border border-white/5 p-6 mb-8 space-y-4">
+                    <div className="flex justify-between items-center border-b border-white/5 pb-4">
+                      <div>
+                        <span className="text-accent text-[10px] font-mono uppercase tracking-widest block mb-1">{selectedStudio.name}</span>
+                        <h4 className="text-white font-bold text-lg">{studioServices.find(c => c.id === selectedCategory)?.name}</h4>
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-center py-2">
+                      <span className="text-text/50 font-mono text-xs uppercase tracking-widest">Inversión Total</span>
+                      <span className="text-white font-bold text-3xl font-heading">{calculateTotal()}€</span>
+                    </div>
+                    {bookingInfo && (
+                      <div className="pt-4 border-t border-white/5">
+                        <p className="text-[10px] text-text/40 font-mono uppercase tracking-widest mb-1">Referencia Cal.com</p>
+                        <p className="text-xs text-accent font-mono">{bookingInfo.bookingId}</p>
+                      </div>
+                    )}
+                  </div>
+                  <div className="mt-auto">
+                    <button
+                      onClick={handlePayment}
+                      disabled={isPaying}
+                      className="w-full py-5 rounded-xl bg-accent text-white font-mono font-bold uppercase tracking-widest hover:bg-[#9d3df2] transition-all disabled:opacity-50 shadow-[0_0_20px_rgba(138,43,226,0.2)]"
+                    >
+                      {isPaying ? 'Iniciando Pasarela...' : `Pagar ${calculateTotal()}€`}
+                    </button>
+                    <p className="text-center text-[10px] text-text/40 mt-4 uppercase tracking-[0.2em]">Pago seguro vía Stripe</p>
+                  </div>
+                </div>
+              )}
+
+              {step === 6 && (
+                <div className="flex-1 flex flex-col items-center justify-center text-center">
+                  <div className="w-24 h-24 bg-green-500/10 rounded-full border border-green-500/30 flex items-center justify-center mb-8 shadow-[0_0_40px_rgba(34,197,94,0.1)]">
+                    <ShieldCheck className="w-12 h-12 text-green-500" />
+                  </div>
+                  <h2 className="text-white font-heading font-bold text-3xl mb-4">¡Sesión Bloqueada!</h2>
+                  <p className="font-mono text-sm text-text/60 mb-10 max-w-[280px]">Hemos recibido tu reserva. Recibirás un correo con los detalles en unos minutos.</p>
+                  <button
+                    onClick={() => navigate('/')}
+                    className="w-full py-4 rounded-xl border border-white/10 text-white font-mono text-xs font-bold uppercase tracking-widest hover:border-accent transition-colors"
+                  >
+                    Volver al Inicio
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
