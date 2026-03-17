@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useLayoutEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import {
@@ -17,7 +17,9 @@ import {
   Zap,
   Disc3,
   Search,
-  ShoppingCart
+  ShoppingCart,
+  Menu,
+  X
 } from 'lucide-react';
 
 gsap.registerPlugin(ScrollTrigger);
@@ -44,39 +46,206 @@ const Button = ({ children, className = '', variant = 'primary', ...props }) => 
 // SECTIONS
 // -------------------------------------------------------------
 
-const Navbar = () => {
-  const [scrolled, setScrolled] = useState(false);
+const NAV_LINKS = [
+  { label: 'Studios',   to: '/book-studio',    icon: <MapPin className="w-4 h-4" />,       mobileIcon: <MapPin className="w-5 h-5" /> },
+  { label: 'Sessions',  href: '#workflow',     icon: <Calendar className="w-4 h-4" />,     mobileIcon: <Calendar className="w-5 h-5" /> },
+  { label: 'Artistas',  to: '/artists',        icon: <Mic className="w-4 h-4" />,          mobileIcon: <Mic className="w-5 h-5" /> },
+  { label: 'Producers', to: '/producer/login', icon: <Headphones className="w-4 h-4" />,   mobileIcon: <Headphones className="w-5 h-5" /> },
+  { label: 'Beats',     to: '/beats',          icon: <ShoppingCart className="w-4 h-4" />, mobileIcon: <ShoppingCart className="w-5 h-5" /> },
+];
 
+const Navbar = () => {
+  const [scrolled, setScrolled]   = useState(false);
+  const [open, setOpen]           = useState(false);
+  const location                  = useLocation();
+  const mobileMenuRef             = useRef(null);
+  const overlayRef                = useRef(null);
+
+  /* scroll listener */
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 50);
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    const onScroll = () => setScrolled(window.scrollY > 50);
+    window.addEventListener('scroll', onScroll);
+    return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
+  /* lock body scroll when mobile menu is open */
+  useEffect(() => {
+    document.body.style.overflow = open ? 'hidden' : '';
+    return () => { document.body.style.overflow = ''; };
+  }, [open]);
+
+  /* close on route change */
+  useEffect(() => { setOpen(false); }, [location.pathname]);
+
+  /* GSAP open/close animation */
+  useEffect(() => {
+    const menu    = mobileMenuRef.current;
+    const overlay = overlayRef.current;
+    if (!menu || !overlay) return;
+
+    if (open) {
+      gsap.set(menu, { display: 'flex' });
+      gsap.fromTo(overlay, { opacity: 0 }, { opacity: 1, duration: 0.25, ease: 'power2.out' });
+      gsap.fromTo(menu,
+        { y: -20, opacity: 0 },
+        { y: 0,   opacity: 1, duration: 0.35, ease: 'power3.out' }
+      );
+      gsap.fromTo(
+        menu.querySelectorAll('.mobile-link'),
+        { x: -24, opacity: 0 },
+        { x: 0, opacity: 1, duration: 0.3, stagger: 0.07, delay: 0.1, ease: 'power2.out' }
+      );
+    } else {
+      gsap.to(overlay, { opacity: 0, duration: 0.2 });
+      gsap.to(menu, {
+        y: -10, opacity: 0, duration: 0.25, ease: 'power2.in',
+        onComplete: () => gsap.set(menu, { display: 'none' }),
+      });
+    }
+  }, [open]);
+
+  const isActive = (to) => to && location.pathname === to;
+
   return (
-    <nav className={`fixed top-0 left-0 right-0 z-50 flex justify-center pt-6 transition-all duration-500`}>
-      <div className={`flex items-center justify-between w-[90%] max-w-6xl rounded-full px-8 py-4 transition-all duration-500 ${scrolled ? 'bg-[#050505]/80 backdrop-blur-xl border border-white/10 shadow-2xl' : 'bg-transparent border-transparent'
-        }`}>
-        <div className="flex items-center gap-2 group cursor-pointer">
-          <Activity className="w-6 h-6 text-accent group-hover:scale-110 transition-transform" />
-          <span className="font-heading font-bold text-xl tracking-wide text-white">Helicon</span>
+    <>
+      {/* ── Main bar ── */}
+      <nav className="fixed top-0 left-0 right-0 z-50 flex justify-center pt-5 transition-all duration-500 pointer-events-none">
+        <div
+          className={`
+            pointer-events-auto
+            flex items-center justify-between
+            w-[92%] max-w-6xl
+            rounded-2xl px-6 py-3
+            transition-all duration-500
+            ${scrolled
+              ? 'bg-[#050505]/85 backdrop-blur-2xl border border-white/10 shadow-[0_4px_40px_rgba(0,0,0,0.6)]'
+              : 'bg-[#0a0a0a]/40 backdrop-blur-md border border-white/5'}
+          `}
+        >
+          {/* Logo */}
+          <Link to="/" className="flex items-center gap-2 group select-none">
+            <span className="relative flex">
+              <Activity className="w-5 h-5 text-accent transition-transform duration-300 group-hover:scale-110 group-hover:rotate-12" />
+              <span className="absolute inset-0 w-5 h-5 bg-accent/30 rounded-full blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            </span>
+            <span className="font-heading font-bold text-lg tracking-wide text-white">
+              Helicon
+            </span>
+          </Link>
+
+          {/* Desktop links */}
+          <div className="hidden md:flex items-center gap-1 font-ui text-sm">
+            {NAV_LINKS.map(({ label, to, href }) => {
+              const active = isActive(to);
+              const baseClass = `
+                relative flex items-center gap-1.5 px-4 py-2 rounded-xl
+                transition-all duration-200
+                ${active
+                  ? 'text-white bg-white/[0.08]'
+                  : 'text-text/70 hover:text-white hover:bg-white/5'}
+              `;
+              const inner = (
+                <>
+                  {label}
+                  {active && (
+                    <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-accent" />
+                  )}
+                </>
+              );
+              return to ? (
+                <Link key={label} to={to} className={baseClass}>{inner}</Link>
+              ) : (
+                <a key={label} href={href} className={baseClass}>{inner}</a>
+              );
+            })}
+          </div>
+
+          {/* CTA + Hamburger */}
+          <div className="flex items-center gap-3">
+            <Link to="/book-studio" className="hidden md:block">
+              <Button variant="primary" className="px-5 py-2 text-xs">
+                Open Studio
+              </Button>
+            </Link>
+
+            {/* Hamburger — mobile only */}
+            <button
+              onClick={() => setOpen(v => !v)}
+              aria-label="Toggle menu"
+              className="md:hidden flex items-center justify-center w-9 h-9 rounded-xl border border-white/10 text-text/70 hover:text-white hover:bg-white/5 hover:border-white/20 transition-all duration-200"
+            >
+              {open ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+            </button>
+          </div>
+        </div>
+      </nav>
+
+      {/* ── Mobile backdrop ── */}
+      <div
+        ref={overlayRef}
+        onClick={() => setOpen(false)}
+        className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden"
+        style={{ display: 'none', opacity: 0 }}
+      />
+
+      {/* ── Mobile menu panel ── */}
+      <div
+        ref={mobileMenuRef}
+        className="fixed top-[82px] left-0 right-0 z-50 md:hidden flex-col mx-4 rounded-2xl border border-white/10 bg-[#080808]/95 backdrop-blur-2xl shadow-[0_20px_60px_rgba(0,0,0,0.7)] overflow-hidden"
+        style={{ display: 'none', opacity: 0 }}
+      >
+        {/* Purple top accent line */}
+        <div className="h-px w-full bg-gradient-to-r from-transparent via-accent/60 to-transparent" />
+
+        <div className="flex flex-col p-3 gap-1">
+          {NAV_LINKS.map(({ label, to, href, mobileIcon }) => {
+            const active = isActive(to);
+            const cls = `
+              mobile-link flex items-center gap-3.5 px-4 py-3.5 rounded-xl
+              font-ui text-sm tracking-wide transition-all duration-200
+              ${active
+                ? 'bg-accent/15 text-white border border-accent/25'
+                : 'text-text/60 hover:text-white hover:bg-white/5 border border-transparent'}
+            `;
+            const inner = (
+              <>
+                {/* Icon box */}
+                <span className={`
+                  flex items-center justify-center w-9 h-9 rounded-xl flex-shrink-0
+                  transition-all duration-200
+                  ${active
+                    ? 'bg-accent/20 text-accent shadow-[0_0_12px_rgba(138,43,226,0.25)]'
+                    : 'bg-accent/10 text-accent/60 hover:text-accent'}
+                `}>
+                  {mobileIcon}
+                </span>
+                <span className="flex-1">{label}</span>
+                {active && (
+                  <span className="flex items-center justify-center w-5 h-5 rounded-full bg-accent/20">
+                    <span className="w-1.5 h-1.5 rounded-full bg-accent" />
+                  </span>
+                )}
+              </>
+            );
+            return to ? (
+              <Link key={label} to={to} className={cls}>{inner}</Link>
+            ) : (
+              <a key={label} href={href} className={cls}>{inner}</a>
+            );
+          })}
         </div>
 
-        <div className="hidden md:flex items-center gap-8 font-ui text-sm text-text/80">
-          <Link to="/book-studio" className="hover:text-accent transition-colors">Studios</Link>
-          <a href="#workflow" className="hover:text-accent transition-colors">Sessions</a>
-          <Link to="/artists" className="hover:text-accent transition-colors">Artistas</Link>
-          <Link to="/producer/login" className="hover:text-accent transition-colors">Producers</Link>
-          <Link to="/beats" className="hover:text-accent transition-colors font-bold text-white flex items-center gap-1"><ShoppingCart className="w-3 h-3" /> Beats Market</Link>
+        {/* CTA */}
+        <div className="px-4 pb-4">
+          <div className="h-px w-full bg-white/5 mb-4" />
+          <Link to="/book-studio" className="block w-full">
+            <Button variant="primary" className="w-full py-3.5 text-sm justify-center">
+              Open Studio
+            </Button>
+          </Link>
         </div>
-
-        <Link to="/book-studio">
-          <Button variant={scrolled ? 'primary' : 'secondary'} className="px-6 py-2 text-xs">
-            Open Studio
-          </Button>
-        </Link>
       </div>
-    </nav>
+    </>
   );
 };
 
