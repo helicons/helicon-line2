@@ -66,6 +66,7 @@ const Navbar = () => {
           <Link to="/book-studio" className="hover:text-accent transition-colors">Studios</Link>
           <a href="#workflow" className="hover:text-accent transition-colors">Sessions</a>
           <Link to="/artists" className="hover:text-accent transition-colors">Artistas</Link>
+          <Link to="/producer/login" className="hover:text-accent transition-colors">Producers</Link>
           <Link to="/beats" className="hover:text-accent transition-colors font-bold text-white flex items-center gap-1"><ShoppingCart className="w-3 h-3" /> Beats Market</Link>
         </div>
 
