@@ -37,6 +37,8 @@ export default function BookStudio() {
   const [error, setError] = useState(null);
   const [studioServices, setStudioServices] = useState([]);
   const [studioSpaceId, setStudioSpaceId] = useState(null);
+  const [selectedSpace, setSelectedSpace] = useState(null);
+  const [selectedDuration, setSelectedDuration] = useState(1);
   const [isPaying, setIsPaying] = useState(false);
   const [clientEmail, setClientEmail] = useState('');
   const [selectedDate, setSelectedDate] = useState(null);
@@ -99,7 +101,7 @@ export default function BookStudio() {
     if (!selectedCategory) return 0;
     const space = studioServices.find(c => c.id === selectedCategory);
     if (!space) return 0;
-    return (parseFloat(space.price_per_hour) || 0) * hoursCount;
+    return (parseFloat(space.price_per_hour) || 0) * selectedDuration;
   };
 
   const handlePayment = async () => {
@@ -261,7 +263,7 @@ export default function BookStudio() {
                       {studioServices.map((space) => (
                         <button
                           key={space.id}
-                          onClick={() => { setSelectedCategory(space.id); setStudioSpaceId(space.id); }}
+                          onClick={() => { setSelectedCategory(space.id); setStudioSpaceId(space.id); setSelectedSpace(space); }}
                           className={`w-full p-4 rounded-xl border text-left transition-all ${selectedCategory === space.id ? 'bg-accent/10 border-accent shadow-[0_0_15px_rgba(138,43,226,0.1)]' : 'bg-white/5 border-white/5 hover:border-white/20'}`}
                         >
                           <div className="flex justify-between items-start mb-1">
@@ -367,9 +369,13 @@ export default function BookStudio() {
                         spaceId={studioSpaceId}
                         clientName={artistName}
                         clientEmail={clientEmail}
-                        onSlotSelected={({ date, slot, bookingId }) => {
+                        pricePerHour={parseFloat(selectedSpace?.price_per_hour) || 0}
+                        minDuration={selectedSpace?.min_duration_hours || 1}
+                        maxDuration={selectedSpace?.max_duration_hours || 4}
+                        onSlotSelected={({ date, slot, bookingId, durationHours }) => {
                           setSelectedDate(date);
                           setSelectedSlot(slot);
+                          setSelectedDuration(durationHours);
                           setPendingBookingId(bookingId);
                           setStep(5);
                         }}
@@ -396,7 +402,8 @@ export default function BookStudio() {
                     {selectedDate && selectedSlot && (
                       <div className="pt-4 border-t border-white/5">
                         <p className="text-[10px] text-text/40 font-mono uppercase tracking-widest mb-1">Fecha y Hora</p>
-                        <p className="text-sm text-white font-mono">{selectedDate} — {selectedSlot}h</p>
+                        <p className="text-sm text-white font-mono">{selectedDate} · {selectedSlot} → {selectedSlot && (() => { const h = parseInt(selectedSlot) + selectedDuration; return `${String(h).padStart(2,'0')}:00` })()}</p>
+                        <p className="text-[10px] text-text/40 font-mono mt-0.5">{selectedDuration}h · {parseFloat(selectedSpace?.price_per_hour) || 0}€/h</p>
                       </div>
                     )}
                   </div>
