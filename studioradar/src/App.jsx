@@ -1,23 +1,25 @@
 import React, { useEffect, useRef, useState, useLayoutEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { 
-  Play, 
-  MapPin, 
-  Calendar, 
-  Mic, 
-  Headphones, 
-  ArrowRight, 
-  Volume2, 
-  Radio, 
-  Map, 
-  Check, 
-  Activity, 
+import {
+  Play,
+  MapPin,
+  Calendar,
+  Mic,
+  Headphones,
+  ArrowRight,
+  Volume2,
+  Radio,
+  Map,
+  Check,
+  Activity,
   Zap,
   Disc3,
   Search,
-  ShoppingCart
+  ShoppingCart,
+  Menu,
+  X
 } from 'lucide-react';
 
 gsap.registerPlugin(ScrollTrigger);
@@ -44,39 +46,206 @@ const Button = ({ children, className = '', variant = 'primary', ...props }) => 
 // SECTIONS
 // -------------------------------------------------------------
 
-const Navbar = () => {
-  const [scrolled, setScrolled] = useState(false);
+const NAV_LINKS = [
+  { label: 'Studios',   to: '/book-studio',    icon: <MapPin className="w-4 h-4" />,       mobileIcon: <MapPin className="w-5 h-5" /> },
+  { label: 'Sessions',  href: '#workflow',     icon: <Calendar className="w-4 h-4" />,     mobileIcon: <Calendar className="w-5 h-5" /> },
+  { label: 'Artistas',  to: '/artists',        icon: <Mic className="w-4 h-4" />,          mobileIcon: <Mic className="w-5 h-5" /> },
+  { label: 'Producers', to: '/producer/login', icon: <Headphones className="w-4 h-4" />,   mobileIcon: <Headphones className="w-5 h-5" /> },
+  { label: 'Beats',     to: '/beats',          icon: <ShoppingCart className="w-4 h-4" />, mobileIcon: <ShoppingCart className="w-5 h-5" /> },
+];
 
+const Navbar = () => {
+  const [scrolled, setScrolled]   = useState(false);
+  const [open, setOpen]           = useState(false);
+  const location                  = useLocation();
+  const mobileMenuRef             = useRef(null);
+  const overlayRef                = useRef(null);
+
+  /* scroll listener */
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 50);
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    const onScroll = () => setScrolled(window.scrollY > 50);
+    window.addEventListener('scroll', onScroll);
+    return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
+  /* lock body scroll when mobile menu is open */
+  useEffect(() => {
+    document.body.style.overflow = open ? 'hidden' : '';
+    return () => { document.body.style.overflow = ''; };
+  }, [open]);
+
+  /* close on route change */
+  useEffect(() => { setOpen(false); }, [location.pathname]);
+
+  /* GSAP open/close animation */
+  useEffect(() => {
+    const menu    = mobileMenuRef.current;
+    const overlay = overlayRef.current;
+    if (!menu || !overlay) return;
+
+    if (open) {
+      gsap.set(menu, { display: 'flex' });
+      gsap.fromTo(overlay, { opacity: 0 }, { opacity: 1, duration: 0.25, ease: 'power2.out' });
+      gsap.fromTo(menu,
+        { y: -20, opacity: 0 },
+        { y: 0,   opacity: 1, duration: 0.35, ease: 'power3.out' }
+      );
+      gsap.fromTo(
+        menu.querySelectorAll('.mobile-link'),
+        { x: -24, opacity: 0 },
+        { x: 0, opacity: 1, duration: 0.3, stagger: 0.07, delay: 0.1, ease: 'power2.out' }
+      );
+    } else {
+      gsap.to(overlay, { opacity: 0, duration: 0.2 });
+      gsap.to(menu, {
+        y: -10, opacity: 0, duration: 0.25, ease: 'power2.in',
+        onComplete: () => gsap.set(menu, { display: 'none' }),
+      });
+    }
+  }, [open]);
+
+  const isActive = (to) => to && location.pathname === to;
+
   return (
-    <nav className={`fixed top-0 left-0 right-0 z-50 flex justify-center pt-6 transition-all duration-500`}>
-      <div className={`flex items-center justify-between w-[90%] max-w-6xl rounded-full px-8 py-4 transition-all duration-500 ${
-        scrolled ? 'bg-[#050505]/80 backdrop-blur-xl border border-white/10 shadow-2xl' : 'bg-transparent border-transparent'
-      }`}>
-        <div className="flex items-center gap-2 group cursor-pointer">
-          <Activity className="w-6 h-6 text-accent group-hover:scale-110 transition-transform" />
-          <span className="font-heading font-bold text-xl tracking-wide text-white">Helicon</span>
+    <>
+      {/* ── Main bar ── */}
+      <nav className="fixed top-0 left-0 right-0 z-50 flex justify-center pt-5 transition-all duration-500 pointer-events-none">
+        <div
+          className={`
+            pointer-events-auto
+            flex items-center justify-between
+            w-[92%] max-w-6xl
+            rounded-2xl px-6 py-3
+            transition-all duration-500
+            ${scrolled
+              ? 'bg-[#050505]/85 backdrop-blur-2xl border border-white/10 shadow-[0_4px_40px_rgba(0,0,0,0.6)]'
+              : 'bg-[#0a0a0a]/40 backdrop-blur-md border border-white/5'}
+          `}
+        >
+          {/* Logo */}
+          <Link to="/" className="flex items-center gap-2 group select-none">
+            <span className="relative flex">
+              <Activity className="w-5 h-5 text-accent transition-transform duration-300 group-hover:scale-110 group-hover:rotate-12" />
+              <span className="absolute inset-0 w-5 h-5 bg-accent/30 rounded-full blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            </span>
+            <span className="font-heading font-bold text-lg tracking-wide text-white">
+              Helicon
+            </span>
+          </Link>
+
+          {/* Desktop links */}
+          <div className="hidden md:flex items-center gap-1 font-ui text-sm">
+            {NAV_LINKS.map(({ label, to, href }) => {
+              const active = isActive(to);
+              const baseClass = `
+                relative flex items-center gap-1.5 px-4 py-2 rounded-xl
+                transition-all duration-200
+                ${active
+                  ? 'text-white bg-white/[0.08]'
+                  : 'text-text/70 hover:text-white hover:bg-white/5'}
+              `;
+              const inner = (
+                <>
+                  {label}
+                  {active && (
+                    <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-accent" />
+                  )}
+                </>
+              );
+              return to ? (
+                <Link key={label} to={to} className={baseClass}>{inner}</Link>
+              ) : (
+                <a key={label} href={href} className={baseClass}>{inner}</a>
+              );
+            })}
+          </div>
+
+          {/* CTA + Hamburger */}
+          <div className="flex items-center gap-3">
+            <Link to="/book-studio" className="hidden md:block">
+              <Button variant="primary" className="px-5 py-2 text-xs">
+                Open Studio
+              </Button>
+            </Link>
+
+            {/* Hamburger — mobile only */}
+            <button
+              onClick={() => setOpen(v => !v)}
+              aria-label="Toggle menu"
+              className="md:hidden flex items-center justify-center w-9 h-9 rounded-xl border border-white/10 text-text/70 hover:text-white hover:bg-white/5 hover:border-white/20 transition-all duration-200"
+            >
+              {open ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+            </button>
+          </div>
         </div>
-        
-        <div className="hidden md:flex items-center gap-8 font-ui text-sm text-text/80">
-          <a href="#studios" className="hover:text-accent transition-colors">Studios</a>
-          <a href="#workflow" className="hover:text-accent transition-colors">Sessions</a>
-          <Link to="/artists" className="hover:text-accent transition-colors">Artistas</Link>
-          <Link to="/beats" className="hover:text-accent transition-colors font-bold text-white flex items-center gap-1"><ShoppingCart className="w-3 h-3"/> Beats Market</Link>
+      </nav>
+
+      {/* ── Mobile backdrop ── */}
+      <div
+        ref={overlayRef}
+        onClick={() => setOpen(false)}
+        className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden"
+        style={{ display: 'none', opacity: 0 }}
+      />
+
+      {/* ── Mobile menu panel ── */}
+      <div
+        ref={mobileMenuRef}
+        className="fixed top-[82px] left-0 right-0 z-50 md:hidden flex-col mx-4 rounded-2xl border border-white/10 bg-[#080808]/95 backdrop-blur-2xl shadow-[0_20px_60px_rgba(0,0,0,0.7)] overflow-hidden"
+        style={{ display: 'none', opacity: 0 }}
+      >
+        {/* Purple top accent line */}
+        <div className="h-px w-full bg-gradient-to-r from-transparent via-accent/60 to-transparent" />
+
+        <div className="flex flex-col p-3 gap-1">
+          {NAV_LINKS.map(({ label, to, href, mobileIcon }) => {
+            const active = isActive(to);
+            const cls = `
+              mobile-link flex items-center gap-3.5 px-4 py-3.5 rounded-xl
+              font-ui text-sm tracking-wide transition-all duration-200
+              ${active
+                ? 'bg-accent/15 text-white border border-accent/25'
+                : 'text-text/60 hover:text-white hover:bg-white/5 border border-transparent'}
+            `;
+            const inner = (
+              <>
+                {/* Icon box */}
+                <span className={`
+                  flex items-center justify-center w-9 h-9 rounded-xl flex-shrink-0
+                  transition-all duration-200
+                  ${active
+                    ? 'bg-accent/20 text-accent shadow-[0_0_12px_rgba(138,43,226,0.25)]'
+                    : 'bg-accent/10 text-accent/60 hover:text-accent'}
+                `}>
+                  {mobileIcon}
+                </span>
+                <span className="flex-1">{label}</span>
+                {active && (
+                  <span className="flex items-center justify-center w-5 h-5 rounded-full bg-accent/20">
+                    <span className="w-1.5 h-1.5 rounded-full bg-accent" />
+                  </span>
+                )}
+              </>
+            );
+            return to ? (
+              <Link key={label} to={to} className={cls}>{inner}</Link>
+            ) : (
+              <a key={label} href={href} className={cls}>{inner}</a>
+            );
+          })}
         </div>
 
-        <Link to="/book-studio">
-          <Button variant={scrolled ? 'primary' : 'secondary'} className="px-6 py-2 text-xs">
-            Open Studio
-          </Button>
-        </Link>
+        {/* CTA */}
+        <div className="px-4 pb-4">
+          <div className="h-px w-full bg-white/5 mb-4" />
+          <Link to="/book-studio" className="block w-full">
+            <Button variant="primary" className="w-full py-3.5 text-sm justify-center">
+              Open Studio
+            </Button>
+          </Link>
+        </div>
       </div>
-    </nav>
+    </>
   );
 };
 
@@ -84,9 +253,9 @@ const Navbar = () => {
 // RADAR BACKGROUND — Vinyl Record + Studio Nodes
 // -------------------------------------------------------------
 const STUDIO_NODES = [
-  { id: 1, name: 'Neon Room',  x: 30, y: 30, accent: false, dist: '~1.2 km' },
-  { id: 2, name: 'The Vault',  x: 74, y: 28, accent: true,  dist: '~2.8 km' },
-  { id: 3, name: '808 Suite',  x: 65, y: 73, accent: false, dist: '~4.5 km' },
+  { id: 1, name: 'Neon Room', x: 30, y: 30, accent: false, dist: '~1.2 km' },
+  { id: 2, name: 'The Vault', x: 74, y: 28, accent: true, dist: '~2.8 km' },
+  { id: 3, name: '808 Suite', x: 65, y: 73, accent: false, dist: '~4.5 km' },
 ];
 
 function useWindowWidth() {
@@ -121,11 +290,11 @@ const RadarBackground = () => {
         <defs>
           <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
             <feGaussianBlur stdDeviation="0.4" result="blur" />
-            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
           </filter>
           <filter id="glow-strong" x="-50%" y="-50%" width="200%" height="200%">
             <feGaussianBlur stdDeviation="0.8" result="blur" />
-            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
           </filter>
         </defs>
 
@@ -160,16 +329,16 @@ const RadarBackground = () => {
 
         {/* ── Studio Nodes ── */}
         {STUDIO_NODES.map(node => {
-          const pinColor  = node.accent ? 'rgba(0,122,255,0.95)' : 'rgba(255,255,255,0.9)';
-          const pingColor = node.accent ? 'rgba(0,122,255,0.5)'  : 'rgba(138,43,226,0.4)';
+          const pinColor = node.accent ? 'rgba(0,122,255,0.95)' : 'rgba(255,255,255,0.9)';
+          const pingColor = node.accent ? 'rgba(0,122,255,0.5)' : 'rgba(138,43,226,0.4)';
           // Mobile: tighten vertical spacing
-          const labelY    = isMobile ? node.y - 2.6 : node.y - 3.4;
-          const distY     = isMobile ? node.y + 1.6 : node.y + 2;
-          const nameFontSize  = isMobile ? '1.1' : '1.5';
-          const distFontSize  = isMobile ? '0.85' : '1.1';
-          const pinScale      = isMobile ? 0.07 : 0.1;
-          const pinOffsetX    = isMobile ? node.x - 0.84 : node.x - 1.2;
-          const pinOffsetY    = isMobile ? node.y - 1.96 : node.y - 2.8;
+          const labelY = isMobile ? node.y - 2.6 : node.y - 3.4;
+          const distY = isMobile ? node.y + 1.6 : node.y + 2;
+          const nameFontSize = isMobile ? '1.1' : '1.5';
+          const distFontSize = isMobile ? '0.85' : '1.1';
+          const pinScale = isMobile ? 0.07 : 0.1;
+          const pinOffsetX = isMobile ? node.x - 0.84 : node.x - 1.2;
+          const pinOffsetY = isMobile ? node.y - 1.96 : node.y - 2.8;
 
           return (
             <g key={node.id} style={{ animation: `node-float ${3 + node.id * 0.5}s ease-in-out infinite` }}>
@@ -243,18 +412,18 @@ const Hero = () => {
   useLayoutEffect(() => {
     let ctx = gsap.context(() => {
       const tl = gsap.timeline({ defaults: { ease: 'power4.out' } });
-      tl.fromTo('.hero-text', 
+      tl.fromTo('.hero-text',
         { y: 60, opacity: 0 },
         { y: 0, opacity: 1, duration: 1.2, stagger: 0.15, delay: 0.2 }
       )
-      .fromTo('.hero-sub', 
-        { y: 30, opacity: 0 },
-        { y: 0, opacity: 1, duration: 1 }, "-=0.8"
-      )
-      .fromTo('.hero-btn', 
-        { scale: 0.9, opacity: 0 },
-        { scale: 1, opacity: 1, duration: 0.8 }, "-=0.6"
-      );
+        .fromTo('.hero-sub',
+          { y: 30, opacity: 0 },
+          { y: 0, opacity: 1, duration: 1 }, "-=0.8"
+        )
+        .fromTo('.hero-btn',
+          { scale: 0.9, opacity: 0 },
+          { scale: 1, opacity: 1, duration: 0.8 }, "-=0.6"
+        );
     }, heroRef);
     return () => ctx.revert();
   }, []);
@@ -266,16 +435,16 @@ const Hero = () => {
           <span className="w-2 h-2 rounded-full bg-accent animate-pulse"></span>
           System Online
         </div>
-        
+
         <h1 className="font-heading font-bold text-6xl md:text-8xl lg:text-9xl leading-[0.9] tracking-tight mb-6 relative z-10 text-center w-full">
           <div className="overflow-hidden"><div className="hero-text text-white drop-shadow-[0_10px_20px_rgba(0,0,0,0.8)]">Del Studio</div></div>
           <div className="overflow-hidden"><div className="hero-text text-accent glow-purple drop-shadow-[0_10px_30px_rgba(138,43,226,0.4)]">al Estadio.</div></div>
         </h1>
-        
+
         <p className="hero-sub font-ui text-lg md:text-xl text-text/80 max-w-2xl mb-10 leading-relaxed">
           Reserva estudios premium cerca de ti por horas y encuentra el beat perfecto para tu próxima sesión. El estudio nocturno definitivo.
         </p>
-        
+
         <div className="hero-btn">
           <Link to="/book-studio">
             <Button className="group text-lg px-10 py-5">
@@ -296,7 +465,7 @@ const Features = () => {
     let ctx = gsap.context(() => {
       gsap.fromTo('.feature-card',
         { y: 50, opacity: 0 },
-        { 
+        {
           y: 0, opacity: 1, duration: 0.8, stagger: 0.2, ease: 'power3.out',
           scrollTrigger: {
             trigger: sectionRef.current,
@@ -312,7 +481,7 @@ const Features = () => {
     <section ref={sectionRef} className="py-24 bg-primary/80 backdrop-blur-md relative z-10">
       <div className="max-w-7xl mx-auto px-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          
+
           {/* Card 1: Radar Scanner (Studios First) */}
           <div className="feature-card glass-panel rounded-2xl p-8 hover:-translate-y-2 transition-transform duration-500 flex flex-col">
             <div className="mb-6 w-12 h-12 rounded-xl bg-surface border border-white/10 flex items-center justify-center text-accent">
@@ -400,11 +569,12 @@ const Workflow = () => {
           scrub: 1
         }
       });
-      
+
       gsap.utils.toArray('.workflow-step').forEach((step, i) => {
         gsap.fromTo(step,
           { x: i % 2 === 0 ? -30 : 30, opacity: 0 },
-          { x: 0, opacity: 1, duration: 0.8,
+          {
+            x: 0, opacity: 1, duration: 0.8,
             scrollTrigger: {
               trigger: step,
               start: "top 80%",
@@ -445,7 +615,7 @@ const Workflow = () => {
                     <p className="font-ui text-sm text-text/70">{step.desc}</p>
                   </div>
                 </div>
-                
+
                 <div className="relative z-10 w-20 flex justify-center shrink-0">
                   <div className="w-16 h-16 rounded-full bg-primary border-2 border-accent flex items-center justify-center shadow-[0_0_20px_rgba(138,43,226,0.2)]">
                     <step.icon className="w-6 h-6 text-accent" />
@@ -467,10 +637,10 @@ const Commerce = () => {
     <section className="py-24 bg-primary/80 backdrop-blur-md" id="beats">
       <div className="max-w-7xl mx-auto px-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
-          
+
           {/* STUDIO SESSIONS FIRST */}
           <div id="studios">
-             <div className="flex items-center gap-3 mb-8">
+            <div className="flex items-center gap-3 mb-8">
               <Radio className="w-6 h-6 text-accent" />
               <h2 className="font-heading font-bold text-3xl text-white">Studio Sessions</h2>
             </div>
@@ -480,7 +650,7 @@ const Commerce = () => {
                 <MapPin className="w-4 h-4 text-accent" />
                 <span className="font-ui text-sm text-text/80">Disponibilidad en: <strong className="text-white">Madrid (Vallecas, Torrejón)</strong></span>
               </div>
-              
+
               <div className="space-y-4 font-ui text-sm">
                 <div className="flex justify-between items-center py-2 hover:text-white transition-colors">
                   <span className="text-text/80">Studio Rental (Booth Only)</span>
@@ -501,14 +671,14 @@ const Commerce = () => {
               </Link>
             </div>
           </div>
-          
+
           {/* BEAT LICENSES SECOND */}
           <div id="beats">
             <div className="flex items-center gap-3 mb-8">
               <Volume2 className="w-6 h-6 text-accent" />
               <h2 className="font-heading font-bold text-3xl text-white">Beat Licenses</h2>
             </div>
-            
+
             <div className="space-y-4">
               {[
                 { name: 'Basic', format: 'MP3 License', price: '29€' },
@@ -532,7 +702,7 @@ const Commerce = () => {
                 </div>
               ))}
             </div>
-            
+
             <Link to="/beats" className="w-full mt-6 block">
               <Button className="w-full" variant="secondary">Explorar Mercado de Beats</Button>
             </Link>
@@ -560,15 +730,15 @@ const Community = () => {
 
       {/* Marquee */}
       <div className="flex gap-6 animate-[scroll_20s_linear_infinite] w-max select-none">
-        {[1,2,3,4,5,6].map((i) => (
+        {[1, 2, 3, 4, 5, 6].map((i) => (
           <div key={i} className="glass-panel w-72 rounded-xl p-4 flex gap-4 items-center shrink-0">
             <img src={`https://images.unsplash.com/photo-1599696848652-f0ff23bc911f?auto=format&fit=crop&q=80&w=150&h=150`} alt="Studio" className="w-16 h-16 rounded-lg object-cover bg-surface" />
             <div>
               <div className="flex items-center gap-2 mb-1">
                 <Activity className="w-3 h-3 text-red-500" />
-                <span className="font-heading font-semibold text-white text-sm">Studio {String.fromCharCode(64+i)}</span>
+                <span className="font-heading font-semibold text-white text-sm">Studio {String.fromCharCode(64 + i)}</span>
               </div>
-              <p className="font-ui text-xs text-text/60 flex items-center gap-1"><MapPin className="w-3 h-3"/> Madrid</p>
+              <p className="font-ui text-xs text-text/60 flex items-center gap-1"><MapPin className="w-3 h-3" /> Madrid</p>
             </div>
           </div>
         ))}
@@ -601,7 +771,7 @@ const Footer = () => {
               System Operational
             </div>
           </div>
-          
+
           <div>
             <h4 className="font-heading font-semibold text-white mb-4">Platform</h4>
             <ul className="space-y-2 font-ui text-sm text-text/60">
