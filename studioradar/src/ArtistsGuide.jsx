@@ -178,6 +178,7 @@ const STEPS = [
           <div>
             <span className="font-ui text-[9px] text-accent uppercase tracking-widest block mb-0.5">Boleto de Sesión</span>
             <span className="font-heading font-bold text-white text-sm">Neon Room · 22:00</span>
+            <span className="font-ui text-[8px] text-text/40 block mt-0.5">DISPONIBLE: 18:00 - 05:00</span>
           </div>
           <div className={`text-[10px] font-ui px-2 py-1 rounded-full border transition-all ${active ? 'border-green-500/40 text-green-400 bg-green-500/10' : 'border-white/10 text-white/30'}`}>
             {active ? '✓ ACTIVO' : 'PENDIENTE'}
@@ -309,7 +310,20 @@ export default function ArtistsGuide() {
           <Radio className="w-3.5 h-3.5"/> Guía Para Artistas
         </div>
         <h1 className="font-heading font-bold text-5xl md:text-7xl lg:text-8xl leading-[0.9] tracking-tight mb-6 text-white">Del Studio<br/><span className="text-accent" style={{ textShadow: '0 0 40px rgba(138,43,226,0.4)' }}>al Estadio.</span></h1>
-        <p className="font-ui text-lg text-text/60 max-w-2xl mb-10 leading-relaxed">Todo lo que necesitas para convertir tu próxima idea en una canción profesional. Sin complicaciones, sin excusas.</p>
+        <p className="font-ui text-lg text-text/60 max-w-2xl mb-8 leading-relaxed">Todo lo que necesitas para convertir tu próxima idea en una canción profesional. Sin complicaciones, sin excusas.</p>
+        <div className="flex flex-wrap gap-5 justify-center mb-10">
+          {[
+            { n: '12', label: 'productores de élite', dot: 'bg-accent' },
+            { n: '3', label: 'estudios activos', dot: 'bg-blue-400' },
+            { n: '50+', label: 'beats exclusivos', dot: 'bg-green-400' },
+          ].map(({ n, label, dot }) => (
+            <div key={label} className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10">
+              <span className={`w-1.5 h-1.5 ${dot} rounded-full animate-pulse`}/>
+              <span className="font-heading font-bold text-white text-sm">{n}</span>
+              <span className="font-ui text-xs text-white/40">{label}</span>
+            </div>
+          ))}
+        </div>
         <div className="flex gap-2 mb-10 flex-wrap justify-center">
           {STEPS.map((s, i) => (
             <button key={i} onClick={() => scrollToStep(i)} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full font-ui text-xs border transition-all duration-300 ${activeStep === i ? 'bg-accent/20 border-accent text-white shadow-[0_0_15px_rgba(138,43,226,0.3)]' : 'bg-white/5 border-white/10 text-white/50 hover:border-white/30'}`}><s.icon className="w-3 h-3"/>{s.tag}</button>
