@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MapPin, Calendar, Clock, ArrowLeft, ArrowRight, Activity, CreditCard, ShieldCheck, Search, Navigation, ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react';
+import { Calendar, ArrowLeft, ArrowRight, Activity, CreditCard, ShieldCheck } from 'lucide-react';
 import { supabase } from './lib/supabase';
 import Cal, { getCalApi } from "@calcom/embed-react";
 import { loadStripe } from '@stripe/stripe-js';
 
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_placeholder');
+loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_placeholder');
 
 const Button = ({ children, className = '', variant = 'primary', ...props }) => {
   const base = "inline-flex items-center justify-center font-ui text-sm uppercase tracking-widest transition-all duration-300 ease-out active:scale-95 active:duration-75 rounded-lg";
@@ -185,6 +185,12 @@ export default function BookStudio() {
     })();
   }, []);
 
+  const studioHours = {
+    "Neon Room": "18:00 - 06:00",
+    "The Vault": "10:00 - 22:00",
+    "808 Suite": "24 / 7"
+  };
+
   const calculateTotal = () => {
     if (!selectedStudio || !selectedCategory) return 0;
     const category = studioServices.find(c => c.id === selectedCategory);
@@ -321,7 +327,10 @@ export default function BookStudio() {
               <div className="glass-panel p-6 rounded-3xl border border-accent/20 flex flex-col animate-[fade-in_0.3s_ease-out]">
                 <div className="flex items-center gap-3 mb-6 pb-4 border-b border-white/5">
                   <button onClick={() => setSelectedStudio(null)} className="text-text/50 hover:text-white"><ArrowLeft className="w-5 h-5"/></button>
-                  <h3 className="font-heading font-bold text-lg text-white">Tipo de Sesión</h3>
+                  <div className="flex flex-col">
+                    <h3 className="font-heading font-bold text-lg text-white">Tipo de Sesión</h3>
+                    <span className="font-ui text-[10px] text-text/40">Disponible: {studioHours[selectedStudio.name] || "Consultar"}</span>
+                  </div>
                 </div>
                 <div className="space-y-3 mb-6">
                   {studioServices.map((cat) => (
@@ -379,16 +388,133 @@ export default function BookStudio() {
                 </div>
               </div>
             ) : step === 5 ? (
-              <div className="glass-panel p-6 rounded-3xl border border-accent/20 flex flex-col animate-[fade-in_0.3s_ease-out]">
-                <h3 className="font-heading font-bold text-lg text-white mb-6">Resumen de Reserva</h3>
-                <div className="bg-[#050505]/60 rounded-2xl border border-white/5 p-4 mb-6 space-y-4">
-                  <div className="flex justify-between border-b border-white/5 pb-4">
-                    <div><span className="text-accent text-[10px] uppercase">{selectedStudio.name}</span><h4 className="text-white font-bold">{studioServices.find(c => c.id === selectedCategory)?.name}</h4></div>
-                    <span className="text-white font-bold text-2xl font-heading">{calculateTotal()}€</span>
+              <div className="glass-panel rounded-3xl border border-accent/20 overflow-hidden animate-[fade-in_0.3s_ease-out]">
+                {/* Header */}
+                <div className="px-5 pt-5 pb-4 border-b border-white/5 flex items-center gap-3">
+                  <button onClick={() => setStep(4)} className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/40 hover:text-white transition-colors shrink-0">
+                    <ArrowLeft className="w-4 h-4" />
+                  </button>
+                  <div className="flex-1">
+                    <h3 className="font-heading font-bold text-white leading-tight">Confirmar Reserva</h3>
+                    <p className="font-ui text-[9px] text-text/30 uppercase tracking-[0.2em]">Revisión de pago</p>
                   </div>
-                  {bookingInfo && <p className="text-[10px] text-text/40 font-mono">ID Cal.com: {bookingInfo.bookingId}</p>}
+                  <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-green-500/10 border border-green-500/20">
+                    <ShieldCheck className="w-3 h-3 text-green-400" />
+                    <span className="font-ui text-[8px] text-green-400 uppercase tracking-widest">Seguro</span>
+                  </div>
                 </div>
-                <Button onClick={handlePayment} disabled={isPaying}>{isPaying ? 'Procesando...' : 'Confirmar y Pagar'}</Button>
+
+                <div className="p-5 space-y-3">
+                  {/* Studio + service card */}
+                  <div className="relative overflow-hidden rounded-2xl border border-white/8 bg-[#0a0a0a]/80">
+                    <div className="absolute inset-0 bg-gradient-to-br from-accent/5 to-transparent pointer-events-none" />
+                    <div className="relative p-4 space-y-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center shrink-0">
+                            <Activity className="w-5 h-5 text-accent" />
+                          </div>
+                          <div>
+                            <p className="font-heading font-bold text-white text-sm leading-tight">{selectedStudio.name}</p>
+                            <p className="font-ui text-[10px] text-accent/60 mt-0.5">{studioServices.find(c => c.id === selectedCategory)?.name}</p>
+                          </div>
+                        </div>
+                        <span className="font-ui text-[8px] px-2 py-0.5 rounded-full border border-white/10 text-white/30 uppercase tracking-wider whitespace-nowrap">
+                          {studioHours[selectedStudio.name] || "Consultar"}
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5 pt-1 border-t border-white/5">
+                        <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-accent/8 border border-accent/15">
+                          <span className="w-1.5 h-1.5 rounded-full bg-accent" />
+                          <span className="font-ui text-[9px] text-accent/80 font-bold">{artistName}</span>
+                        </div>
+                        {companions.filter(c => c.trim()).map((c, i) => (
+                          <span key={i} className="font-ui text-[9px] px-2.5 py-1 rounded-full bg-white/5 border border-white/8 text-white/40">{c}</span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Price breakdown */}
+                  <div className="bg-[#050505]/60 rounded-2xl border border-white/5 p-4">
+                    {(() => {
+                      const category = studioServices.find(c => c.id === selectedCategory);
+                      const base = category?.is_package
+                        ? (category.package_price || 0)
+                        : ((selectedStudio.price_per_hour || 0) + (category?.additional_price || 0)) * hoursCount;
+                      const fee = Math.round(base * 0.15 * 100) / 100;
+                      return (
+                        <div className="space-y-2.5">
+                          <div className="flex justify-between items-center">
+                            <span className="font-ui text-xs text-white/35">
+                              {category?.is_package ? 'Paquete' : `${hoursCount}h × ${selectedStudio.price_per_hour || 0}€/h`}
+                            </span>
+                            <span className="font-ui text-xs text-white/55">{base}€</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="font-ui text-xs text-white/35 flex items-center gap-1">
+                              <ShieldCheck className="w-3 h-3 text-accent/30" /> Tarifa Helicon (15%)
+                            </span>
+                            <span className="font-ui text-xs text-white/35">{fee}€</span>
+                          </div>
+                          <div className="flex justify-between items-center border-t border-white/8 pt-2.5">
+                            <span className="font-heading font-bold text-white text-sm">Total</span>
+                            <span className="font-heading font-bold text-3xl leading-none"
+                              style={{ background: 'linear-gradient(135deg,#fff 40%,rgba(138,43,226,0.9))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                              {calculateTotal()}€
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+
+                  {/* Cal.com booking ID */}
+                  {bookingInfo && (
+                    <div className="flex items-center gap-2 px-3 py-2 bg-green-500/5 border border-green-500/15 rounded-xl">
+                      <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+                      <span className="font-ui text-[9px] text-green-400/60 font-mono truncate">Cal ID: {bookingInfo.bookingId}</span>
+                    </div>
+                  )}
+
+                  {/* Pay CTA */}
+                  <button
+                    onClick={handlePayment}
+                    disabled={isPaying}
+                    className="w-full relative overflow-hidden group py-4 rounded-2xl font-ui font-bold text-sm uppercase tracking-widest transition-all duration-300 disabled:opacity-60"
+                    style={{
+                      background: 'linear-gradient(135deg, #8A2BE2 0%, #6A1BE2 100%)',
+                      boxShadow: '0 0 32px rgba(138,43,226,0.4), inset 0 1px 0 rgba(255,255,255,0.12)',
+                    }}
+                  >
+                    <div className="absolute inset-0 bg-white/0 group-hover:bg-white/8 transition-all duration-300 rounded-2xl" />
+                    <span className="relative z-10 flex items-center justify-center gap-2 text-white">
+                      {isPaying ? (
+                        <>
+                          <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                          Procesando...
+                        </>
+                      ) : (
+                        <>
+                          <CreditCard className="w-4 h-4" />
+                          Confirmar y Pagar
+                          <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                        </>
+                      )}
+                    </span>
+                  </button>
+
+                  {/* Footer trust */}
+                  <div className="flex items-center justify-center gap-2.5 pb-1">
+                    <span className="font-ui text-[8px] text-white/15 flex items-center gap-1">
+                      <ShieldCheck className="w-3 h-3" /> SSL
+                    </span>
+                    <span className="text-white/10">·</span>
+                    <span className="font-ui text-[8px] text-white/15">Powered by Stripe</span>
+                    <span className="text-white/10">·</span>
+                    <span className="font-ui text-[8px] text-white/15">Helicon © 2025</span>
+                  </div>
+                </div>
               </div>
             ) : step === 6 ? (
               <div className="glass-panel p-8 rounded-3xl border border-green-500/30 flex flex-col items-center text-center animate-[fade-in_0.5s_ease-out]">

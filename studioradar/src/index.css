@@ -47,6 +47,12 @@
   background: #8A2BE2; 
 }
 
+/* ── Nav active link dot ── */
+@keyframes nav-dot-in {
+  from { transform: translateX(-50%) scale(0); opacity: 0; }
+  to   { transform: translateX(-50%) scale(1); opacity: 1; }
+}
+
 /* ── Radar Animations ── */
 @keyframes radar-spin {
   from { transform: rotate(0deg); }

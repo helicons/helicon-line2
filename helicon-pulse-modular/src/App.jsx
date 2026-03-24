@@ -5,9 +5,10 @@ import { useSynthStore } from './store';
 import { Knob } from './components/Knob';
 import { ModuleCard } from './components/ModuleCard';
 import { IsomorphicGrid } from './components/IsomorphicGrid';
+import { SamplerModule } from './components/SamplerModule';
 
 function App() {
-  const { initAudio, isAudioEngineRunning } = useSynth();
+  const { initAudio, isAudioEngineRunning, ctx } = useSynth();
   const { 
     osc1, osc2, filter, delay, master,
     setOsc1Param, setOsc2Param, setFilterParam, setDelayParam, setMasterVolume
@@ -108,6 +109,11 @@ function App() {
         </div>
 
       </main>
+
+      {/* --- SAMPLER MODULE --- */}
+      <section className="mt-6 z-10 shrink-0">
+        <SamplerModule audioCtx={ctx} />
+      </section>
 
       {/* --- PERFORMANCE INTERFACE --- */}
       <footer className="mt-8 z-10 shrink-0">

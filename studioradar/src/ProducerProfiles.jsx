@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { ActivitySquare, Star, Zap, X, MessageSquare } from 'lucide-react';
+import { ActivitySquare, Star, Zap, X, MessageSquare, CheckCircle2, Music2, Headphones, Instagram, Twitter, Youtube } from 'lucide-react';
 
 const PRODUCERS = [
   {
@@ -248,6 +248,19 @@ const PokemonCard = ({ prod }) => {
                 </div>
 
                 <div className="flex-1 space-y-6">
+                {/* 3D SOCIAL TACTILE BUTTONS FOR REGULAR CARDS */}
+                <div className="flex items-center gap-3 mb-6">
+                   <button className="w-12 h-12 rounded-xl flex items-center justify-center transition-all bg-surface border border-white/10 shadow-[0_6px_0_rgba(255,255,255,0.15)] hover:shadow-[0_2px_0_rgba(255,255,255,0.3)] hover:translate-y-1 hover:bg-white/10 hover:text-white text-white/50 active:translate-y-[6px] active:shadow-none">
+                      <Instagram className="w-5 h-5" />
+                   </button>
+                   <button className="w-12 h-12 rounded-xl flex items-center justify-center transition-all bg-surface border border-white/10 shadow-[0_6px_0_rgba(255,255,255,0.15)] hover:shadow-[0_2px_0_rgba(255,255,255,0.3)] hover:translate-y-1 hover:bg-white/10 hover:text-white text-white/50 active:translate-y-[6px] active:shadow-none">
+                      <Twitter className="w-5 h-5" />
+                   </button>
+                   <button className="w-12 h-12 rounded-xl flex items-center justify-center transition-all bg-surface border border-white/10 shadow-[0_6px_0_rgba(255,255,255,0.15)] hover:shadow-[0_2px_0_rgba(255,255,255,0.3)] hover:translate-y-1 hover:bg-white/10 hover:text-white text-white/50 active:translate-y-[6px] active:shadow-none">
+                      <Youtube className="w-5 h-5" />
+                   </button>
+                </div>
+
                    <div>
                      <h3 className="font-ui text-xs text-text/50 uppercase tracking-widest mb-4">Signature Abilities</h3>
                      <div className="space-y-3">
@@ -281,15 +294,246 @@ const PokemonCard = ({ prod }) => {
   );
 };
 
+// ─── ELITE PRODUCER CARD ──────────────────────────────────────────────────────
+const EliteProducerCard = ({ prod }) => {
+  const cardRef = useRef(null);
+  const [rot, setRot] = useState({ x: 0, y: 0 });
+  const [glow, setGlow] = useState({ x: 50, y: 50 });
+  const [hovered, setHovered] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+
+  const onMove = (e) => {
+    if (!cardRef.current) return;
+    const r = cardRef.current.getBoundingClientRect();
+    const x = e.clientX - r.left, y = e.clientY - r.top;
+    setRot({ x: ((y - r.height / 2) / r.height) * -10, y: ((x - r.width / 2) / r.width) * 10 });
+    setGlow({ x: (x / r.width) * 100, y: (y / r.height) * 100 });
+  };
+
+  useEffect(() => {
+    document.body.style.overflow = expanded ? 'hidden' : 'auto';
+    return () => { document.body.style.overflow = 'auto'; };
+  }, [expanded]);
+
+  return (
+    <>
+      <div
+        className="perspective-[1200px] cursor-pointer group"
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => { setHovered(false); setRot({ x: 0, y: 0 }); }}
+        onClick={() => setExpanded(true)}
+      >
+        <div
+          ref={cardRef}
+          onMouseMove={onMove}
+          className="relative rounded-2xl overflow-hidden transition-all duration-200 ease-out"
+          style={{
+            transform: `rotateX(${rot.x}deg) rotateY(${rot.y}deg)`,
+            background: 'linear-gradient(160deg, #141414 0%, #0a0a0a 100%)',
+            border: `1px solid ${hovered ? prod.color + '50' : 'rgba(255,255,255,0.07)'}`,
+            boxShadow: hovered
+              ? `0 24px 60px rgba(0,0,0,0.7), 0 0 50px ${prod.color}20`
+              : '0 8px 32px rgba(0,0,0,0.5)',
+          }}
+        >
+          {/* Holographic shimmer on hover */}
+          <div
+            className="absolute inset-0 z-20 pointer-events-none mix-blend-screen transition-opacity duration-300"
+            style={{
+              opacity: hovered ? 0.25 : 0,
+              background: `radial-gradient(circle at ${glow.x}% ${glow.y}%, ${prod.color}cc, transparent 55%)`,
+            }}
+          />
+
+          {/* Photo */}
+          <div className="relative h-52 overflow-hidden">
+            <img
+              src={prod.image} alt={prod.name}
+              className="w-full h-full object-cover transition-transform duration-700"
+              style={{ transform: hovered ? 'scale(1.07)' : 'scale(1)' }}
+              draggable={false}
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a]/30 to-transparent" />
+            {/* Color haze top-right */}
+            <div className="absolute -top-4 -right-4 w-32 h-32 rounded-full blur-3xl opacity-25 pointer-events-none"
+              style={{ background: prod.color }} />
+            {/* Type pill */}
+            <div
+              className="absolute top-3 left-3 px-2.5 py-1 rounded-full font-ui text-[9px] font-bold uppercase tracking-widest"
+              style={{ background: prod.color + '25', border: `1px solid ${prod.color}50`, color: prod.color }}
+            >
+              {prod.type}
+            </div>
+            {/* Elite badge */}
+            <div className="absolute top-3 right-3 flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/70 border border-accent/30">
+              <Star className="w-2.5 h-2.5 text-accent fill-current" />
+              <span className="font-ui text-[9px] text-accent uppercase tracking-widest font-bold">Elite</span>
+            </div>
+          </div>
+
+          {/* Info body */}
+          <div className="p-4 space-y-3">
+            {/* Name + verified + streams */}
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <h3 className="font-heading font-bold text-white text-xl leading-tight truncate">{prod.name}</h3>
+                <div className="flex items-center gap-1 mt-0.5">
+                  <CheckCircle2 className="w-3 h-3 text-accent/60 shrink-0" />
+                  <span className="font-ui text-[9px] text-accent/50 uppercase tracking-widest">Verified Creator</span>
+                </div>
+              </div>
+              <div className="text-right shrink-0">
+                <p className="font-heading font-bold text-2xl leading-none"
+                  style={{ background: `linear-gradient(135deg,#fff,${prod.color})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                  {prod.hp}
+                </p>
+                <p className="font-ui text-[8px] text-white/25 uppercase tracking-widest mt-0.5">Streams</p>
+              </div>
+            </div>
+
+            <div className="border-t border-white/5" />
+
+            {/* Signature beats */}
+            <div className="space-y-2">
+              <p className="font-ui text-[9px] text-white/25 uppercase tracking-widest flex items-center gap-1">
+                <Music2 className="w-3 h-3" /> Signature
+              </p>
+              {prod.abilities.map((ab, i) => (
+                <div key={i} className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: prod.color }} />
+                    <span className="font-ui text-xs text-white/60 truncate">{ab.name}</span>
+                  </div>
+                  <span className="font-heading font-bold text-xs shrink-0" style={{ color: prod.color }}>{ab.damage}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* CTA */}
+            <button
+              className="w-full py-2.5 rounded-xl font-ui font-bold text-xs uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-1.5"
+              style={{
+                background: hovered ? prod.color : 'transparent',
+                border: `1px solid ${prod.color}50`,
+                color: hovered ? '#fff' : prod.color,
+                boxShadow: hovered ? `0 0 24px ${prod.color}40` : 'none',
+              }}
+              onClick={(e) => { e.stopPropagation(); setExpanded(true); }}
+            >
+              <Headphones className="w-3.5 h-3.5" />
+              Ver Perfil Completo
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Expanded modal — reuses existing PokemonCard modal layout */}
+      {expanded && createPortal(
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-[#050505]/90 backdrop-blur-md"
+          onClick={() => setExpanded(false)}>
+          <div
+            className="w-full max-w-5xl max-h-[90vh] overflow-y-auto bg-[#0a0a0a] rounded-[2rem] border border-white/10 shadow-[0_0_80px_rgba(0,0,0,0.8)] flex flex-col md:flex-row relative animate-in fade-in zoom-in-95 duration-200"
+            style={{ borderColor: prod.color + '25' }}
+            onClick={e => e.stopPropagation()}
+          >
+            <button
+              className="absolute top-4 right-4 z-50 p-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-full text-white/50 hover:text-white transition-colors"
+              onClick={() => setExpanded(false)}
+            ><X className="w-5 h-5" /></button>
+
+            {/* Left — card visual */}
+            <div className="w-full md:w-[45%] p-8 flex items-center justify-center relative border-b md:border-b-0 md:border-r border-white/5 min-h-[350px]">
+              <div className="absolute inset-0 blur-[120px] opacity-20 pointer-events-none rounded-l-[2rem]"
+                style={{ background: prod.color }} />
+              <div className="w-full max-w-[300px] pointer-events-none relative z-10">
+                <div className="relative rounded-2xl overflow-hidden"
+                  style={{ border: `1px solid ${prod.color}40`, boxShadow: `0 0 60px ${prod.color}30` }}>
+                  <img src={prod.image} alt={prod.name} className="w-full aspect-square object-cover" draggable={false} />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+                  <div className="absolute bottom-4 left-4">
+                    <div className="flex items-center gap-1.5 px-3 py-1 rounded-full mb-2"
+                      style={{ background: prod.color + '30', border: `1px solid ${prod.color}50` }}>
+                      <Star className="w-3 h-3 fill-current" style={{ color: prod.color }} />
+                      <span className="font-ui text-[10px] font-bold uppercase tracking-widest" style={{ color: prod.color }}>Elite · Edition 1</span>
+                    </div>
+                    <h2 className="font-heading font-bold text-white text-3xl leading-none">{prod.name}</h2>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right — details */}
+            <div className="w-full md:w-[55%] p-6 md:p-12 flex flex-col relative z-20">
+              <span className="font-ui text-[10px] text-accent font-bold tracking-widest uppercase mb-4 flex items-center gap-2">
+                <ActivitySquare className="w-4 h-4" /> Certified Helicon Creator
+              </span>
+              <h2 className="font-heading font-bold text-4xl md:text-5xl text-white mb-2 uppercase tracking-tight leading-none">{prod.name}</h2>
+              <div className="flex flex-wrap items-center gap-2 mb-8 mt-3">
+                <span className="px-3 py-1 rounded-full font-ui text-xs font-bold uppercase tracking-widest"
+                  style={{ background: prod.color + '20', border: `1px solid ${prod.color}40`, color: prod.color }}>
+                  {prod.type} TYPE
+                </span>
+                <span className="px-3 py-1 bg-white/5 border border-white/10 rounded-full font-ui text-xs text-white/70 flex items-center gap-1">
+                  <Headphones className="w-3 h-3" /> {prod.hp} Streams
+                </span>
+              </div>
+              <div className="flex-1 space-y-3">
+                {/* 3D SOCIAL TACTILE BUTTONS */}
+                <div className="flex items-center gap-4 mb-8">
+                   <button className="w-12 h-12 rounded-xl flex items-center justify-center transition-all bg-surface border border-white/10 shadow-[0_6px_0_rgba(138,43,226,0.5)] hover:shadow-[0_2px_0_rgba(138,43,226,0.8)] hover:translate-y-1 hover:bg-accent/20 hover:text-accent active:translate-y-[6px] active:shadow-none text-white/70">
+                      <Instagram className="w-6 h-6" />
+                   </button>
+                   <button className="w-12 h-12 rounded-xl flex items-center justify-center transition-all bg-surface border border-white/10 shadow-[0_6px_0_rgba(138,43,226,0.5)] hover:shadow-[0_2px_0_rgba(138,43,226,0.8)] hover:translate-y-1 hover:bg-accent/20 hover:text-accent active:translate-y-[6px] active:shadow-none text-white/70">
+                      <Twitter className="w-6 h-6" />
+                   </button>
+                   <button className="w-12 h-12 rounded-xl flex items-center justify-center transition-all bg-surface border border-white/10 shadow-[0_6px_0_rgba(138,43,226,0.5)] hover:shadow-[0_2px_0_rgba(138,43,226,0.8)] hover:translate-y-1 hover:bg-accent/20 hover:text-accent active:translate-y-[6px] active:shadow-none text-white/70">
+                      <Youtube className="w-6 h-6" />
+                   </button>
+                </div>
+
+                <h3 className="font-ui text-xs text-text/40 uppercase tracking-widest mb-3">Signature Abilities</h3>
+                {prod.abilities.map((ab, i) => (
+                  <div key={i} className="bg-white/3 border border-white/5 hover:border-accent/20 p-4 rounded-xl transition-colors">
+                    <div className="flex justify-between items-center mb-1">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2.5 h-2.5 rounded-full" style={{ background: prod.color, boxShadow: `0 0 8px ${prod.color}` }} />
+                        <span className="font-heading font-bold text-white text-base">{ab.name}</span>
+                      </div>
+                      <span className="font-heading font-bold text-accent">{ab.damage}</span>
+                    </div>
+                    <p className="font-ui text-sm text-text/60 ml-[18px]">{ab.desc}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-8 pt-6 border-t border-white/8">
+                <button
+                  className="w-full py-4 rounded-2xl font-ui font-bold text-white uppercase tracking-widest text-sm transition-all duration-300 flex items-center justify-center gap-2"
+                  style={{
+                    background: `linear-gradient(135deg, ${prod.color}, #8A2BE2)`,
+                    boxShadow: `0 0 30px ${prod.color}30`,
+                  }}
+                >
+                  <MessageSquare className="w-5 h-5" /> Request Custom Beat
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+    </>
+  );
+};
+
 export default function ProducerProfiles() {
   return (
     <div className="min-h-screen bg-[#050505] text-text pt-24 pb-24 relative overflow-hidden">
-      
+
       {/* Background Decor */}
       <div className="absolute top-0 right-0 w-1/2 h-1/2 bg-accent/10 blur-[150px] rounded-full pointer-events-none"></div>
 
       <div className="max-w-7xl mx-auto px-6 relative z-10">
-        
+
         <div className="text-center mb-16">
           <div className="inline-flex items-center gap-2 px-3 py-1 mb-4 rounded-full bg-white/5 border border-white/10 text-accent font-ui text-xs tracking-widest">
             <ActivitySquare className="w-4 h-4" />
@@ -301,7 +545,7 @@ export default function ProducerProfiles() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {PRODUCERS.map(prod => (
-            <PokemonCard key={prod.id} prod={prod} />
+            <EliteProducerCard key={prod.id} prod={prod} />
           ))}
         </div>
 
