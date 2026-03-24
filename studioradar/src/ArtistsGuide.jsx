@@ -259,12 +259,7 @@ export default function ArtistsGuide() {
   const [paymentState, setPaymentState] = useState(null);
   const stepRefs = useRef([]);
 
-  const handleStartPaymentDemo = () => {
-    setPaymentState('processing');
-    setTimeout(() => setPaymentState('success'), 3000);
-  };
-
-  useEffect(() => {
+useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
@@ -370,10 +365,10 @@ export default function ArtistsGuide() {
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-accent/5 to-transparent pointer-events-none"/>
         <div className="max-w-3xl mx-auto relative z-10">
           <h2 className="font-heading font-bold text-4xl md:text-6xl text-white mb-6 leading-tight">¿Listo para<br/><span className="text-accent">grabar hoy?</span></h2>
-          <p className="font-ui text-text/60 mb-10 leading-relaxed">Abre el radar, selecciona tu estudio y reserva tu sesión en menos de 2 minutos.</p>
+          <p className="font-ui text-text/60 mb-10 leading-relaxed">Empieza con tu beat. Cuando lo tengas, reserva tu estudio en menos de 2 minutos.</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button onClick={handleStartPaymentDemo} className="inline-flex items-center gap-2 font-ui text-sm uppercase tracking-widest bg-accent text-white px-8 py-4 rounded-xl hover:bg-[#9d3df2] transition-all shadow-[0_0_30px_rgba(138,43,226,0.3)] hover:shadow-[0_0_50px_rgba(138,43,226,0.6)]">Confirmar Reserva<ArrowRight className="w-4 h-4"/></button>
-            <Link to="/book-studio"><button className="inline-flex items-center gap-2 font-ui text-sm uppercase tracking-widest bg-white/5 border border-white/10 text-white px-8 py-4 rounded-xl hover:bg-white/10 transition-all">Abrir Radar</button></Link>
+            <Link to="/beats"><button className="inline-flex items-center gap-2 font-ui text-sm uppercase tracking-widest bg-accent text-white px-8 py-4 rounded-xl hover:bg-[#9d3df2] transition-all shadow-[0_0_30px_rgba(138,43,226,0.3)] hover:shadow-[0_0_50px_rgba(138,43,226,0.6)]"><Music className="w-4 h-4"/>Encuentra tu Beat</button></Link>
+            <Link to="/book-studio"><button className="inline-flex items-center gap-2 font-ui text-sm uppercase tracking-widest bg-white/5 border border-white/10 text-white px-8 py-4 rounded-xl hover:bg-white/10 transition-all">Abrir Radar<ArrowRight className="w-4 h-4"/></button></Link>
           </div>
         </div>
       </section>

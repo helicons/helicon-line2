@@ -248,6 +248,7 @@ const PokemonCard = ({ prod }) => {
                 </div>
 
                 <div className="flex-1 space-y-6">
+                
                 {/* 3D SOCIAL TACTILE BUTTONS FOR REGULAR CARDS */}
                 <div className="flex items-center gap-3 mb-6">
                    <button className="w-12 h-12 rounded-xl flex items-center justify-center transition-all bg-surface border border-white/10 shadow-[0_6px_0_rgba(255,255,255,0.15)] hover:shadow-[0_2px_0_rgba(255,255,255,0.3)] hover:translate-y-1 hover:bg-white/10 hover:text-white text-white/50 active:translate-y-[6px] active:shadow-none">
