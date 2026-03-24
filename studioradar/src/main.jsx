@@ -10,6 +10,7 @@ import GlobalAudio from './GlobalAudio.jsx'
 import ProducerLogin from './ProducerLogin.jsx'
 import ProducerDashboard from './ProducerDashboard.jsx'
 import ProtectedRoute from './components/ProtectedRoute.jsx'
+import Legal from './Legal.jsx'
 import './index.css'
 
 createRoot(document.getElementById('root')).render(
@@ -22,6 +23,7 @@ createRoot(document.getElementById('root')).render(
         <Route path="/beats" element={<BeatMarketplace />} />
         <Route path="/producers" element={<ProducerProfiles />} />
         <Route path="/artists" element={<ArtistsGuide />} />
+        <Route path="/legal" element={<Legal />} />
         <Route path="/producer/login" element={<ProducerLogin />} />
         <Route path="/producer/dashboard" element={
           <ProtectedRoute><ProducerDashboard /></ProtectedRoute>

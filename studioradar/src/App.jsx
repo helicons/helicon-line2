@@ -47,19 +47,19 @@ const Button = ({ children, className = '', variant = 'primary', ...props }) => 
 // -------------------------------------------------------------
 
 const NAV_LINKS = [
-  { label: 'Studios',   to: '/book-studio',    icon: <MapPin className="w-4 h-4" />,       mobileIcon: <MapPin className="w-5 h-5" /> },
-  { label: 'Sessions',  href: '#workflow',     icon: <Calendar className="w-4 h-4" />,     mobileIcon: <Calendar className="w-5 h-5" /> },
-  { label: 'Artistas',  to: '/artists',        icon: <Mic className="w-4 h-4" />,          mobileIcon: <Mic className="w-5 h-5" /> },
-  { label: 'Producers', to: '/producer/login', icon: <Headphones className="w-4 h-4" />,   mobileIcon: <Headphones className="w-5 h-5" /> },
-  { label: 'Beats',     to: '/beats',          icon: <ShoppingCart className="w-4 h-4" />, mobileIcon: <ShoppingCart className="w-5 h-5" /> },
+  { label: 'Studios', to: '/book-studio', icon: <MapPin className="w-4 h-4" />, mobileIcon: <MapPin className="w-5 h-5" /> },
+  { label: 'Sessions', href: '#workflow', icon: <Calendar className="w-4 h-4" />, mobileIcon: <Calendar className="w-5 h-5" /> },
+  { label: 'Artistas', to: '/artists', icon: <Mic className="w-4 h-4" />, mobileIcon: <Mic className="w-5 h-5" /> },
+  { label: 'Producers', to: '/producer/login', icon: <Headphones className="w-4 h-4" />, mobileIcon: <Headphones className="w-5 h-5" /> },
+  { label: 'Beats', to: '/beats', icon: <ShoppingCart className="w-4 h-4" />, mobileIcon: <ShoppingCart className="w-5 h-5" /> },
 ];
 
 const Navbar = () => {
-  const [scrolled, setScrolled]   = useState(false);
-  const [open, setOpen]           = useState(false);
-  const location                  = useLocation();
-  const mobileMenuRef             = useRef(null);
-  const overlayRef                = useRef(null);
+  const [scrolled, setScrolled] = useState(false);
+  const [open, setOpen] = useState(false);
+  const location = useLocation();
+  const mobileMenuRef = useRef(null);
+  const overlayRef = useRef(null);
 
   /* scroll listener */
   useEffect(() => {
@@ -79,7 +79,7 @@ const Navbar = () => {
 
   /* GSAP open/close animation */
   useEffect(() => {
-    const menu    = mobileMenuRef.current;
+    const menu = mobileMenuRef.current;
     const overlay = overlayRef.current;
     if (!menu || !overlay) return;
 
@@ -88,7 +88,7 @@ const Navbar = () => {
       gsap.fromTo(overlay, { opacity: 0 }, { opacity: 1, duration: 0.25, ease: 'power2.out' });
       gsap.fromTo(menu,
         { y: -20, opacity: 0 },
-        { y: 0,   opacity: 1, duration: 0.35, ease: 'power3.out' }
+        { y: 0, opacity: 1, duration: 0.35, ease: 'power3.out' }
       );
       gsap.fromTo(
         menu.querySelectorAll('.mobile-link'),
@@ -785,9 +785,9 @@ const Footer = () => {
           <div>
             <h4 className="font-heading font-semibold text-white mb-4">Legal</h4>
             <ul className="space-y-2 font-ui text-sm text-text/60">
-              <li><a href="#" className="hover:text-white transition-colors">Terms of Service</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Privacy Policy</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">License Agreements</a></li>
+              <li><Link to="/legal" className="hover:text-white transition-colors">Terms of Service</Link></li>
+              <li><Link to="/legal" className="hover:text-white transition-colors">Privacy Policy</Link></li>
+              <li><Link to="/legal" className="hover:text-white transition-colors">License Agreements</Link></li>
             </ul>
           </div>
         </div>
