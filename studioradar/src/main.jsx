@@ -10,6 +10,7 @@ import GlobalAudio from './GlobalAudio.jsx'
 import ProducerLogin from './ProducerLogin.jsx'
 import ProducerDashboard from './ProducerDashboard.jsx'
 import ProtectedRoute from './components/ProtectedRoute.jsx'
+import CheckoutPage from './CheckoutPage.jsx'
 import './index.css'
 
 createRoot(document.getElementById('root')).render(
@@ -26,6 +27,7 @@ createRoot(document.getElementById('root')).render(
         <Route path="/producer/dashboard" element={
           <ProtectedRoute><ProducerDashboard /></ProtectedRoute>
         } />
+        <Route path="/checkout" element={<CheckoutPage />} />
       </Routes>
     </BrowserRouter>
   </StrictMode>,

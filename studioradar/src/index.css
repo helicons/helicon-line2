@@ -101,3 +101,36 @@
 .preserve-3d {
   transform-style: preserve-3d;
 }
+
+/* ── Beat player progress bar ── */
+@keyframes progress-bar {
+  from { width: 0%; }
+  to   { width: 100%; }
+}
+
+/* ── Helicon propulsion launch ── */
+@keyframes propulsion-launch {
+  0%   { transform: translateY(0) scale(1);    opacity: 1; filter: brightness(1); }
+  25%  { transform: translateY(0) scale(1.15); opacity: 1; filter: brightness(2) drop-shadow(0 0 30px #8A2BE2); }
+  100% { transform: translateY(-120vh) scale(0.2); opacity: 0; }
+}
+@keyframes propulsion-trail {
+  0%   { opacity: 0; height: 0; }
+  20%  { opacity: 0.8; }
+  100% { opacity: 0; height: 180px; }
+}
+@keyframes propulsion-bg {
+  0%   { opacity: 0; }
+  10%  { opacity: 1; }
+  90%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+.animate-propulsion-launch {
+  animation: propulsion-launch 1.4s cubic-bezier(0.22,1,0.36,1) forwards;
+}
+.animate-propulsion-trail {
+  animation: propulsion-trail 1.4s ease-in forwards;
+}
+.animate-propulsion-bg {
+  animation: propulsion-bg 1.6s ease forwards;
+}

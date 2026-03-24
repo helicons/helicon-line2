@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Play, Pause, Search, Filter, SlidersHorizontal, ShoppingCart, Heart, MoreHorizontal, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, SkipBack, SkipForward, Volume2, Activity, ArrowLeft, TrendingUp, Music, Keyboard, Zap, Pencil } from 'lucide-react';
 import { PRODUCERS, PokemonCard } from './ProducerProfiles';
 
@@ -40,6 +40,8 @@ const LICENSES = [
 ];
 
 export default function BeatMarketplace() {
+  const navigate = useNavigate();
+  const [showLoading, setShowLoading] = useState(false);
   const [playingId, setPlayingId] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [cart, setCart] = useState([]);
@@ -120,8 +122,6 @@ export default function BeatMarketplace() {
             <div className="absolute bottom-0 right-1/4 w-[30vw] h-[30vh] rounded-full blur-[150px] opacity-5" style={{ background: 'rgba(80,0,180,1)' }} />
           </>
         )}
-        {/* Subtle grid overlay */}
-        <div className="absolute inset-0 opacity-[0.015]" style={{ backgroundImage: 'linear-gradient(#fff 1px,transparent 1px),linear-gradient(90deg,#fff 1px,transparent 1px)', backgroundSize: '60px 60px' }} />
       </div>
       
       {/* 
@@ -620,9 +620,17 @@ export default function BeatMarketplace() {
             <button className="text-white/40 hover:text-white transition-colors hover:scale-110"><SkipForward className="w-5 h-5 fill-current" /></button>
           </div>
           <div className="w-full hidden md:flex items-center gap-3 font-ui text-[10px] text-white/30 font-medium">
-            <span className="w-8 text-right">0:45</span>
-            <div className={`flex-1 h-1.5 bg-white/5 rounded-full relative cursor-pointer overflow-hidden ${isPlaying ? 'group' : ''}`}>
-               <div className="absolute left-0 top-0 bottom-0 w-1/3 bg-white group-hover:bg-accent transition-colors rounded-full"></div>
+            <span className="w-8 text-right">0:00</span>
+            <div className="flex-1 h-1.5 bg-white/5 rounded-full relative cursor-pointer overflow-hidden">
+              <div
+                className="absolute left-0 top-0 bottom-0 rounded-full"
+                style={{
+                  background: isPlaying ? '#8A2BE2' : 'rgba(255,255,255,0.3)',
+                  width: '0%',
+                  animation: isPlaying ? 'progress-bar 165s linear forwards' : 'none',
+                  transition: 'background 0.3s',
+                }}
+              />
             </div>
             <span className="w-8">2:45</span>
           </div>
@@ -724,8 +732,17 @@ export default function BeatMarketplace() {
                       <span>0:45</span>
                       <span>2:45</span>
                     </div>
-                    <div className="h-2.5 bg-black/40 rounded-full w-full relative overflow-hidden cursor-pointer shadow-inner border border-white/5 group">
-                      <div className="absolute left-0 top-0 bottom-0 bg-white group-hover:bg-accent transition-colors w-1/3 rounded-full shadow-[0_0_20px_rgba(255,255,255,0.8)] relative"></div>
+                    <div className="h-2.5 bg-black/40 rounded-full w-full relative overflow-hidden cursor-pointer shadow-inner border border-white/5">
+                      <div
+                        className="absolute left-0 top-0 bottom-0 rounded-full"
+                        style={{
+                          background: currentTrack ? `rgb(${currentTrack.colors[0].join(',')})` : '#fff',
+                          boxShadow: currentTrack && isPlaying ? `0 0 16px rgba(${currentTrack.colors[0].join(',')},0.8)` : 'none',
+                          width: '0%',
+                          animation: isPlaying ? 'progress-bar 165s linear forwards' : 'none',
+                          transition: 'background 0.3s',
+                        }}
+                      />
                     </div>
                  </div>
 
@@ -830,7 +847,15 @@ export default function BeatMarketplace() {
                                  ))}
                                </ul>
                                <button
-                                 onClick={e => { e.stopPropagation(); setCart(c => [...c, { ...currentTrack, licenseId: lic.id, licensePrice: price }]); }}
+                                 onClick={e => {
+                                   e.stopPropagation();
+                                   const item = { ...currentTrack, licenseId: lic.id, licensePrice: price };
+                                   const newCart = [...cart, item];
+                                   setCart(newCart);
+                                   localStorage.setItem('helicon_cart', JSON.stringify(newCart));
+                                   setShowLoading(true);
+                                   setTimeout(() => navigate('/checkout'), 1600);
+                                 }}
                                  className="w-full py-2.5 rounded-xl font-ui font-bold text-xs uppercase tracking-widest text-white transition-all"
                                  style={{ background: `rgb(${currentTrack?.colors[0].join(',')})` }}
                                >
