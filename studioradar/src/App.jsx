@@ -762,9 +762,9 @@ const Community = () => {
             <div>
               <div className="flex items-center gap-2 mb-1">
                 <Activity className="w-3 h-3 text-red-500" />
-                <span className="font-heading font-semibold text-white text-sm">Studio {String.fromCharCode(64+i)}</span>
+                <span className="font-heading font-semibold text-white text-sm">Studio {String.fromCharCode(64 + i)}</span>
               </div>
-              <p className="font-ui text-xs text-text/60 flex items-center gap-1"><MapPin className="w-3 h-3"/> Madrid</p>
+              <p className="font-ui text-xs text-text/60 flex items-center gap-1"><MapPin className="w-3 h-3" /> Madrid</p>
             </div>
           </div>
         ))}
@@ -885,9 +885,9 @@ const Footer = () => {
           <div>
             <h4 className="font-heading font-semibold text-white mb-4">Legal</h4>
             <ul className="space-y-2 font-ui text-sm text-text/60">
-              <li><a href="#" className="hover:text-white transition-colors">Terms of Service</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Privacy Policy</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">License Agreements</a></li>
+              <li><Link to="/legal" className="hover:text-white transition-colors">Terms of Service</Link></li>
+              <li><Link to="/legal" className="hover:text-white transition-colors">Privacy Policy</Link></li>
+              <li><Link to="/legal" className="hover:text-white transition-colors">License Agreements</Link></li>
             </ul>
           </div>
         </div>
