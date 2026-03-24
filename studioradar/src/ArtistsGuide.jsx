@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
+import Navbar from './components/Navbar';
 import {
   MapPin, Calendar, Music, CreditCard, ArrowLeft, ArrowRight,
   CheckCircle2, Radio, Mic, Headphones, Zap, ChevronDown, Play
@@ -255,15 +256,8 @@ const FAQS = [
 export default function ArtistsGuide() {
   const [activeStep, setActiveStep] = useState(0);
   const [openFaq, setOpenFaq] = useState(null);
-  const [scrolled, setScrolled] = useState(false);
   const [paymentState, setPaymentState] = useState(null);
   const stepRefs = useRef([]);
-
-useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 50);
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
 
   useEffect(() => {
     const observers = stepRefs.current.map((el, i) => {
@@ -281,25 +275,7 @@ useEffect(() => {
     <div className="min-h-screen bg-[#050505] text-text relative overflow-x-hidden">
       <MiniRadar />
       {paymentState && <PaymentOverlay status={paymentState} onClose={() => setPaymentState(null)} />}
-      <nav className="fixed top-0 left-0 right-0 z-50 flex justify-center pt-6 transition-all duration-500">
-        <div className={`flex items-center justify-between w-[90%] max-w-6xl rounded-full px-8 py-4 transition-all duration-500 ${scrolled ? 'bg-[#050505]/80 backdrop-blur-xl border border-white/10 shadow-2xl' : 'bg-transparent'}`}>
-          <Link to="/" className="flex items-center gap-2 group cursor-pointer">
-            <div className="w-6 h-6 rounded-full border border-accent flex items-center justify-center">
-              <div className="w-2 h-2 bg-accent rounded-full"/>
-            </div>
-            <span className="font-heading font-bold text-xl tracking-wide text-white">Helicon</span>
-          </Link>
-          <div className="hidden md:flex items-center gap-8 font-ui text-sm text-text/60">
-            <Link to="/" className="hover:text-white transition-colors">Inicio</Link>
-            <Link to="/book-studio" className="hover:text-accent transition-colors">Reservar</Link>
-            <Link to="/beats" className="hover:text-accent transition-colors">Beats</Link>
-            <span className="text-accent font-bold text-white">Artistas</span>
-          </div>
-          <Link to="/book-studio">
-            <button className="inline-flex items-center gap-2 font-ui text-xs uppercase tracking-widest bg-accent text-white px-6 py-2.5 rounded-full hover:bg-[#9d3df2] transition-all shadow-[0_0_20px_rgba(138,43,226,0.3)] hover:shadow-[0_0_30px_rgba(138,43,226,0.6)]">Reservar Ahora</button>
-          </Link>
-        </div>
-      </nav>
+      <Navbar />
       <section className="relative min-h-[60vh] flex flex-col items-center justify-center text-center px-6 pt-32 pb-16">
         <div className="inline-flex items-center gap-2 px-3 py-1 mb-6 rounded-full bg-white/5 border border-white/10 text-accent font-ui text-xs tracking-widest">
           <Radio className="w-3.5 h-3.5"/> Guía Para Artistas

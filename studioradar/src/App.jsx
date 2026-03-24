@@ -1,10 +1,9 @@
-import React, { useEffect, useRef, useState, useLayoutEffect } from 'react';
+import React, { useRef, useState, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import {
-  Play,
   MapPin,
   Calendar,
   Mic,
@@ -13,15 +12,10 @@ import {
   Volume2,
   Radio,
   Map,
-  Check,
   Activity,
-  Zap,
   Disc3,
-  Search,
-  ShoppingCart,
-  Menu,
-  X
 } from 'lucide-react';
+import Navbar from './components/Navbar';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -46,209 +40,6 @@ const Button = ({ children, className = '', variant = 'primary', ...props }) => 
 // -------------------------------------------------------------
 // SECTIONS
 // -------------------------------------------------------------
-
-const NAV_LINKS = [
-  { label: 'Studios',   to: '/book-studio',    icon: <MapPin className="w-4 h-4" />,       mobileIcon: <MapPin className="w-5 h-5" /> },
-  { label: 'Sessions',  href: '#workflow',     icon: <Calendar className="w-4 h-4" />,     mobileIcon: <Calendar className="w-5 h-5" /> },
-  { label: 'Artistas',  to: '/artists',        icon: <Mic className="w-4 h-4" />,          mobileIcon: <Mic className="w-5 h-5" /> },
-  { label: 'Producers', to: '/producer/login', icon: <Headphones className="w-4 h-4" />,   mobileIcon: <Headphones className="w-5 h-5" /> },
-  { label: 'Beats',     to: '/beats',          icon: <ShoppingCart className="w-4 h-4" />, mobileIcon: <ShoppingCart className="w-5 h-5" /> },
-];
-
-const Navbar = () => {
-  const [scrolled, setScrolled]   = useState(false);
-  const [open, setOpen]           = useState(false);
-  const location                  = useLocation();
-  const mobileMenuRef             = useRef(null);
-  const overlayRef                = useRef(null);
-
-  /* scroll listener */
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 50);
-    window.addEventListener('scroll', onScroll);
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
-
-  /* lock body scroll when mobile menu is open */
-  useEffect(() => {
-    document.body.style.overflow = open ? 'hidden' : '';
-    return () => { document.body.style.overflow = ''; };
-  }, [open]);
-
-  /* close on route change */
-  useEffect(() => { setOpen(false); }, [location.pathname]);
-
-  /* GSAP open/close animation */
-  useEffect(() => {
-    const menu    = mobileMenuRef.current;
-    const overlay = overlayRef.current;
-    if (!menu || !overlay) return;
-
-    if (open) {
-      gsap.set(menu, { display: 'flex' });
-      gsap.fromTo(overlay, { opacity: 0 }, { opacity: 1, duration: 0.25, ease: 'power2.out' });
-      gsap.fromTo(menu,
-        { y: -20, opacity: 0 },
-        { y: 0,   opacity: 1, duration: 0.35, ease: 'power3.out' }
-      );
-      gsap.fromTo(
-        menu.querySelectorAll('.mobile-link'),
-        { x: -24, opacity: 0 },
-        { x: 0, opacity: 1, duration: 0.3, stagger: 0.07, delay: 0.1, ease: 'power2.out' }
-      );
-    } else {
-      gsap.to(overlay, { opacity: 0, duration: 0.2 });
-      gsap.to(menu, {
-        y: -10, opacity: 0, duration: 0.25, ease: 'power2.in',
-        onComplete: () => gsap.set(menu, { display: 'none' }),
-      });
-    }
-  }, [open]);
-
-  const isActive = (to) => to && location.pathname === to;
-
-  return (
-    <>
-      {/* ── Main bar ── */}
-      <nav className="fixed top-0 left-0 right-0 z-50 flex justify-center pt-5 transition-all duration-500 pointer-events-none">
-        <div
-          className={`
-            pointer-events-auto
-            flex items-center justify-between
-            w-[92%] max-w-6xl
-            rounded-2xl px-6 py-3
-            transition-all duration-500
-            ${scrolled
-              ? 'bg-[#050505]/85 backdrop-blur-2xl border border-white/10 shadow-[0_4px_40px_rgba(0,0,0,0.6)]'
-              : 'bg-[#0a0a0a]/40 backdrop-blur-md border border-white/5'}
-          `}
-        >
-          {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 group select-none">
-            <span className="relative flex">
-              <Activity className="w-5 h-5 text-accent transition-transform duration-300 group-hover:scale-110 group-hover:rotate-12" />
-              <span className="absolute inset-0 w-5 h-5 bg-accent/30 rounded-full blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-            </span>
-            <span className="font-heading font-bold text-lg tracking-wide text-white">
-              Helicon
-            </span>
-          </Link>
-
-          {/* Desktop links */}
-          <div className="hidden md:flex items-center gap-1 font-ui text-sm">
-            {NAV_LINKS.map(({ label, to, href }) => {
-              const active = isActive(to);
-              const baseClass = `
-                relative flex items-center gap-1.5 px-4 py-2 rounded-xl
-                transition-all duration-200
-                ${active
-                  ? 'text-white bg-white/[0.08]'
-                  : 'text-text/70 hover:text-white hover:bg-white/5'}
-              `;
-              const inner = (
-                <>
-                  {label}
-                  {active && (
-                    <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-accent" />
-                  )}
-                </>
-              );
-              return to ? (
-                <Link key={label} to={to} className={baseClass}>{inner}</Link>
-              ) : (
-                <a key={label} href={href} className={baseClass}>{inner}</a>
-              );
-            })}
-          </div>
-
-          {/* CTA + Hamburger */}
-          <div className="flex items-center gap-3">
-            <Link to="/book-studio" className="hidden md:block">
-              <Button variant="primary" className="px-5 py-2 text-xs">
-                Open Studio
-              </Button>
-            </Link>
-
-            {/* Hamburger — mobile only */}
-            <button
-              onClick={() => setOpen(v => !v)}
-              aria-label="Toggle menu"
-              className="md:hidden flex items-center justify-center w-9 h-9 rounded-xl border border-white/10 text-text/70 hover:text-white hover:bg-white/5 hover:border-white/20 transition-all duration-200"
-            >
-              {open ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
-            </button>
-          </div>
-        </div>
-      </nav>
-
-      {/* ── Mobile backdrop ── */}
-      <div
-        ref={overlayRef}
-        onClick={() => setOpen(false)}
-        className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden"
-        style={{ display: 'none', opacity: 0 }}
-      />
-
-      {/* ── Mobile menu panel ── */}
-      <div
-        ref={mobileMenuRef}
-        className="fixed top-[82px] left-0 right-0 z-50 md:hidden flex-col mx-4 rounded-2xl border border-white/10 bg-[#080808]/95 backdrop-blur-2xl shadow-[0_20px_60px_rgba(0,0,0,0.7)] overflow-hidden"
-        style={{ display: 'none', opacity: 0 }}
-      >
-        {/* Purple top accent line */}
-        <div className="h-px w-full bg-gradient-to-r from-transparent via-accent/60 to-transparent" />
-
-        <div className="flex flex-col p-3 gap-1">
-          {NAV_LINKS.map(({ label, to, href, mobileIcon }) => {
-            const active = isActive(to);
-            const cls = `
-              mobile-link flex items-center gap-3.5 px-4 py-3.5 rounded-xl
-              font-ui text-sm tracking-wide transition-all duration-200
-              ${active
-                ? 'bg-accent/15 text-white border border-accent/25'
-                : 'text-text/60 hover:text-white hover:bg-white/5 border border-transparent'}
-            `;
-            const inner = (
-              <>
-                {/* Icon box */}
-                <span className={`
-                  flex items-center justify-center w-9 h-9 rounded-xl flex-shrink-0
-                  transition-all duration-200
-                  ${active
-                    ? 'bg-accent/20 text-accent shadow-[0_0_12px_rgba(138,43,226,0.25)]'
-                    : 'bg-accent/10 text-accent/60 hover:text-accent'}
-                `}>
-                  {mobileIcon}
-                </span>
-                <span className="flex-1">{label}</span>
-                {active && (
-                  <span className="flex items-center justify-center w-5 h-5 rounded-full bg-accent/20">
-                    <span className="w-1.5 h-1.5 rounded-full bg-accent" />
-                  </span>
-                )}
-              </>
-            );
-            return to ? (
-              <Link key={label} to={to} className={cls}>{inner}</Link>
-            ) : (
-              <a key={label} href={href} className={cls}>{inner}</a>
-            );
-          })}
-        </div>
-
-        {/* CTA */}
-        <div className="px-4 pb-4">
-          <div className="h-px w-full bg-white/5 mb-4" />
-          <Link to="/book-studio" className="block w-full">
-            <Button variant="primary" className="w-full py-3.5 text-sm justify-center">
-              Open Studio
-            </Button>
-          </Link>
-        </div>
-      </div>
-    </>
-  );
-};
 
 // -------------------------------------------------------------
 // RADAR BACKGROUND — Vinyl Record + Studio Nodes
@@ -434,7 +225,7 @@ const Hero = () => {
       <div className="relative z-10 text-center max-w-5xl px-6 flex flex-col items-center">
         <div className="inline-flex items-center gap-2 px-3 py-1 mb-8 rounded-full bg-white/5 border border-white/10 text-accent font-ui text-xs tracking-widest backdrop-blur-md hero-text">
           <span className="w-2 h-2 rounded-full bg-accent animate-pulse"></span>
-          System Online
+          Sistema Activo
         </div>
 
         <h1 className="font-heading font-bold text-6xl md:text-8xl lg:text-9xl leading-[0.9] tracking-tight mb-6 relative z-10 text-center w-full">
@@ -607,16 +398,16 @@ const Workflow = () => {
   }, []);
 
   const steps = [
-    { icon: Map, title: "1. Locate a Studio", desc: "Find a premium recording studio nearby with real-time availability." },
-    { icon: Mic, title: "2. Lock in your session", desc: "Reserve a recording booth or mixing session seamlessly." },
-    { icon: Headphones, title: "3. Choose a Beat (Optional)", desc: "Need instrumentals? Browse and buy beats directly before you hit the booth." },
+    { icon: Map,       title: "1. Encuentra un Estudio",        desc: "Localiza un estudio de grabación premium cerca de ti con disponibilidad en tiempo real." },
+    { icon: Mic,       title: "2. Reserva tu Sesión",           desc: "Reserva una cabina de grabación o sesión de mezcla al instante, sin llamadas ni esperas." },
+    { icon: Headphones,title: "3. Elige un Beat (Opcional)",    desc: "¿Necesitas instrumentales? Explora y compra beats directamente antes de entrar al estudio." },
   ];
 
   return (
     <section ref={workflowRef} id="workflow" className="py-24 bg-[#080808]/80 backdrop-blur-md relative">
       <div className="max-w-4xl mx-auto px-6 relative">
         <div className="text-center mb-16">
-          <h2 className="font-heading font-bold text-4xl lg:text-5xl text-white mb-4">The Pipeline</h2>
+          <h2 className="font-heading font-bold text-4xl lg:text-5xl text-white mb-4">Cómo Funciona</h2>
           <p className="font-ui text-text/70">Tres simples pasos para materializar tu visión.</p>
         </div>
 
@@ -662,7 +453,7 @@ const Commerce = () => {
           <div id="studios">
             <div className="flex items-center gap-3 mb-8">
               <Radio className="w-6 h-6 text-accent" />
-              <h2 className="font-heading font-bold text-3xl text-white">Studio Sessions</h2>
+              <h2 className="font-heading font-bold text-3xl text-white">Sesiones de Estudio</h2>
             </div>
 
             <div className="glass-panel rounded-2xl p-6 overflow-hidden">
@@ -696,7 +487,7 @@ const Commerce = () => {
           <div id="beats">
             <div className="flex items-center gap-3 mb-8">
               <Volume2 className="w-6 h-6 text-accent" />
-              <h2 className="font-heading font-bold text-3xl text-white">Beat Licenses</h2>
+              <h2 className="font-heading font-bold text-3xl text-white">Licencias de Beat</h2>
             </div>
 
             <div className="space-y-4">
@@ -741,7 +532,7 @@ const Community = () => {
     <section className="py-24 overflow-hidden bg-[#0A0A0A]/80 backdrop-blur-md border-y border-white/5" id="community">
       <div className="max-w-7xl mx-auto px-6 mb-12 flex justify-between items-end">
         <div>
-          <h2 className="font-heading font-bold text-3xl text-white mb-2">Live Sessions Now</h2>
+          <h2 className="font-heading font-bold text-3xl text-white mb-2">Sesiones en Directo</h2>
           <p className="font-ui text-text/60 text-sm">El ecosistema está activo.</p>
         </div>
         <div className="flex items-center gap-2 px-3 py-1 rounded bg-red-500/10 text-red-500 font-ui text-xs">
@@ -804,7 +595,7 @@ const Community = () => {
             <button onClick={() => setSelectedStudio(null)} className="absolute top-6 right-6 w-8 h-8 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-white/50 hover:text-white transition-colors z-20">✕</button>
 
             <h3 className="font-heading font-bold text-3xl text-white mb-1 relative z-10">Studio {String.fromCharCode(64+selectedStudio)}</h3>
-            <p className="font-ui text-[10px] text-red-500 flex items-center gap-2 mb-10 tracking-[0.2em] font-bold relative z-10"><span className="w-2 h-2 bg-red-500 rounded-full animate-pulse shadow-[0_0_10px_#ef4444]"/> LIVE RECORDING</p>
+            <p className="font-ui text-[10px] text-red-500 flex items-center gap-2 mb-10 tracking-[0.2em] font-bold relative z-10"><span className="w-2 h-2 bg-red-500 rounded-full animate-pulse shadow-[0_0_10px_#ef4444]"/> EN DIRECTO</p>
 
             {/* Waves Animation (Grabo) */}
             <div className="relative w-48 h-48 flex items-center justify-center mb-12">
@@ -864,36 +655,35 @@ const Footer = () => {
               <span className="font-heading font-bold text-2xl tracking-wide text-white">Helicon</span>
             </div>
             <p className="font-ui text-sm text-text/60 max-w-sm leading-relaxed mb-6">
-              Where artists turn ideas into songs. Reserva tu sesión de estudio por horas y encuentra el beat perfecto en un solo lugar.
+              Donde los artistas convierten ideas en canciones. Reserva tu sesión de estudio por horas y encuentra el beat perfecto en un solo lugar.
             </p>
             <div className="flex items-center gap-2 font-ui text-xs text-green-500 bg-green-500/10 px-3 py-1.5 rounded w-max">
               <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
-              System Operational
+              Sistema Operativo
             </div>
           </div>
 
           <div>
-            <h4 className="font-heading font-semibold text-white mb-4">Platform</h4>
+            <h4 className="font-heading font-semibold text-white mb-4">Plataforma</h4>
             <ul className="space-y-2 font-ui text-sm text-text/60">
-              <li><Link to="/book-studio" className="hover:text-accent transition-colors">Book Studios</Link></li>
-              <li><Link to="/beats" className="hover:text-accent transition-colors">Browse Beats</Link></li>
-              <li><a href="#" className="hover:text-accent transition-colors">Pricing</a></li>
-              <li><Link to="/producers" className="hover:text-accent transition-colors">Producers</Link></li>
+              <li><Link to="/book-studio" className="hover:text-accent transition-colors">Reservar Estudio</Link></li>
+              <li><Link to="/beats" className="hover:text-accent transition-colors">Explorar Beats</Link></li>
+              <li><Link to="/producers" className="hover:text-accent transition-colors">Productores</Link></li>
             </ul>
           </div>
 
           <div>
             <h4 className="font-heading font-semibold text-white mb-4">Legal</h4>
             <ul className="space-y-2 font-ui text-sm text-text/60">
-              <li><Link to="/legal" className="hover:text-white transition-colors">Terms of Service</Link></li>
-              <li><Link to="/legal" className="hover:text-white transition-colors">Privacy Policy</Link></li>
-              <li><Link to="/legal" className="hover:text-white transition-colors">License Agreements</Link></li>
+              <li><Link to="/legal" className="hover:text-white transition-colors">Términos y Condiciones</Link></li>
+              <li><Link to="/legal" className="hover:text-white transition-colors">Política de Privacidad</Link></li>
+              <li><Link to="/legal" className="hover:text-white transition-colors">Política de Cancelación</Link></li>
             </ul>
           </div>
         </div>
 
         <div className="border-t border-white/5 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="font-ui text-xs text-text/40">© {new Date().getFullYear()} Helicon. All rights reserved.</p>
+          <p className="font-ui text-xs text-text/40">© {new Date().getFullYear()} Helicon. Todos los derechos reservados.</p>
           <div className="flex gap-4">
             <div className="w-8 h-8 rounded-full bg-surface border border-white/5 flex items-center justify-center text-text/60 hover:text-white hover:border-white/20 transition-all cursor-pointer">
               X

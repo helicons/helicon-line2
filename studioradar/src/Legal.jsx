@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
-import { FileText, XCircle, ChevronDown, ChevronUp, ArrowLeft } from 'lucide-react'
+import { FileText, XCircle, ChevronDown, ChevronUp } from 'lucide-react'
+import Navbar from './components/Navbar'
 
 const SECTIONS = {
   terms: {
@@ -162,11 +162,10 @@ function AccordionItem({ title, body, table, defaultOpen = false }) {
               {table.map((row, i) => (
                 <div
                   key={i}
-                  className={`grid grid-cols-2 gap-4 px-4 py-3 text-xs font-mono ${
-                    i === 0
+                  className={`grid grid-cols-2 gap-4 px-4 py-3 text-xs font-mono ${i === 0
                       ? 'bg-white/5 text-white/40 uppercase tracking-widest'
                       : 'border-t border-white/5 text-white/60'
-                  }`}
+                    }`}
                 >
                   <span>{row[0]}</span>
                   <span className={i > 0 ? 'text-accent' : ''}>{row[1]}</span>
@@ -190,22 +189,9 @@ export default function Legal() {
       {/* Noise overlay */}
       <div className="noise-bg" />
 
-      {/* Header */}
-      <header className="border-b border-white/5 bg-[#050505]/90 backdrop-blur sticky top-0 z-40">
-        <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link to="/" className="font-mono text-lg font-bold tracking-[0.2em] text-white hover:text-accent transition-colors">
-            HELICON
-          </Link>
-          <Link
-            to="/"
-            className="flex items-center gap-1.5 text-white/30 text-xs font-mono hover:text-white transition-colors"
-          >
-            <ArrowLeft size={13} /> Volver
-          </Link>
-        </div>
-      </header>
+      <Navbar />
 
-      <main className="max-w-4xl mx-auto px-6 py-16">
+      <main className="max-w-4xl mx-auto px-6 pt-28 pb-16">
         {/* Hero */}
         <div className="mb-12">
           <p className="text-[10px] font-mono text-accent uppercase tracking-[0.3em] mb-3">Documentos Legales</p>
@@ -223,11 +209,10 @@ export default function Legal() {
               <button
                 key={key}
                 onClick={() => setActiveTab(key)}
-                className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-xs font-mono transition-all ${
-                  activeTab === key
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-xs font-mono transition-all ${activeTab === key
                     ? 'bg-accent text-white shadow-lg shadow-accent/20'
                     : 'text-white/40 hover:text-white'
-                }`}
+                  }`}
               >
                 <TabIcon size={13} />
                 {s.label}

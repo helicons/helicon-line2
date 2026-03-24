@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import Navbar from './components/Navbar';
 import { createPortal } from 'react-dom';
 import { ActivitySquare, Star, Zap, X, MessageSquare, CheckCircle2, Music2, Headphones, Instagram, Twitter, Youtube } from 'lucide-react';
 
@@ -528,12 +529,13 @@ const EliteProducerCard = ({ prod }) => {
 
 export default function ProducerProfiles() {
   return (
-    <div className="min-h-screen bg-[#050505] text-text pt-24 pb-24 relative overflow-hidden">
+    <div className="min-h-screen bg-[#050505] text-text pb-24 relative overflow-hidden">
+      <Navbar />
 
       {/* Background Decor */}
       <div className="absolute top-0 right-0 w-1/2 h-1/2 bg-accent/10 blur-[150px] rounded-full pointer-events-none"></div>
 
-      <div className="max-w-7xl mx-auto px-6 relative z-10">
+      <div className="max-w-7xl mx-auto px-6 relative z-10 pt-24">
 
         <div className="text-center mb-16">
           <div className="inline-flex items-center gap-2 px-3 py-1 mb-4 rounded-full bg-white/5 border border-white/10 text-accent font-ui text-xs tracking-widest">
