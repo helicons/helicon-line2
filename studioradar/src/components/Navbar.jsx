@@ -4,18 +4,18 @@ import { Activity, MapPin, Mic, Headphones, ShoppingCart, Menu, X, ArrowRight } 
 import { gsap } from 'gsap'
 
 const NAV_LINKS = [
-  { label: 'Estudios',     to: '/book-studio',    Icon: MapPin,       },
-  { label: 'Artistas',     to: '/artists',         Icon: Mic,          },
-  { label: 'Productores',  to: '/producers',       Icon: Headphones,   },
-  { label: 'Beats',        to: '/beats',           Icon: ShoppingCart, },
+  { label: 'Estudios', to: '/book-studio', Icon: MapPin, },
+  /*   { label: 'Artistas',     to: '/artists',         Icon: Mic,          }, */
+  /*   { label: 'Productores', to: '/producers', Icon: Headphones, }, */
+  { label: 'Beats Market', to: '/beats', Icon: ShoppingCart, },
 ]
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false)
-  const [open, setOpen]         = useState(false)
-  const location                = useLocation()
-  const mobileMenuRef           = useRef(null)
-  const overlayRef              = useRef(null)
+  const [open, setOpen] = useState(false)
+  const location = useLocation()
+  const mobileMenuRef = useRef(null)
+  const overlayRef = useRef(null)
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 50)
@@ -31,13 +31,13 @@ export default function Navbar() {
   useEffect(() => { setOpen(false) }, [location.pathname])
 
   useEffect(() => {
-    const menu    = mobileMenuRef.current
+    const menu = mobileMenuRef.current
     const overlay = overlayRef.current
     if (!menu || !overlay) return
     if (open) {
       gsap.set(menu, { display: 'flex' })
       gsap.fromTo(overlay, { opacity: 0 }, { opacity: 1, duration: 0.25, ease: 'power2.out' })
-      gsap.fromTo(menu,    { y: -20, opacity: 0 }, { y: 0, opacity: 1, duration: 0.35, ease: 'power3.out' })
+      gsap.fromTo(menu, { y: -20, opacity: 0 }, { y: 0, opacity: 1, duration: 0.35, ease: 'power3.out' })
       gsap.fromTo(
         menu.querySelectorAll('.mobile-link'),
         { x: -24, opacity: 0 },
