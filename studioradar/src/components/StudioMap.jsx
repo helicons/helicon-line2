@@ -36,11 +36,16 @@ export default function StudioMap({ studios = [], selectedStudio, onStudioSelect
   const debounceRef = useRef(null)
   const [viewState, setViewState] = useState(DEFAULT_CENTER)
   const [popupStudio, setPopupStudio] = useState(null)
+  const [userLocation, setUserLocation] = useState(null)
 
   // Geolocalización al montar
   useEffect(() => {
     navigator.geolocation.getCurrentPosition(
-      pos => setViewState(v => ({ ...v, latitude: pos.coords.latitude, longitude: pos.coords.longitude })),
+      pos => {
+        const { latitude, longitude } = pos.coords
+        setUserLocation({ latitude, longitude })
+        setViewState(v => ({ ...v, latitude, longitude }))
+      },
       () => {} // silenciar → queda Madrid por defecto
     )
   }, [])
@@ -102,6 +107,14 @@ export default function StudioMap({ studios = [], selectedStudio, onStudioSelect
           color: white !important;
         }
         .mapboxgl-ctrl-icon { filter: invert(1) !important; }
+        @keyframes user-pulse {
+          0%   { transform: scale(1);   opacity: 0.6; }
+          70%  { transform: scale(2.2); opacity: 0; }
+          100% { transform: scale(1);   opacity: 0; }
+        }
+        .user-location-ring {
+          animation: user-pulse 2s ease-out infinite;
+        }
       `}</style>
 
       <Map
@@ -113,6 +126,28 @@ export default function StudioMap({ studios = [], selectedStudio, onStudioSelect
         reuseMaps
       >
         <NavigationControl position="bottom-right" showCompass={false} />
+
+        {/* Marcador de ubicación del usuario */}
+        {userLocation && (
+          <Marker latitude={userLocation.latitude} longitude={userLocation.longitude} anchor="center">
+            <div style={{ position: 'relative', width: 16, height: 16 }}>
+              {/* Onda pulsante */}
+              <div className="user-location-ring" style={{
+                position: 'absolute', inset: 0,
+                borderRadius: '50%',
+                background: '#3B82F6',
+              }} />
+              {/* Punto central */}
+              <div style={{
+                position: 'absolute', inset: '3px',
+                borderRadius: '50%',
+                background: '#60A5FA',
+                border: '2px solid white',
+                boxShadow: '0 0 6px rgba(59,130,246,0.8)',
+              }} />
+            </div>
+          </Marker>
+        )}
 
         {/* Pins de estudios */}
         {safeStudios.map(studio => (
