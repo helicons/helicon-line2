@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Save, Eye, EyeOff, X, Plus } from 'lucide-react'
+import { Save, Eye, EyeOff, X, Plus, MapPin, Loader2, CheckCircle2 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import PhotoUploader from './PhotoUploader'
 
@@ -24,12 +24,18 @@ export default function StudioForm({ studio, producerId, onSaved }) {
     price_per_hour:  studio?.price_per_hour  ?? '',
     photos:          studio?.photos          ?? [],
     equipment_tags:  studio?.equipment_tags  ?? [],
-    is_published:    studio?.is_published    ?? false,
+    is_published:    studio?.is_published    ?? true,
   })
 
   const [tagInput, setTagInput] = useState('')
   const [saving, setSaving] = useState(false)
-  const [toast, setToast] = useState(null)  // { type: 'success' | 'error', msg }
+  const [toast, setToast] = useState(null)       // { type: 'success' | 'error', msg }
+  const [geocoding, setGeocoding] = useState(false)
+  const [geocodeResult, setGeocodeResult] = useState(
+    studio?.lat && studio?.lng
+      ? { label: `${studio.address ?? studio.city ?? 'Dirección guardada'} — ubicado`, ok: true }
+      : null
+  )
 
   const set = (field, value) => setForm(f => ({ ...f, [field]: value }))
 
@@ -46,6 +52,63 @@ export default function StudioForm({ studio, producerId, onSaved }) {
     setTagInput('')
   }
   const removeTag = (tag) => set('equipment_tags', form.equipment_tags.filter(t => t !== tag))
+
+  // Expande abreviaturas comunes del callejero español
+  const expandAbbreviations = (str) => str
+    .replace(/\bC\.\s*/gi,   'Calle ')
+    .replace(/\bAv\.\s*/gi,  'Avenida ')
+    .replace(/\bAvda\.\s*/gi,'Avenida ')
+    .replace(/\bPza\.\s*/gi, 'Plaza ')
+    .replace(/\bPl\.\s*/gi,  'Plaza ')
+    .replace(/\bPº\s*/gi,    'Paseo ')
+    .replace(/\bPo\.\s*/gi,  'Paseo ')
+    .replace(/\bCtra\.\s*/gi,'Carretera ')
+    .replace(/\bUrb\.\s*/gi, 'Urbanización ')
+    .trim()
+
+  // Geocodificación con Nominatim (OpenStreetMap) — gratis, sin API key
+  const nominatim = async (query) => {
+    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1&addressdetails=1`
+    const res  = await fetch(url, { headers: { 'Accept-Language': 'es', 'User-Agent': 'Helicon/1.0' } })
+    return res.json()
+  }
+
+  const geocodeAddress = async () => {
+    const hasInput = form.address || form.city || form.postal_code
+    if (!hasInput) {
+      showToast('error', 'Escribe al menos la dirección o ciudad antes de localizar.')
+      return
+    }
+    setGeocoding(true)
+    setGeocodeResult(null)
+    try {
+      // Intento 1: dirección completa con abreviaturas expandidas
+      const fullQuery = [expandAbbreviations(form.address), form.city, form.postal_code, form.country]
+        .filter(Boolean).join(', ')
+      let data = await nominatim(fullQuery)
+
+      // Intento 2: solo código postal + ciudad (si el primero falla)
+      if (!data.length && (form.postal_code || form.city)) {
+        const simpleQuery = [form.postal_code, form.city, form.country].filter(Boolean).join(', ')
+        data = await nominatim(simpleQuery)
+      }
+
+      if (!data.length) {
+        setGeocodeResult({ ok: false, label: 'No encontrado. Comprueba la dirección o prueba solo con el código postal.' })
+        return
+      }
+
+      const { lat, lon, display_name } = data[0]
+      setForm(f => ({ ...f, lat: parseFloat(lat), lng: parseFloat(lon) }))
+      const city = data[0].address?.city ?? data[0].address?.town ?? data[0].address?.village ?? ''
+      if (!form.city && city) setForm(f => ({ ...f, city }))
+      setGeocodeResult({ ok: true, label: display_name.split(',').slice(0, 3).join(',') })
+    } catch {
+      setGeocodeResult({ ok: false, label: 'Error de conexión. Inténtalo de nuevo.' })
+    } finally {
+      setGeocoding(false)
+    }
+  }
 
   // Toggle publicar — UPDATE inmediato sin esperar al guardado completo
   const handlePublishToggle = async () => {
@@ -178,7 +241,7 @@ export default function StudioForm({ studio, producerId, onSaved }) {
           <label className="text-[10px] font-mono text-text/50 uppercase tracking-widest block mb-1.5">Dirección</label>
           <input
             value={form.address}
-            onChange={e => set('address', e.target.value)}
+            onChange={e => { set('address', e.target.value); setGeocodeResult(null) }}
             placeholder="Calle Gran Vía 28, 1º"
             className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white text-sm font-mono outline-none focus:border-accent transition-colors"
           />
@@ -189,7 +252,7 @@ export default function StudioForm({ studio, producerId, onSaved }) {
             <label className="text-[10px] font-mono text-text/50 uppercase tracking-widest block mb-1.5">Ciudad</label>
             <input
               value={form.city}
-              onChange={e => set('city', e.target.value)}
+              onChange={e => { set('city', e.target.value); setGeocodeResult(null) }}
               placeholder="Madrid"
               className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white text-sm font-mono outline-none focus:border-accent transition-colors"
             />
@@ -198,7 +261,7 @@ export default function StudioForm({ studio, producerId, onSaved }) {
             <label className="text-[10px] font-mono text-text/50 uppercase tracking-widest block mb-1.5">Código Postal</label>
             <input
               value={form.postal_code}
-              onChange={e => set('postal_code', e.target.value)}
+              onChange={e => { set('postal_code', e.target.value); setGeocodeResult(null) }}
               placeholder="28013"
               className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white text-sm font-mono outline-none focus:border-accent transition-colors"
             />
@@ -215,37 +278,37 @@ export default function StudioForm({ studio, producerId, onSaved }) {
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="text-[10px] font-mono text-text/50 uppercase tracking-widest block mb-1.5">
-              Latitud <span className="text-text/20">(opcional)</span>
-            </label>
-            <input
-              type="number"
-              step="0.000001"
-              value={form.lat}
-              onChange={e => set('lat', e.target.value)}
-              placeholder="40.416775"
-              className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white text-sm font-mono outline-none focus:border-accent transition-colors"
-            />
-          </div>
-          <div>
-            <label className="text-[10px] font-mono text-text/50 uppercase tracking-widest block mb-1.5">
-              Longitud <span className="text-text/20">(opcional)</span>
-            </label>
-            <input
-              type="number"
-              step="0.000001"
-              value={form.lng}
-              onChange={e => set('lng', e.target.value)}
-              placeholder="-3.703790"
-              className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-white text-sm font-mono outline-none focus:border-accent transition-colors"
-            />
-          </div>
+        {/* Botón de localización automática */}
+        <div className="space-y-2">
+          <button
+            type="button"
+            onClick={geocodeAddress}
+            disabled={geocoding}
+            className="flex items-center gap-2 bg-white/5 border border-white/10 text-white text-xs font-mono px-4 py-2.5 rounded-xl hover:border-accent/50 hover:bg-accent/10 transition-all disabled:opacity-50"
+          >
+            {geocoding
+              ? <Loader2 size={13} className="animate-spin text-accent" />
+              : <MapPin size={13} className="text-accent" />
+            }
+            {geocoding ? 'Buscando ubicación…' : 'Localizar dirección en el mapa'}
+          </button>
+
+          {geocodeResult && (
+            <div className={`flex items-start gap-2 text-[11px] font-mono px-3 py-2 rounded-lg ${geocodeResult.ok ? 'bg-green-500/10 border border-green-500/20 text-green-400' : 'bg-red-500/10 border border-red-500/20 text-red-400'}`}>
+              {geocodeResult.ok && <CheckCircle2 size={13} className="shrink-0 mt-0.5" />}
+              {geocodeResult.ok
+                ? <>📍 {geocodeResult.label}</>
+                : geocodeResult.label
+              }
+            </div>
+          )}
+
+          {form.lat && form.lng && (
+            <p className="text-[10px] font-mono text-text/20">
+              Coordenadas: {Number(form.lat).toFixed(5)}, {Number(form.lng).toFixed(5)}
+            </p>
+          )}
         </div>
-        <p className="text-[10px] font-mono text-text/20">
-          Puedes obtener lat/lng en Google Maps → clic derecho sobre tu dirección → copiar coordenadas.
-        </p>
       </section>
 
       {/* Sección: Equipamiento */}

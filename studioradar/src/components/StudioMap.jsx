@@ -2,43 +2,178 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import Map, { Marker, Popup, NavigationControl } from 'react-map-gl/maplibre'
 import 'maplibre-gl/dist/maplibre-gl.css'
 
-// Tiles oscuros gratuitos de CartoDB — sin API key
-const MAP_STYLE = 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json'
+const MAP_STYLE   = 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json'
 const DEFAULT_CENTER = { latitude: 40.4168, longitude: -3.7038, zoom: 11 }
 
-// Pin SVG personalizado
+// Pin con efecto radar pulsante
 function StudioPin({ selected, hovered }) {
-  const size = selected ? 40 : hovered ? 36 : 32
+  const size = selected ? 44 : hovered ? 38 : 32
   return (
-    <svg width={size} height={size} viewBox="0 0 32 32" style={{ transition: 'all 0.15s ease', filter: selected ? 'drop-shadow(0 0 8px #8A2BE2)' : 'none' }}>
-      <circle cx="16" cy="16" r="14" fill={selected ? '#8A2BE2' : '#1A1A1A'} stroke="#8A2BE2" strokeWidth="2" />
-      {/* Icono de nota musical */}
-      <path
-        d="M20 9v7.5M20 9l-6 1.5v8M14 18.5c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm6-2c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2z"
-        stroke={selected ? 'white' : '#8A2BE2'}
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        fill="none"
+    <div style={{ position: 'relative', width: size, height: size, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      {/* Anillo radar — siempre visible, más pronunciado si seleccionado */}
+      <div
+        className={selected ? 'pin-radar-selected' : 'pin-radar'}
+        style={{
+          position: 'absolute',
+          inset: 0,
+          borderRadius: '50%',
+          background: selected ? '#8A2BE2' : 'rgba(138,43,226,0.5)',
+        }}
       />
-    </svg>
+      {/* Segundo anillo más lento si seleccionado */}
+      {selected && (
+        <div className="pin-radar-selected-2" style={{
+          position: 'absolute',
+          inset: '-6px',
+          borderRadius: '50%',
+          border: '2px solid rgba(138,43,226,0.6)',
+        }} />
+      )}
+      {/* Pin SVG */}
+      <svg
+        width={size}
+        height={size}
+        viewBox="0 0 32 32"
+        style={{
+          position: 'relative',
+          zIndex: 1,
+          transition: 'all 0.2s ease',
+          filter: selected
+            ? 'drop-shadow(0 0 10px #8A2BE2) drop-shadow(0 0 4px #fff)'
+            : hovered ? 'drop-shadow(0 0 6px #8A2BE2)' : 'none',
+        }}
+      >
+        <circle cx="16" cy="16" r="14"
+          fill={selected ? '#8A2BE2' : '#0D0D0D'}
+          stroke={selected ? '#C084FC' : '#8A2BE2'}
+          strokeWidth={selected ? 2.5 : 1.5}
+        />
+        <path
+          d="M20 9v7.5M20 9l-6 1.5v8M14 18.5c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm6-2c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2z"
+          stroke={selected ? 'white' : '#8A2BE2'}
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          fill="none"
+        />
+      </svg>
+    </div>
+  )
+}
+
+// Card del estudio reutilizada en popup (desktop) y bottom sheet (móvil)
+function StudioCard({ studio, onSelect, onClose }) {
+  return (
+    <div style={{ fontFamily: 'monospace' }}>
+      {(studio.photos?.[0] || studio.image_url) ? (
+        <div style={{ position: 'relative' }}>
+          <img
+            src={studio.photos?.[0] ?? studio.image_url}
+            alt={studio.name}
+            loading="lazy"
+            style={{ width: '100%', height: '130px', objectFit: 'cover', display: 'block' }}
+          />
+          {/* Gradiente sobre imagen */}
+          <div style={{
+            position: 'absolute', bottom: 0, left: 0, right: 0, height: '60px',
+            background: 'linear-gradient(transparent, #0D0D0D)',
+          }} />
+        </div>
+      ) : (
+        /* Placeholder sin foto */
+        <div style={{
+          height: '80px', background: 'linear-gradient(135deg, #1A0A2E 0%, #0D0D0D 100%)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+            <path d="M20 9v7.5M20 9l-6 1.5v8M14 18.5c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm6-2c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2z"
+              stroke="#8A2BE2" strokeWidth="1.5" strokeLinecap="round" />
+          </svg>
+        </div>
+      )}
+
+      <div style={{ padding: '14px' }}>
+        {/* Nombre */}
+        <p style={{ color: 'white', fontWeight: 700, fontSize: '14px', marginBottom: '4px', letterSpacing: '-0.01em' }}>
+          {studio.name}
+        </p>
+
+        {/* Ciudad */}
+        {studio.city && (
+          <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px', marginBottom: '8px' }}>
+            📍 {studio.city}
+          </p>
+        )}
+
+        {/* Tags de equipo */}
+        {studio.equipment_tags?.length > 0 && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '10px' }}>
+            {studio.equipment_tags.slice(0, 3).map(tag => (
+              <span key={tag} style={{
+                background: 'rgba(138,43,226,0.15)',
+                border: '1px solid rgba(138,43,226,0.3)',
+                color: '#C084FC',
+                fontSize: '9px',
+                padding: '2px 6px',
+                borderRadius: '4px',
+                letterSpacing: '0.05em',
+              }}>{tag}</span>
+            ))}
+          </div>
+        )}
+
+        {/* Precio */}
+        {studio.price_per_hour && (
+          <p style={{ color: '#A855F7', fontSize: '13px', fontWeight: 700, marginBottom: '12px' }}>
+            Desde <span style={{ color: '#C084FC' }}>{studio.price_per_hour}€</span>/h
+          </p>
+        )}
+
+        <button
+          onClick={() => { onSelect?.(studio); onClose?.() }}
+          style={{
+            width: '100%',
+            background: 'linear-gradient(135deg, #7C3AED, #8A2BE2)',
+            color: 'white',
+            border: 'none',
+            borderRadius: '8px',
+            padding: '10px',
+            fontSize: '11px',
+            fontFamily: 'monospace',
+            fontWeight: 700,
+            cursor: 'pointer',
+            letterSpacing: '0.08em',
+            transition: 'opacity 0.15s',
+          }}
+          onMouseOver={e => e.currentTarget.style.opacity = '0.85'}
+          onMouseOut={e => e.currentTarget.style.opacity = '1'}
+        >
+          RESERVAR SESIÓN →
+        </button>
+      </div>
+    </div>
   )
 }
 
 const validStudios = (studios) => studios.filter(s =>
   typeof s.lat === 'number' && typeof s.lng === 'number' &&
-  s.lat >= -90 && s.lat <= 90 &&
-  s.lng >= -180 && s.lng <= 180
+  s.lat >= -90 && s.lat <= 90 && s.lng >= -180 && s.lng <= 180
 )
 
 export default function StudioMap({ studios = [], selectedStudio, onStudioSelect, onVisibleChange, hoveredStudio }) {
-  const safeStudios = validStudios(studios)
-  const mapRef = useRef(null)
-  const debounceRef = useRef(null)
-  const [viewState, setViewState] = useState(DEFAULT_CENTER)
+  const safeStudios  = validStudios(studios)
+  const mapRef       = useRef(null)
+  const debounceRef  = useRef(null)
+  const [viewState, setViewState]     = useState(DEFAULT_CENTER)
   const [popupStudio, setPopupStudio] = useState(null)
   const [userLocation, setUserLocation] = useState(null)
+  const [isMobile, setIsMobile]       = useState(window.innerWidth < 768)
 
-  // Geolocalización al montar
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth < 768)
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
+
   useEffect(() => {
     navigator.geolocation.getCurrentPosition(
       pos => {
@@ -46,11 +181,10 @@ export default function StudioMap({ studios = [], selectedStudio, onStudioSelect
         setUserLocation({ latitude, longitude })
         setViewState(v => ({ ...v, latitude, longitude }))
       },
-      () => {} // silenciar → queda Madrid por defecto
+      () => {}
     )
   }, [])
 
-  // Calcular estudios visibles en el viewport (debounced 400ms)
   const updateVisible = useCallback(() => {
     if (!mapRef.current) return
     clearTimeout(debounceRef.current)
@@ -58,16 +192,13 @@ export default function StudioMap({ studios = [], selectedStudio, onStudioSelect
       const bounds = mapRef.current.getBounds()
       if (!bounds) return
       const visible = safeStudios.filter(s =>
-        s.lat >= bounds.getSouth() &&
-        s.lat <= bounds.getNorth() &&
-        s.lng >= bounds.getWest() &&
-        s.lng <= bounds.getEast()
+        s.lat >= bounds.getSouth() && s.lat <= bounds.getNorth() &&
+        s.lng >= bounds.getWest() && s.lng <= bounds.getEast()
       )
       onVisibleChange?.(visible)
     }, 400)
   }, [safeStudios, onVisibleChange])
 
-  // Actualizar visibles cuando cambian los estudios o el viewport
   useEffect(() => {
     updateVisible()
     return () => clearTimeout(debounceRef.current)
@@ -78,42 +209,72 @@ export default function StudioMap({ studios = [], selectedStudio, onStudioSelect
     onStudioSelect?.(studio)
   }
 
+  const closePopup = () => setPopupStudio(null)
+
   return (
     <>
-      {/* CSS global del popup de Mapbox */}
       <style>{`
-        .mapboxgl-popup-content {
-          background: #1A1A1A !important;
-          border: 1px solid rgba(255,255,255,0.08) !important;
-          border-radius: 12px !important;
-          padding: 0 !important;
-          box-shadow: 0 20px 60px rgba(0,0,0,0.6) !important;
-          overflow: hidden;
+        /* Animaciones radar de pines */
+        @keyframes pin-radar {
+          0%   { transform: scale(1);   opacity: 0.5; }
+          70%  { transform: scale(2.4); opacity: 0; }
+          100% { transform: scale(1);   opacity: 0; }
         }
-        .mapboxgl-popup-tip { display: none !important; }
-        .mapboxgl-popup-close-button {
-          color: rgba(255,255,255,0.3) !important;
-          font-size: 18px !important;
-          padding: 6px 10px !important;
-          z-index: 1;
+        @keyframes pin-radar-sel {
+          0%   { transform: scale(1);   opacity: 0.7; }
+          70%  { transform: scale(2.8); opacity: 0; }
+          100% { transform: scale(1);   opacity: 0; }
         }
-        .mapboxgl-popup-close-button:hover { color: white !important; }
-        .mapboxgl-ctrl-group {
-          background: #1A1A1A !important;
-          border: 1px solid rgba(255,255,255,0.08) !important;
+        @keyframes pin-radar-ring {
+          0%   { transform: scale(1);   opacity: 0.5; }
+          100% { transform: scale(1.8); opacity: 0; }
         }
-        .mapboxgl-ctrl-group button {
-          background: transparent !important;
-          color: white !important;
-        }
-        .mapboxgl-ctrl-icon { filter: invert(1) !important; }
+        .pin-radar          { animation: pin-radar      3s ease-out infinite; }
+        .pin-radar-selected { animation: pin-radar-sel  1.6s ease-out infinite; }
+        .pin-radar-selected-2 { animation: pin-radar-ring 1.6s ease-out 0.4s infinite; }
+
+        /* Animación usuario */
         @keyframes user-pulse {
           0%   { transform: scale(1);   opacity: 0.6; }
           70%  { transform: scale(2.2); opacity: 0; }
           100% { transform: scale(1);   opacity: 0; }
         }
-        .user-location-ring {
-          animation: user-pulse 2s ease-out infinite;
+        .user-location-ring { animation: user-pulse 2s ease-out infinite; }
+
+        /* Popup desktop — maplibre usa prefijo maplibregl */
+        .maplibregl-popup-content {
+          background: #0D0D0D !important;
+          border: 1px solid rgba(138,43,226,0.25) !important;
+          border-radius: 14px !important;
+          padding: 0 !important;
+          box-shadow: 0 0 0 1px rgba(138,43,226,0.1), 0 24px 60px rgba(0,0,0,0.8) !important;
+          overflow: hidden;
+          min-width: 220px;
+        }
+        .maplibregl-popup-tip { display: none !important; }
+        .maplibregl-popup-close-button {
+          color: rgba(255,255,255,0.3) !important;
+          font-size: 18px !important;
+          padding: 6px 10px !important;
+          z-index: 2;
+          background: rgba(0,0,0,0.4) !important;
+          border-radius: 0 14px 0 8px !important;
+        }
+        .maplibregl-popup-close-button:hover { color: white !important; background: rgba(138,43,226,0.4) !important; }
+        .maplibregl-ctrl-group {
+          background: #0D0D0D !important;
+          border: 1px solid rgba(138,43,226,0.2) !important;
+        }
+        .maplibregl-ctrl-group button { background: transparent !important; color: white !important; }
+        .maplibregl-ctrl-icon { filter: invert(1) !important; }
+
+        /* Bottom sheet móvil */
+        @keyframes sheet-up {
+          from { transform: translateY(100%); }
+          to   { transform: translateY(0); }
+        }
+        .bottom-sheet {
+          animation: sheet-up 0.3s cubic-bezier(0.32,0.72,0,1);
         }
       `}</style>
 
@@ -127,23 +288,17 @@ export default function StudioMap({ studios = [], selectedStudio, onStudioSelect
       >
         <NavigationControl position="bottom-right" showCompass={false} />
 
-        {/* Marcador de ubicación del usuario */}
+        {/* Marcador ubicación usuario */}
         {userLocation && (
           <Marker latitude={userLocation.latitude} longitude={userLocation.longitude} anchor="center">
             <div style={{ position: 'relative', width: 16, height: 16 }}>
-              {/* Onda pulsante */}
               <div className="user-location-ring" style={{
-                position: 'absolute', inset: 0,
-                borderRadius: '50%',
-                background: '#3B82F6',
+                position: 'absolute', inset: 0, borderRadius: '50%', background: '#8A2BE2',
               }} />
-              {/* Punto central */}
               <div style={{
-                position: 'absolute', inset: '3px',
-                borderRadius: '50%',
-                background: '#60A5FA',
-                border: '2px solid white',
-                boxShadow: '0 0 6px rgba(59,130,246,0.8)',
+                position: 'absolute', inset: '3px', borderRadius: '50%',
+                background: '#A855F7', border: '2px solid white',
+                boxShadow: '0 0 6px rgba(138,43,226,0.8)',
               }} />
             </div>
           </Marker>
@@ -165,56 +320,52 @@ export default function StudioMap({ studios = [], selectedStudio, onStudioSelect
           </Marker>
         ))}
 
-        {/* Popup al hacer clic en un pin */}
-        {popupStudio && (
+        {/* Popup desktop (oculto en móvil) */}
+        {popupStudio && !isMobile && (
           <Popup
             latitude={popupStudio.lat}
             longitude={popupStudio.lng}
             anchor="top"
-            offset={20}
-            onClose={() => setPopupStudio(null)}
+            offset={24}
+            onClose={closePopup}
             closeOnClick={false}
-            maxWidth="220px"
+            maxWidth="240px"
           >
-            <div>
-              {(popupStudio.photos?.[0] || popupStudio.image_url) && (
-                <img
-                  src={popupStudio.photos?.[0] ?? popupStudio.image_url}
-                  alt={popupStudio.name}
-                  loading="lazy"
-                  style={{ width: '100%', height: '110px', objectFit: 'cover', display: 'block' }}
-                />
-              )}
-              <div style={{ padding: '12px' }}>
-                <p style={{ color: 'white', fontWeight: 700, fontSize: '13px', fontFamily: 'monospace', marginBottom: '2px' }}>
-                  {popupStudio.name}
-                </p>
-                {popupStudio.city && (
-                  <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px', fontFamily: 'monospace', marginBottom: '6px' }}>
-                    {popupStudio.city}
-                  </p>
-                )}
-                {popupStudio.price_per_hour && (
-                  <p style={{ color: '#8A2BE2', fontSize: '12px', fontFamily: 'monospace', marginBottom: '10px' }}>
-                    Desde {popupStudio.price_per_hour}€/h
-                  </p>
-                )}
-                <button
-                  onClick={() => { onStudioSelect?.(popupStudio); setPopupStudio(null) }}
-                  style={{
-                    width: '100%', background: '#8A2BE2', color: 'white',
-                    border: 'none', borderRadius: '8px', padding: '8px',
-                    fontSize: '11px', fontFamily: 'monospace', fontWeight: 700,
-                    cursor: 'pointer', letterSpacing: '0.05em'
-                  }}
-                >
-                  RESERVAR SESIÓN →
-                </button>
-              </div>
-            </div>
+            <StudioCard studio={popupStudio} onSelect={onStudioSelect} onClose={closePopup} />
           </Popup>
         )}
       </Map>
+
+      {/* Bottom sheet móvil */}
+      {popupStudio && isMobile && (
+        <div
+          style={{
+            position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 10,
+            background: '#0D0D0D',
+            borderTop: '1px solid rgba(138,43,226,0.3)',
+            borderRadius: '20px 20px 0 0',
+            boxShadow: '0 -20px 60px rgba(0,0,0,0.7)',
+            overflow: 'hidden',
+          }}
+          className="bottom-sheet"
+        >
+          {/* Handle + cerrar */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px 16px 0', position: 'relative' }}>
+            <div style={{ width: 36, height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.15)' }} />
+            <button
+              onClick={closePopup}
+              style={{
+                position: 'absolute', right: 14, top: 8,
+                background: 'rgba(255,255,255,0.07)', border: 'none',
+                color: 'rgba(255,255,255,0.5)', borderRadius: '50%',
+                width: 28, height: 28, cursor: 'pointer', fontSize: 16,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}
+            >×</button>
+          </div>
+          <StudioCard studio={popupStudio} onSelect={onStudioSelect} onClose={closePopup} />
+        </div>
+      )}
     </>
   )
 }
