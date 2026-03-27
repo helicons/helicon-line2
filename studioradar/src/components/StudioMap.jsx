@@ -166,13 +166,7 @@ export default function StudioMap({ studios = [], selectedStudio, onStudioSelect
   const [viewState, setViewState]     = useState(DEFAULT_CENTER)
   const [popupStudio, setPopupStudio] = useState(null)
   const [userLocation, setUserLocation] = useState(null)
-  const [isMobile, setIsMobile]       = useState(window.innerWidth < 768)
-
-  useEffect(() => {
-    const onResize = () => setIsMobile(window.innerWidth < 768)
-    window.addEventListener('resize', onResize)
-    return () => window.removeEventListener('resize', onResize)
-  }, [])
+  const isMobile = window.innerWidth < 768
 
   useEffect(() => {
     navigator.geolocation.getCurrentPosition(
@@ -268,14 +262,6 @@ export default function StudioMap({ studios = [], selectedStudio, onStudioSelect
         .maplibregl-ctrl-group button { background: transparent !important; color: white !important; }
         .maplibregl-ctrl-icon { filter: invert(1) !important; }
 
-        /* Bottom sheet móvil */
-        @keyframes sheet-up {
-          from { transform: translateY(100%); }
-          to   { transform: translateY(0); }
-        }
-        .bottom-sheet {
-          animation: sheet-up 0.3s cubic-bezier(0.32,0.72,0,1);
-        }
       `}</style>
 
       <Map
