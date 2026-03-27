@@ -336,36 +336,6 @@ export default function StudioMap({ studios = [], selectedStudio, onStudioSelect
         )}
       </Map>
 
-      {/* Bottom sheet móvil */}
-      {popupStudio && isMobile && (
-        <div
-          style={{
-            position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 10,
-            background: '#0D0D0D',
-            borderTop: '1px solid rgba(138,43,226,0.3)',
-            borderRadius: '20px 20px 0 0',
-            boxShadow: '0 -20px 60px rgba(0,0,0,0.7)',
-            overflow: 'hidden',
-          }}
-          className="bottom-sheet"
-        >
-          {/* Handle + cerrar */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px 16px 0', position: 'relative' }}>
-            <div style={{ width: 36, height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.15)' }} />
-            <button
-              onClick={closePopup}
-              style={{
-                position: 'absolute', right: 14, top: 8,
-                background: 'rgba(255,255,255,0.07)', border: 'none',
-                color: 'rgba(255,255,255,0.5)', borderRadius: '50%',
-                width: 28, height: 28, cursor: 'pointer', fontSize: 16,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}
-            >×</button>
-          </div>
-          <StudioCard studio={popupStudio} onSelect={onStudioSelect} onClose={closePopup} />
-        </div>
-      )}
     </>
   )
 }
