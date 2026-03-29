@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { CalendarDays, Layers, Clock, BookOpen, LogOut, ChevronDown, Building2, Pencil, PlusCircle, ArrowLeft } from 'lucide-react'
+import { CalendarDays, Layers, Clock, BookOpen, LogOut, ChevronDown, Building2, Pencil, PlusCircle, ArrowLeft, Music2, Trash2, Eye, EyeOff } from 'lucide-react'
 import { supabase } from './lib/supabase'
 import SpaceManager from './components/SpaceManager'
 import AvailabilityManager from './components/AvailabilityManager'
 import ProducerCalendar from './components/ProducerCalendar'
 import StudioForm from './components/StudioForm'
+import BeatForm from './components/BeatForm'
 
 const TABS = [
   { id: 'studio',       label: 'Mis Estudios',   Icon: Building2   },
@@ -13,6 +14,7 @@ const TABS = [
   { id: 'spaces',       label: 'Espacios',        Icon: Layers      },
   { id: 'availability', label: 'Disponibilidad',  Icon: Clock       },
   { id: 'bookings',     label: 'Reservas',        Icon: BookOpen    },
+  { id: 'beats',        label: 'Beats',           Icon: Music2      },
 ]
 
 const STATUS_BADGE = {
@@ -34,6 +36,9 @@ export default function ProducerDashboard() {
   const [bookings, setBookings]     = useState([])
   const [bookingsLoading, setBookingsLoading] = useState(false)
   const [bookingsFilter, setBookingsFilter]   = useState('all')
+  const [beats, setBeats]           = useState([])
+  const [beatsLoading, setBeatsLoading] = useState(false)
+  const [addingBeat, setAddingBeat] = useState(false)
 
   const activeStudio = studios.find(s => s.id === activeStudioId) ?? studios[0] ?? null
 
@@ -90,6 +95,21 @@ export default function ProducerDashboard() {
         })
       })
   }, [activeStudioId, tab])
+
+  // Cargar beats del productor
+  useEffect(() => {
+    if (tab !== 'beats' || !producer) return
+    setBeatsLoading(true)
+    supabase
+      .from('beats')
+      .select('*')
+      .eq('producer_id', producer.id)
+      .order('created_at', { ascending: false })
+      .then(({ data }) => {
+        setBeats(data ?? [])
+        setBeatsLoading(false)
+      })
+  }, [tab, producer])
 
   // Cargar reservas
   useEffect(() => {
@@ -320,6 +340,105 @@ export default function ProducerDashboard() {
                 </div>
               )}
               <AvailabilityManager spaceId={selectedSpaceId} />
+            </div>
+          )}
+
+          {/* ── BEATS ── */}
+          {tab === 'beats' && (
+            <div className="space-y-4">
+              {!addingBeat ? (
+                <>
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-white font-bold text-sm font-mono uppercase tracking-widest">Mis Beats</h3>
+                    <button
+                      onClick={() => setAddingBeat(true)}
+                      className="flex items-center gap-2 bg-accent text-white font-mono font-bold text-xs px-4 py-2 rounded-xl hover:bg-[#9d3df2] transition-all shadow-lg shadow-accent/20"
+                    >
+                      <PlusCircle size={14} /> Subir Beat
+                    </button>
+                  </div>
+
+                  {beatsLoading && <p className="text-text/30 text-xs font-mono text-center py-12">Cargando…</p>}
+
+                  {!beatsLoading && beats.length === 0 && (
+                    <div className="flex flex-col items-center justify-center py-16 text-center">
+                      <div className="w-16 h-16 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center mb-6">
+                        <Music2 size={28} className="text-accent" />
+                      </div>
+                      <h3 className="text-white font-bold text-lg mb-2">Aún no tienes beats</h3>
+                      <p className="text-text/40 text-sm font-mono max-w-xs">Sube tu primer beat para que los artistas puedan descubrirlo en el Beat Market.</p>
+                    </div>
+                  )}
+
+                  {!beatsLoading && beats.length > 0 && (
+                    <div className="space-y-2">
+                      {beats.map(beat => (
+                        <div key={beat.id} className="flex items-center gap-4 bg-white/3 border border-white/5 rounded-xl p-3 hover:border-white/10 transition-all">
+                          {beat.image_url ? (
+                            <img src={beat.image_url} alt={beat.title} className="w-12 h-12 rounded-lg object-cover border border-white/10 shrink-0" />
+                          ) : (
+                            <div className="w-12 h-12 rounded-lg bg-accent/10 border border-accent/20 flex items-center justify-center shrink-0">
+                              <Music2 size={18} className="text-accent/50" />
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h4 className="text-white font-bold text-sm truncate">{beat.title}</h4>
+                              <span className={`text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-full border ${beat.is_published ? 'bg-accent/15 text-accent border-accent/30' : 'bg-white/5 text-text/30 border-white/10'}`}>
+                                {beat.is_published ? 'Publicado' : 'Oculto'}
+                              </span>
+                            </div>
+                            <p className="text-text/40 text-xs font-mono mt-0.5">
+                              {[beat.genre, beat.mood, beat.bpm && `${beat.bpm} BPM`, beat.key].filter(Boolean).join(' · ')}
+                            </p>
+                          </div>
+                          {beat.price != null && (
+                            <span className="text-accent text-sm font-mono font-bold shrink-0">{beat.price}€</span>
+                          )}
+                          <button
+                            onClick={async () => {
+                              await supabase.from('beats').update({ is_published: !beat.is_published }).eq('id', beat.id)
+                              setBeats(prev => prev.map(b => b.id === beat.id ? { ...b, is_published: !b.is_published } : b))
+                            }}
+                            className="text-text/30 hover:text-white transition-colors shrink-0"
+                            title={beat.is_published ? 'Ocultar' : 'Publicar'}
+                          >
+                            {beat.is_published ? <EyeOff size={15} /> : <Eye size={15} />}
+                          </button>
+                          <button
+                            onClick={async () => {
+                              if (!confirm('¿Eliminar este beat?')) return
+                              await supabase.from('beats').delete().eq('id', beat.id)
+                              setBeats(prev => prev.filter(b => b.id !== beat.id))
+                            }}
+                            className="text-text/30 hover:text-red-400 transition-colors shrink-0"
+                            title="Eliminar"
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div>
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-white font-bold text-sm font-mono uppercase tracking-widest">Subir Beat</h3>
+                    <button onClick={() => setAddingBeat(false)} className="flex items-center gap-1.5 text-text/40 text-xs font-mono hover:text-white transition-colors">
+                      <ArrowLeft size={13} /> Volver
+                    </button>
+                  </div>
+                  <BeatForm
+                    producerId={producer?.id}
+                    onSaved={(newBeat) => {
+                      setBeats(prev => [newBeat, ...prev])
+                      setAddingBeat(false)
+                    }}
+                    onCancel={() => setAddingBeat(false)}
+                  />
+                </div>
+              )}
             </div>
           )}
 

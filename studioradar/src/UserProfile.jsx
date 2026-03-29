@@ -42,16 +42,19 @@ export default function UserProfile() {
         avatar: session.user.user_metadata?.avatar_url ?? null,
       })
 
-      // Reservas del usuario por email
-      const { data: bookingData } = await supabase
+      // Reservas del usuario — buscar por email de sesión (más fiable que tabla users)
+      const sessionEmail = session.user.email
+      const { data: bookingData, error: bookingError } = await supabase
         .from('bookings')
         .select(`
           id, client_name, start_datetime, end_datetime,
           status, amount_paid,
           spaces ( name, studios ( name, photos, image_url, city ) )
         `)
-        .eq('client_email', userRow.email)
+        .ilike('client_email', sessionEmail)
         .order('start_datetime', { ascending: false })
+
+      if (bookingError) console.error('Error cargando reservas:', bookingError)
 
       setBookings(bookingData ?? [])
       setLoading(false)

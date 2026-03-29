@@ -1,19 +1,47 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Play, Pause, Search, Filter, SlidersHorizontal, ShoppingCart, Heart, MoreHorizontal, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, SkipBack, SkipForward, Volume2, Activity, ArrowLeft, TrendingUp, Music, Keyboard, Zap, Pencil } from 'lucide-react';
 import { PRODUCERS, PokemonCard } from './ProducerProfiles';
+import { supabase } from './lib/supabase';
 
 const KEY_OPTIONS = ['C Maj', 'C Min', 'C# Maj', 'C# Min', 'D Maj', 'D Min', 'D# Maj', 'D# Min', 'E Maj', 'E Min', 'F Maj', 'F Min', 'F# Maj', 'F# Min', 'G Maj', 'G Min', 'G# Maj', 'G# Min', 'A Maj', 'A Min', 'A# Maj', 'A# Min', 'B Maj', 'B Min'];
 
-// Hardcoded dummy data for beats
-const BEATS = [
-  { id: 1, title: 'NEON TEARS',  producer: 'Helicon Origin', bpm: 140, key: 'C# Min', tags: ['Synthwave', 'Dark'],     price: 29, plays: '8.4M',  image: 'https://images.unsplash.com/photo-1557672172-298e090bd0f1?auto=format&fit=crop&q=80&w=200', colors: [[138,43,226],[80,0,180]] },
-  { id: 2, title: 'GHOST RIDE',  producer: 'Metro Shadows',  bpm: 120, key: 'F Min',   tags: ['Trap', 'Hard'],         price: 35, plays: '12.1M', image: 'https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?auto=format&fit=crop&q=80&w=200', colors: [[255,0,60],[180,0,40]] },
-  { id: 3, title: 'LUCID',       producer: 'Cloud Nine',     bpm: 95,  key: 'A Maj',   tags: ['R&B', 'Chill'],         price: 29, plays: '5.2M',  image: 'https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?auto=format&fit=crop&q=80&w=200', colors: [[0,240,255],[0,150,200]] },
-  { id: 4, title: 'BRUTALIST',   producer: 'Iron Foundry',   bpm: 130, key: 'D Min',   tags: ['Techno', 'Industrial'], price: 45, plays: '2.9M',  image: 'https://images.unsplash.com/photo-1518609878373-06d740f60d8b?auto=format&fit=crop&q=80&w=200', colors: [[255,215,0],[200,150,0]] },
-  { id: 5, title: 'VOID WALKER', producer: 'Helicon Origin', bpm: 145, key: 'G Min',   tags: ['Drill', 'Dark'],        price: 39, plays: '3.8M',  image: 'https://images.unsplash.com/photo-1550684848-fac1c5b4e853?auto=format&fit=crop&q=80&w=200', colors: [[138,43,226],[60,0,120]] },
-  { id: 6, title: 'PULSE 808',   producer: 'Metro Shadows',  bpm: 110, key: 'B Min',   tags: ['Trap', 'Bouncy'],       price: 29, plays: '7.6M',  image: 'https://plus.unsplash.com/premium_photo-1681335029094-846c770c06ae?auto=format&fit=crop&q=80&w=200', colors: [[255,0,60],[120,0,30]] },
-];
+// Color palette por género para el efecto visual de las cards
+const GENRE_COLORS = {
+  'Trap':       [[255,0,60],[180,0,40]],
+  'R&B':        [[0,200,255],[0,120,200]],
+  'Drill':      [[138,43,226],[60,0,120]],
+  'Synthwave':  [[138,43,226],[80,0,180]],
+  'Techno':     [[255,215,0],[200,150,0]],
+  'Industrial': [[255,140,0],[180,80,0]],
+  'Hard':       [[255,60,0],[180,30,0]],
+  'Bouncy':     [[0,255,150],[0,180,100]],
+  'Chill':      [[0,240,255],[0,150,200]],
+}
+const DEFAULT_COLORS = [[138,43,226],[80,0,180]]
+
+const formatPlays = (n) => {
+  if (!n) return '0'
+  if (n >= 1000000) return `${(n/1000000).toFixed(1)}M`
+  if (n >= 1000) return `${(n/1000).toFixed(1)}K`
+  return String(n)
+}
+
+const mapBeat = (b) => ({
+  id: b.id,
+  title: b.title,
+  producer: b.producers?.name ?? 'Productor',
+  bpm: b.bpm ?? 0,
+  key: b.key ?? '—',
+  genre: b.genre ?? '',
+  mood: b.mood ?? '',
+  tags: [b.genre, b.mood].filter(Boolean),
+  price: parseFloat(b.price) || 0,
+  plays: formatPlays(b.plays),
+  image: b.image_url ?? 'https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?auto=format&fit=crop&q=80&w=200',
+  audio_url: b.audio_url ?? null,
+  colors: GENRE_COLORS[b.genre] ?? DEFAULT_COLORS,
+})
 
 const LICENSES = [
   {
@@ -41,6 +69,8 @@ const LICENSES = [
 
 export default function BeatMarketplace() {
   const navigate = useNavigate();
+  const [beats, setBeats] = useState([]);
+  const [beatsLoading, setBeatsLoading] = useState(true);
   const [showLoading, setShowLoading] = useState(false);
   const [playingId, setPlayingId] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -53,6 +83,28 @@ export default function BeatMarketplace() {
   const [lyrics, setLyrics] = useState({});
   const [playerTab, setPlayerTab] = useState('licenses'); // 'licenses' | 'lyrics'
 
+  const audioRef = useRef(null);
+
+  // Motor de audio real
+  useEffect(() => {
+    if (!audioRef.current) audioRef.current = new Audio();
+    const audio = audioRef.current;
+    const track = beats.find(b => b.id === playingId);
+    if (!track?.audio_url) { audio.pause(); return; }
+    if (audio.src !== track.audio_url) {
+      audio.src = track.audio_url;
+      audio.load();
+    }
+    if (isPlaying) { audio.play().catch(() => {}); }
+    else { audio.pause(); }
+    return () => {}; // no cleanup — audio persists between renders
+  }, [playingId, isPlaying, beats]);
+
+  // Limpiar al desmontar
+  useEffect(() => {
+    return () => { audioRef.current?.pause(); };
+  }, []);
+
   const toggleWishlist = (id) => setWishlist(w => w.includes(id) ? w.filter(x => x !== id) : [...w, id]);
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -63,16 +115,29 @@ export default function BeatMarketplace() {
   const [filterGenre, setFilterGenre] = useState(null);
   const [filterMood, setFilterMood] = useState(null);
   const [bpmMin, setBpmMin] = useState(60);
-  const [bpmMax, setBpmMax] = useState(160);
+  const [bpmMax, setBpmMax] = useState(220);
   const [filterKey, setFilterKey] = useState(null);
   
+  // Cargar beats desde Supabase
+  useEffect(() => {
+    supabase
+      .from('beats')
+      .select('*, producers(name)')
+      .eq('is_published', true)
+      .order('created_at', { ascending: false })
+      .then(({ data }) => {
+        setBeats((data ?? []).map(mapBeat))
+        setBeatsLoading(false)
+      })
+  }, []);
+
   useEffect(() => {
     const onKey = (e) => { if (e.key === 'Escape') setIsPlayerExpanded(false); };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
-  const anyFilter = filterGenre || filterMood || filterKey || bpmMin > 60 || bpmMax < 160;
+  const anyFilter = filterGenre || filterMood || filterKey || bpmMin > 60 || bpmMax < 220;
   const clearFilters = () => {
     setFilterGenre(null);
     setFilterMood(null);
@@ -96,12 +161,12 @@ export default function BeatMarketplace() {
     setIsPlayerExpanded(true);
   };
 
-  const currentTrack = BEATS.find(b => b.id === playingId) || null;
+  const currentTrack = beats.find(b => b.id === playingId) || null;
 
-  const filteredBeats = BEATS.filter(b => {
-    if (filterGenre && !b.tags.includes(filterGenre)) return false;
-    if (filterMood && !b.tags.includes(filterMood)) return false;
-    if (b.bpm < bpmMin || b.bpm > bpmMax) return false;
+  const filteredBeats = beats.filter(b => {
+    if (filterGenre && b.genre !== filterGenre) return false;
+    if (filterMood && b.mood !== filterMood) return false;
+    if (b.bpm && (b.bpm < bpmMin || b.bpm > bpmMax)) return false;
     if (filterKey && b.key !== filterKey) return false;
     return true;
   });
@@ -372,6 +437,13 @@ export default function BeatMarketplace() {
               <span className="font-ui text-xs text-white/30">{filteredBeats.length} tracks</span>
             </div>
 
+            {beatsLoading && (
+              <div className="flex items-center justify-center py-20">
+                <div className="w-8 h-8 rounded-full border-2 border-accent border-t-transparent animate-spin" />
+              </div>
+            )}
+
+            {!beatsLoading && (<>
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
               {filteredBeats.map((beat, i) => {
                 const isCurrentlyPlaying = playingId === beat.id;
@@ -514,29 +586,25 @@ export default function BeatMarketplace() {
               })}
             </div>
 
-            {filteredBeats.length === 0 && (
+            {filteredBeats.length === 0 && !beatsLoading && (
               <div className="flex flex-col items-center justify-center py-20 text-white/30">
                 <Music className="w-12 h-12 mb-4 opacity-30" />
-                <p className="font-ui text-sm">No beats match your filters</p>
+                <p className="font-ui text-sm">{beats.length === 0 ? 'Aún no hay beats publicados' : 'No beats match your filters'}</p>
               </div>
             )}
-            
+            </>)}
+
             {/* ── Beatstars-style list ───────────────────────────── */}
             <div className="mt-10">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="font-heading font-bold text-xl text-white">New Releases</h2>
-                <span className="font-ui text-xs text-white/30">{BEATS.length * 2} tracks</span>
+                <span className="font-ui text-xs text-white/30">{filteredBeats.length} tracks</span>
               </div>
               {/* Header row */}
               <div className="hidden md:grid grid-cols-[24px_40px_1fr_80px_60px_60px_70px_36px] gap-4 px-3 pb-2 border-b border-white/5 font-ui text-[10px] text-white/25 uppercase tracking-widest">
                 <span>#</span><span/><span>Título</span><span>Género</span><span>BPM</span><span>Key</span><span className="text-right">Precio</span><span/>
               </div>
-              {[...BEATS, ...BEATS.map(b => ({
-                ...b,
-                id: b.id + 100,
-                title: b.title + ' (VIP)',
-                price: Math.round(b.price * 1.4),
-              }))].map((beat, i) => {
+              {filteredBeats.map((beat, i) => {
                 const isActive = playingId === beat.id;
                 const [r,g,b2] = beat.colors[0];
                 return (
@@ -877,7 +945,7 @@ export default function BeatMarketplace() {
                        <span className="font-ui text-[9px] text-accent border border-accent/20 px-2 py-0.5 rounded-full uppercase tracking-widest bg-accent/10">Slide to reveal</span>
                     </div>
                     <div className="flex gap-6 md:gap-8 overflow-x-auto pb-6 scrollbar-none snap-x mask-fade-right">
-                      {BEATS.filter(b => b.id !== playingId).slice(0, 4).map((b, i) => (
+                      {beats.filter(b => b.id !== playingId).slice(0, 4).map((b, i) => (
                         <div key={b.id} onClick={() => { setPlayingId(b.id); setIsPlaying(true); }} className="relative flex items-center group cursor-pointer shrink-0 snap-start w-56 md:w-64">
                            {/* Sleeve (Cover) */}
                            <div className="w-16 h-16 md:w-20 md:h-20 rounded-md shadow-[0_10px_30px_rgba(0,0,0,0.8)] z-20 relative overflow-hidden border border-white/20 bg-[#111] transition-transform duration-500 group-hover:-translate-y-2 group-hover:scale-105">
@@ -917,7 +985,7 @@ export default function BeatMarketplace() {
           <div className="flex items-center justify-between px-5 pt-6 pb-4 border-b border-white/5">
             <div>
               <h2 className="font-heading font-bold text-white text-lg">Cola</h2>
-              <p className="font-ui text-xs text-white/30 mt-0.5">{BEATS.filter(b => b.id !== playingId).length} beats pendientes</p>
+              <p className="font-ui text-xs text-white/30 mt-0.5">{beats.filter(b => b.id !== playingId).length} beats pendientes</p>
             </div>
             <button onClick={() => setShowQueue(false)} className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-white/50 hover:text-white transition-all">
               <ChevronDown className="w-4 h-4 rotate-[-90deg]"/>
@@ -941,7 +1009,7 @@ export default function BeatMarketplace() {
           <div className="flex-1 overflow-y-auto scrollbar-none px-5 py-4">
             <p className="font-ui text-[10px] text-white/30 uppercase tracking-widest mb-3">Siguiente</p>
             <div className="flex flex-col gap-1">
-              {BEATS.filter(b => b.id !== playingId).map((b, i) => (
+              {beats.filter(b => b.id !== playingId).map((b, i) => (
                 <div key={b.id} onClick={() => { setPlayingId(b.id); setIsPlaying(true); }} className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/5 cursor-pointer transition-colors group">
                   <span className="font-ui text-xs text-white/20 w-4 text-right shrink-0">{i+1}</span>
                   <img src={b.image} className="w-9 h-9 rounded-lg object-cover border border-white/10 shrink-0"/>
