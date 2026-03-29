@@ -41,6 +41,8 @@ export default function BookStudio() {
   const [selectedDuration, setSelectedDuration] = useState(1);
   const [isPaying, setIsPaying] = useState(false);
   const [clientEmail, setClientEmail] = useState('');
+  const [clientPhone, setClientPhone] = useState('');
+  const [sessionUser, setSessionUser] = useState(null);
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [pendingBookingId, setPendingBookingId] = useState(null);
@@ -51,6 +53,15 @@ export default function BookStudio() {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [step]);
+
+  // Pre-rellenar email si el usuario está logueado
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) return
+      setSessionUser(session.user)
+      setClientEmail(session.user.email ?? '')
+    })
+  }, []);
 
   useEffect(() => {
     const fetchStudios = async () => {
@@ -312,12 +323,26 @@ export default function BookStudio() {
                       />
                     </div>
                     <div>
-                      <label className="font-mono text-[10px] text-text/50 uppercase tracking-widest block mb-2">Email de Contacto *</label>
+                      <label className="font-mono text-[10px] text-text/50 uppercase tracking-widest block mb-2">
+                        Email de Contacto *
+                        {sessionUser && <span className="ml-2 text-accent/60 normal-case tracking-normal">· de tu cuenta</span>}
+                      </label>
                       <input
                         type="email"
                         value={clientEmail}
-                        onChange={e => setClientEmail(e.target.value)}
+                        onChange={e => !sessionUser && setClientEmail(e.target.value)}
                         placeholder="tu@email.com"
+                        readOnly={!!sessionUser}
+                        className={`w-full border rounded-xl py-4 px-4 outline-none transition-colors font-mono ${sessionUser ? 'bg-transparent border-white/8 text-white/40 cursor-default' : 'bg-white/5 border-white/10 text-white focus:border-accent'}`}
+                      />
+                    </div>
+                    <div>
+                      <label className="font-mono text-[10px] text-text/50 uppercase tracking-widest block mb-2">Teléfono *</label>
+                      <input
+                        type="tel"
+                        value={clientPhone}
+                        onChange={e => setClientPhone(e.target.value)}
+                        placeholder="600 000 000"
                         className="w-full bg-white/5 border border-white/10 rounded-xl py-4 px-4 text-white outline-none focus:border-accent transition-colors font-mono"
                       />
                     </div>
@@ -345,7 +370,7 @@ export default function BookStudio() {
                   <div className="mt-auto pt-8">
                     <button
                       onClick={() => setStep(4)}
-                      disabled={!artistName.trim() || !clientEmail.includes('@')}
+                      disabled={!artistName.trim() || !clientEmail.includes('@') || !clientPhone.trim()}
                       className="w-full py-4 rounded-xl bg-accent text-white font-mono font-bold uppercase tracking-widest hover:bg-[#9d3df2] transition-all disabled:opacity-50 shadow-lg"
                     >
                       Elegir Horario <Calendar className="inline ml-2 w-4 h-4" />
@@ -402,7 +427,7 @@ export default function BookStudio() {
                     {selectedDate && selectedSlot && (
                       <div className="pt-4 border-t border-white/5">
                         <p className="text-[10px] text-text/40 font-mono uppercase tracking-widest mb-1">Fecha y Hora</p>
-                        <p className="text-sm text-white font-mono">{selectedDate} · {selectedSlot} → {selectedSlot && (() => { const h = parseInt(selectedSlot) + selectedDuration; return `${String(h).padStart(2,'0')}:00` })()}</p>
+                        <p className="text-sm text-white font-mono">{selectedDate} · {selectedSlot} → {selectedSlot && (() => { const h = parseInt(selectedSlot) + selectedDuration; return `${String(h).padStart(2, '0')}:00` })()}</p>
                         <p className="text-[10px] text-text/40 font-mono mt-0.5">{selectedDuration}h · {parseFloat(selectedSpace?.price_per_hour) || 0}€/h</p>
                       </div>
                     )}
@@ -442,6 +467,7 @@ export default function BookStudio() {
 
       <style>{`
         @keyframes fade-in { 0% { opacity: 0; transform: translateY(10px); } 100% { opacity: 1; transform: translateY(0); } }
+        input:-webkit-autofill, input:-webkit-autofill:focus { -webkit-box-shadow: 0 0 0 1000px #0a0a0a inset !important; -webkit-text-fill-color: rgba(255,255,255,0.4) !important; }
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(138, 43, 226, 0.2); border-radius: 10px; }
