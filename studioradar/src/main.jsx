@@ -12,6 +12,7 @@ import ProducerDashboard from './ProducerDashboard.jsx'
 import ProtectedRoute from './components/ProtectedRoute.jsx'
 import CheckoutPage from './CheckoutPage.jsx'
 import Legal from './Legal.jsx'
+import UserLogin from './UserLogin.jsx'
 import './index.css'
 
 createRoot(document.getElementById('root')).render(
@@ -30,6 +31,7 @@ createRoot(document.getElementById('root')).render(
         } />
         <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="/legal" element={<Legal />} />
+        <Route path="/login" element={<UserLogin />} />
       </Routes>
     </BrowserRouter>
   </StrictMode>,
