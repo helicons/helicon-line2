@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Play, Pause, Search, Filter, SlidersHorizontal, ShoppingCart, Heart, MoreHorizontal, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, SkipBack, SkipForward, Volume2, Activity, ArrowLeft, TrendingUp, Music, Keyboard, Zap, Pencil } from 'lucide-react';
+import { Play, Pause, Search, Filter, SlidersHorizontal, ShoppingCart, Heart, MoreHorizontal, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, SkipBack, SkipForward, Volume2, Activity, ArrowLeft, TrendingUp, Music, Keyboard, Zap, Pencil, X, Eye, Repeat, Shuffle, List, User } from 'lucide-react';
 import { PRODUCERS, PokemonCard } from './ProducerProfiles';
 import { supabase } from './lib/supabase';
 
@@ -79,9 +79,25 @@ export default function BeatMarketplace() {
   const [selectedLicense, setSelectedLicense] = useState('basic');
   const [showQueue, setShowQueue] = useState(false);
   const [showCheckout, setShowCheckout] = useState(false);
-  const [wishlist, setWishlist] = useState([]);
+  
+  const [wishlist, setWishlist] = useState(() => {
+    try {
+      const w = localStorage.getItem('helicon_wishlist');
+      return w ? JSON.parse(w) : [];
+    } catch (e) { return []; }
+  });
+  
   const [lyrics, setLyrics] = useState({});
   const [playerTab, setPlayerTab] = useState('licenses'); // 'licenses' | 'lyrics'
+
+  // Audio state
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [volume, setVolume] = useState(1);
+  const [isLooping, setIsLooping] = useState(false);
+  const [isShuffle, setIsShuffle] = useState(false);
+  const [isFocusMode, setIsFocusMode] = useState(false);
+  const [showFullCover, setShowFullCover] = useState(false);
 
   const audioRef = useRef(null);
 
@@ -89,23 +105,70 @@ export default function BeatMarketplace() {
   useEffect(() => {
     if (!audioRef.current) audioRef.current = new Audio();
     const audio = audioRef.current;
+    
+    const onTimeUpdate = () => setCurrentTime(audio.currentTime);
+    const onLoadedMetadata = () => setDuration(audio.duration);
+    const onEnded = () => {
+      if (isLooping) {
+        audio.currentTime = 0;
+        audio.play().catch(() => {});
+      } else if (isShuffle) {
+        const nextIdx = Math.floor(Math.random() * beats.length);
+        if (beats[nextIdx]) {
+           setPlayingId(beats[nextIdx].id);
+           setIsPlaying(true);
+        }
+      } else {
+        // play next sequentially
+        const currentIdx = beats.findIndex(b => b.id === playingId);
+        if (currentIdx !== -1 && currentIdx < beats.length - 1) {
+           setPlayingId(beats[currentIdx + 1].id);
+           setIsPlaying(true);
+        } else {
+           setIsPlaying(false);
+        }
+      }
+    };
+
+    audio.addEventListener('timeupdate', onTimeUpdate);
+    audio.addEventListener('loadedmetadata', onLoadedMetadata);
+    audio.addEventListener('ended', onEnded);
+
     const track = beats.find(b => b.id === playingId);
-    if (!track?.audio_url) { audio.pause(); return; }
-    if (audio.src !== track.audio_url) {
-      audio.src = track.audio_url;
-      audio.load();
+    if (!track?.audio_url) { audio.pause(); }
+    else {
+      if (audio.src !== track.audio_url) {
+        audio.src = track.audio_url;
+        audio.load();
+      }
+      audio.volume = volume;
+      if (isPlaying) { audio.play().catch(() => {}); }
+      else { audio.pause(); }
     }
-    if (isPlaying) { audio.play().catch(() => {}); }
-    else { audio.pause(); }
-    return () => {}; // no cleanup — audio persists between renders
-  }, [playingId, isPlaying, beats]);
+    
+    return () => {
+       audio.removeEventListener('timeupdate', onTimeUpdate);
+       audio.removeEventListener('loadedmetadata', onLoadedMetadata);
+       audio.removeEventListener('ended', onEnded);
+    };
+  }, [playingId, isPlaying, beats, isLooping, isShuffle]);
+
+  useEffect(() => {
+    if (audioRef.current) audioRef.current.volume = volume;
+  }, [volume]);
 
   // Limpiar al desmontar
   useEffect(() => {
     return () => { audioRef.current?.pause(); };
   }, []);
 
-  const toggleWishlist = (id) => setWishlist(w => w.includes(id) ? w.filter(x => x !== id) : [...w, id]);
+  const toggleWishlist = (id) => {
+    setWishlist(w => {
+      const newW = w.includes(id) ? w.filter(x => x !== id) : [...w, id];
+      localStorage.setItem('helicon_wishlist', JSON.stringify(newW));
+      return newW;
+    });
+  };
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isSidebarHovered, setIsSidebarHovered] = useState(false);
@@ -163,11 +226,49 @@ export default function BeatMarketplace() {
 
   const currentTrack = beats.find(b => b.id === playingId) || null;
 
+  const RELATIVE_KEYS = {
+    'C Maj': 'A Min', 'A Min': 'C Maj',
+    'C# Maj': 'A# Min', 'A# Min': 'C# Maj',
+    'D Maj': 'B Min', 'B Min': 'D Maj',
+    'D# Maj': 'C Min', 'C Min': 'D# Maj',
+    'E Maj': 'C# Min', 'C# Min': 'E Maj',
+    'F Maj': 'D Min', 'D Min': 'F Maj',
+    'F# Maj': 'D# Min', 'D# Min': 'F# Maj',
+    'G Maj': 'E Min', 'E Min': 'G Maj',
+    'G# Maj': 'F Min', 'F Min': 'G# Maj',
+    'A Maj': 'F# Min', 'F# Min': 'A Maj',
+    'A# Maj': 'G Min', 'G Min': 'A# Maj',
+    'B Maj': 'G# Min', 'G# Min': 'B Maj'
+  };
+
   const filteredBeats = beats.filter(b => {
     if (filterGenre && b.genre !== filterGenre) return false;
     if (filterMood && b.mood !== filterMood) return false;
-    if (b.bpm && (b.bpm < bpmMin || b.bpm > bpmMax)) return false;
-    if (filterKey && b.key !== filterKey) return false;
+    
+    // Robust BPM Match (Allows half-time and double-time feeling)
+    const isBpmActive = bpmMin > 60 || bpmMax < 220;
+    if (isBpmActive) {
+      if (!b.bpm || b.bpm === 0) return false;
+      const bpm = Number(b.bpm);
+      const tolerance = 2;
+      const isNormal = bpm >= (bpmMin - tolerance) && bpm <= (bpmMax + tolerance);
+      const isHalf = (bpm * 2) >= (bpmMin - tolerance) && (bpm * 2) <= (bpmMax + tolerance);
+      const isDouble = (bpm / 2) >= (bpmMin - tolerance) && (bpm / 2) <= (bpmMax + tolerance);
+      if (!isNormal && !isHalf && !isDouble) return false;
+    }
+    
+    // Perfect Key Match (Allows Relative Minor/Major - Harmonic Mixing)
+    if (filterKey) {
+      if (!b.key) return false;
+      const normalize = k => typeof k === 'string' ? k.toLowerCase().replace('minor', 'min').replace('major', 'maj').replace(/[^a-z0-9#]/g, '') : '';
+      
+      const targetQuery = normalize(filterKey);
+      const relativeQuery = RELATIVE_KEYS[filterKey] ? normalize(RELATIVE_KEYS[filterKey]) : '';
+      const beatKey = normalize(b.key);
+      
+      if (beatKey !== targetQuery && beatKey !== relativeQuery) return false;
+    }
+    
     return true;
   });
 
@@ -237,6 +338,9 @@ export default function BeatMarketplace() {
               </span>
             )}
           </button>
+          <Link to="/perfil" className="relative p-2 rounded-full hover:bg-white/5 transition-colors" title="Perfil">
+            <User className="w-5 h-5 text-text/80 hover:text-white" />
+          </Link>
         </div>
       </nav>
 
@@ -667,10 +771,26 @@ export default function BeatMarketplace() {
                     <ChevronDown className="w-6 h-6 text-white rotate-180 drop-shadow-md" />
                  </div>
               </div>
-              <div className="flex flex-col min-w-0">
+              <div className="flex flex-col min-w-0 pr-2">
                 <span className="font-heading font-bold text-base text-white truncate drop-shadow-sm">{currentTrack.title}</span>
                 <span className="font-ui text-xs text-white/50 truncate uppercase tracking-wider">{currentTrack.producer}</span>
               </div>
+              <button 
+                 onClick={(e) => {
+                   e.stopPropagation();
+                   const newFocus = !isFocusMode;
+                   setIsFocusMode(newFocus);
+                   if (newFocus) {
+                     setIsPlayerExpanded(true);
+                     setPlayerTab('lyrics');
+                     setIsLooping(true);
+                   }
+                 }}
+                 className={`ml-2 w-10 h-10 hidden md:flex shrink-0 items-center justify-center rounded-xl transition-all duration-500 shadow-md border ${isFocusMode ? 'bg-[#1A1A1A] border-accent shadow-[0_0_15px_rgba(138,43,226,0.3)]' : 'bg-white/5 hover:bg-white/10 border-white/5'}`}
+                 title="Modo Concentración"
+               >
+                 <Eye className={`w-4 h-4 transition-all duration-500 ${isFocusMode ? 'text-[#e0b0ff] drop-shadow-[0_0_8px_rgba(224,176,255,0.8)] fill-[#8A2BE2]/20' : 'text-gray-400 drop-shadow-sm'}`} />
+               </button>
             </>
           )}
         </div>
@@ -688,19 +808,30 @@ export default function BeatMarketplace() {
             <button className="text-white/40 hover:text-white transition-colors hover:scale-110"><SkipForward className="w-5 h-5 fill-current" /></button>
           </div>
           <div className="w-full hidden md:flex items-center gap-3 font-ui text-[10px] text-white/30 font-medium">
-            <span className="w-8 text-right">0:00</span>
-            <div className="flex-1 h-1.5 bg-white/5 rounded-full relative cursor-pointer overflow-hidden">
-              <div
-                className="absolute left-0 top-0 bottom-0 rounded-full"
-                style={{
-                  background: isPlaying ? '#8A2BE2' : 'rgba(255,255,255,0.3)',
-                  width: '0%',
-                  animation: isPlaying ? 'progress-bar 165s linear forwards' : 'none',
-                  transition: 'background 0.3s',
-                }}
-              />
+            <span className="w-8 text-right">{Math.floor(currentTime/60)}:{(Math.floor(currentTime%60)).toString().padStart(2, '0')}</span>
+            <div className="flex-1 h-1.5 relative flex items-center group">
+               <div className="absolute inset-0 bg-white/5 rounded-full overflow-hidden pointer-events-none">
+                 <div
+                   className="absolute left-0 top-0 bottom-0 rounded-full animate-smoke"
+                   style={{
+                     width: duration ? `${(currentTime / duration) * 100}%` : '0%',
+                     background: `linear-gradient(90deg, #8A2BE2, #C471ED, #8A2BE2)`,
+                     backgroundSize: '200% 100%',
+                     transition: 'width 0.1s linear',
+                   }}
+                 />
+               </div>
+               <input 
+                  type="range" min="0" max={duration || 100} value={currentTime}
+                  onChange={e => { if (audioRef.current) audioRef.current.currentTime = e.target.value; }}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+               />
+               <div 
+                  className="w-3 h-3 rounded-full bg-white shadow-[0_0_10px_white] absolute pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity"
+                  style={{ left: `calc(${(currentTime / duration) * 100 || 0}% - 6px)` }}
+               />
             </div>
-            <span className="w-8">2:45</span>
+            <span className="w-8">{duration ? `${Math.floor(duration/60)}:${(Math.floor(duration%60)).toString().padStart(2, '0')}` : '0:00'}</span>
           </div>
         </div>
 
@@ -715,7 +846,7 @@ export default function BeatMarketplace() {
              {currentTrack && lyrics[currentTrack.id] && <span className="absolute -top-1 -right-1 w-2 h-2 bg-accent rounded-full"/>}
            </button>
            <button onClick={() => setShowQueue(q => !q)} className={`transition-colors relative ${showQueue ? 'text-white' : 'text-white/40 hover:text-white'}`} title="Cola de reproducción">
-              <Activity className="w-5 h-5" />
+              <List className="w-5 h-5" />
               {showQueue && <span className="absolute -top-1 -right-1 w-2 h-2 bg-accent rounded-full"/>}
            </button>
            <button onClick={() => setShowCheckout(true)} className="relative text-white/40 hover:text-white transition-colors" title="Carrito">
@@ -723,9 +854,27 @@ export default function BeatMarketplace() {
               {cart.length > 0 && <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-accent rounded-full font-ui text-[9px] font-bold flex items-center justify-center text-white">{cart.length}</span>}
            </button>
            <div className="flex items-center gap-3">
+              <button 
+                onClick={(e) => { e.stopPropagation(); toggleWishlist(currentTrack.id); }}
+                className="text-white/40 hover:text-accent transition-colors hidden lg:block mr-2"
+                title="Me gusta"
+              >
+                <Heart className="w-5 h-5" style={{ color: wishlist.includes(currentTrack?.id) ? '#8A2BE2' : '', fill: wishlist.includes(currentTrack?.id) ? '#8A2BE2' : 'none' }} />
+              </button>
               <Volume2 className="w-5 h-5 text-white/40" />
-              <div className="w-24 h-1.5 bg-white/5 rounded-full overflow-hidden cursor-pointer group">
-                 <div className="w-2/3 h-full bg-white/50 group-hover:bg-white transition-colors rounded-full"></div>
+              <div className="relative w-24 h-1.5 flex items-center group" onClick={(e) => e.stopPropagation()}>
+                 <div className="absolute inset-0 bg-white/5 rounded-full overflow-hidden pointer-events-none">
+                    <div className="h-full bg-white/40 group-hover:bg-accent transition-colors rounded-full" style={{ width: `${volume * 100}%` }}></div>
+                 </div>
+                 <input 
+                    type="range" min="0" max="1" step="0.01" value={volume}
+                    onChange={e => setVolume(Number(e.target.value))}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                 />
+                 <div 
+                    className="w-2.5 h-2.5 rounded-full bg-white shadow-[0_0_8px_white] absolute pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity"
+                    style={{ left: `calc(${volume * 100}% - 5px)` }}
+                 />
               </div>
            </div>
         </div>
@@ -743,25 +892,31 @@ export default function BeatMarketplace() {
       <div 
          className={`fixed top-20 left-1/2 -translate-x-1/2 w-[98vw] md:w-[94vw] max-w-[1000px] z-[100] transition-all duration-[800ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${isPlayerExpanded && currentTrack ? 'translate-y-0 opacity-100 pointer-events-auto' : '-translate-y-[130%] opacity-0 pointer-events-none scale-95'}`}
       >
-         <div className="w-full bg-[#0a0a0a]/95 backdrop-blur-[40px] rounded-[2rem] md:rounded-[3rem] border border-white/10 shadow-[0_50px_100px_rgba(0,0,0,0.9),inset_0_2px_10px_rgba(255,255,255,0.05)] overflow-hidden max-h-[80vh] overflow-y-auto flex flex-col relative before:absolute before:inset-0 before:pointer-events-none before:bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.05)_0%,transparent_60%)] scrollbar-none">
+         <div className="w-full bg-[#0a0a0a]/95 backdrop-blur-[40px] rounded-[2rem] md:rounded-[3rem] border border-white/10 shadow-[0_50px_100px_rgba(0,0,0,0.9),inset_0_2px_10px_rgba(255,255,255,0.05)] overflow-hidden max-h-[80vh] flex flex-col relative before:absolute before:inset-0 before:pointer-events-none before:bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.05)_0%,transparent_60%)]">
            
            {currentTrack && isPlaying && (
               <div className="absolute inset-0 opacity-20 pointer-events-none mix-blend-screen transition-opacity duration-1000" style={{ background: `radial-gradient(circle at 0% 0%, rgba(${currentTrack.colors[0].join(',')}, 0.8) 0%, transparent 50%)` }} />
            )}
 
-           {/* Close Button Inside Console */}
-           <button 
-             onClick={() => setIsPlayerExpanded(false)} 
-             className="absolute top-4 right-4 md:top-8 md:right-8 w-10 h-10 md:w-12 md:h-12 bg-white/5 hover:bg-white/10 border border-white/10 rounded-full flex items-center justify-center text-white/50 hover:text-white transition-all z-30 group shadow-lg"
-           >
-             <ChevronDown className="w-5 h-5 md:w-6 md:h-6 transition-transform group-hover:translate-y-0.5 drop-shadow-md" />
-           </button>
+           {/* Controles modo Focus / Cerrar Inside Console */}
+           <div className="absolute top-4 right-4 md:top-8 md:right-8 flex items-center gap-4 z-30">
+               <button 
+                 onClick={() => { setIsPlayerExpanded(false); setIsFocusMode(false); }} 
+                 className="w-10 h-10 md:w-12 md:h-12 bg-white/5 hover:bg-white/10 border border-white/10 rounded-full flex items-center justify-center text-white/50 hover:text-white transition-all group shadow-lg"
+               >
+                 <ChevronDown className="w-5 h-5 md:w-6 md:h-6 transition-transform group-hover:translate-y-0.5 drop-shadow-md" />
+               </button>
+           </div>
 
-           <div className="flex flex-col md:flex-row items-center md:items-stretch gap-6 md:gap-12 p-6 md:p-12 relative z-10">
+           <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 relative">
+             <div className="flex flex-col md:flex-row items-center md:items-stretch gap-6 md:gap-12 p-6 md:p-12 relative z-10">
               
               {/* Left Model: Big 3D Album */}
               <div className="w-40 md:w-72 shrink-0 perspective-[1000px] group z-20">
-                 <div className="relative w-full aspect-square rounded-[1.5rem] md:rounded-[2rem] shadow-[0_30px_60px_rgba(0,0,0,0.8)] overflow-hidden transition-transform duration-700 ease-out preserve-3d group-hover:rotate-y-[8deg] group-hover:-rotate-x-[5deg]">
+                 <div 
+                   onClick={() => setShowFullCover(true)}
+                   className="relative w-full aspect-square rounded-[1.5rem] md:rounded-[2rem] shadow-[0_30px_60px_rgba(0,0,0,0.8)] overflow-hidden transition-transform duration-700 ease-out preserve-3d group-hover:rotate-y-[8deg] group-hover:-rotate-x-[5deg] cursor-pointer ring-1 ring-white/10 group-hover:ring-accent/50 group-hover:shadow-[0_0_50px_rgba(138,43,226,0.3)]"
+                 >
                     <img src={currentTrack?.image} className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-[3s] ease-out" />
                     <div className="absolute inset-0 ring-1 ring-inset ring-white/20 rounded-[1.5rem] md:rounded-[2rem] mix-blend-overlay"></div>
                     <div className="absolute inset-0 bg-gradient-to-tr from-black/80 via-transparent to-white/10 pointer-events-none"></div>
@@ -796,27 +951,44 @@ export default function BeatMarketplace() {
 
                  {/* Top Center iPod Scrubber */}
                  <div className="w-full mb-6 md:mb-10 px-4 md:px-0">
-                    <div className="flex justify-between items-center mb-3 font-ui text-[10px] text-white/40 font-bold tracking-widest">
-                      <span>0:45</span>
-                      <span>2:45</span>
-                    </div>
-                    <div className="h-2.5 bg-black/40 rounded-full w-full relative overflow-hidden cursor-pointer shadow-inner border border-white/5">
-                      <div
-                        className="absolute left-0 top-0 bottom-0 rounded-full"
-                        style={{
-                          background: currentTrack ? `rgb(${currentTrack.colors[0].join(',')})` : '#fff',
-                          boxShadow: currentTrack && isPlaying ? `0 0 16px rgba(${currentTrack.colors[0].join(',')},0.8)` : 'none',
-                          width: '0%',
-                          animation: isPlaying ? 'progress-bar 165s linear forwards' : 'none',
-                          transition: 'background 0.3s',
-                        }}
-                      />
-                    </div>
+                     <div className="flex justify-between items-center mb-3 font-ui text-[10px] text-white/40 font-bold tracking-widest">
+                       <span>{Math.floor(currentTime/60)}:{(Math.floor(currentTime%60)).toString().padStart(2, '0')}</span>
+                       <span>{duration ? `${Math.floor(duration/60)}:${(Math.floor(duration%60)).toString().padStart(2, '0')}` : '0:00'}</span>
+                     </div>
+                     <div className="w-full relative h-2.5 flex items-center group">
+                        <div className="absolute inset-0 bg-black/40 rounded-full overflow-hidden pointer-events-none shadow-inner border border-white/5">
+                           <div
+                             className="absolute left-0 top-0 bottom-0 rounded-full animate-smoke"
+                             style={{
+                               width: duration ? `${(currentTime / duration) * 100}%` : '0%',
+                               background: currentTrack ? `linear-gradient(90deg, rgba(${currentTrack.colors[0].join(',')}, 0.8), rgba(${currentTrack.colors[1].join(',')}, 1), rgba(${currentTrack.colors[0].join(',')}, 0.8))` : '#8A2BE2',
+                               backgroundSize: '200% 100%',
+                               boxShadow: currentTrack && isPlaying ? `0 0 16px rgba(${currentTrack.colors[0].join(',')},0.8)` : 'none',
+                               transition: 'width 0.1s linear',
+                             }}
+                           />
+                        </div>
+                        <input 
+                           type="range" min="0" max={duration || 100} value={currentTime}
+                           onChange={e => { if (audioRef.current) audioRef.current.currentTime = e.target.value; }}
+                           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                        />
+                        <div 
+                           className="w-4 h-4 rounded-full bg-white shadow-[0_0_15px_white] absolute pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity"
+                           style={{ left: `calc(${(currentTime / duration) * 100 || 0}% - 8px)` }}
+                        />
+                     </div>
                  </div>
 
                  {/* Massive tactile play button controls */}
-                 <div className="flex items-center justify-center md:justify-start gap-6 md:gap-10 border-b border-white/5 pb-8 md:pb-10">
-                    <button className="w-12 h-12 md:w-16 md:h-16 flex items-center justify-center bg-surface border border-white/10 rounded-2xl text-white/50 hover:text-white transition-all shadow-[0_6px_0_rgba(0,0,0,0.4)] active:translate-y-[6px] active:shadow-none hover:-translate-y-1 hover:bg-white/5">
+                 <div className="flex items-center justify-center md:justify-start gap-4 md:gap-8 border-b border-white/5 pb-8 md:pb-10">
+                    <button 
+                       onClick={() => setIsShuffle(!isShuffle)}
+                       className={`w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-2xl transition-all shadow-[0_4px_0_rgba(0,0,0,0.4)] active:translate-y-[4px] active:shadow-none hover:-translate-y-1 hover:bg-white/5 ${isShuffle ? 'bg-accent/20 border-accent/40 text-accent' : 'bg-surface border-white/10 text-white/50'}`}
+                    >
+                       <Shuffle className="w-4 h-4 md:w-5 md:h-5" />
+                    </button>
+                    <button className="w-12 h-12 md:w-14 md:h-14 flex items-center justify-center bg-surface border border-white/10 rounded-2xl text-white/50 hover:text-white transition-all shadow-[0_6px_0_rgba(0,0,0,0.4)] active:translate-y-[6px] active:shadow-none hover:-translate-y-1 hover:bg-white/5">
                        <SkipBack className="w-5 h-5 md:w-6 md:h-6 fill-current" />
                     </button>
                     <button 
@@ -825,29 +997,34 @@ export default function BeatMarketplace() {
                     >
                        {isPlaying ? <Pause className="w-8 h-8 md:w-10 md:h-10 fill-current drop-shadow-md" /> : <Play className="w-8 h-8 md:w-10 md:h-10 fill-current ml-2 drop-shadow-md" />}
                     </button>
-                    <button className="w-12 h-12 md:w-16 md:h-16 flex items-center justify-center bg-surface border border-white/10 rounded-2xl text-white/50 hover:text-white transition-all shadow-[0_6px_0_rgba(0,0,0,0.4)] active:translate-y-[6px] active:shadow-none hover:-translate-y-1 hover:bg-white/5">
+                    <button className="w-12 h-12 md:w-14 md:h-14 flex items-center justify-center bg-surface border border-white/10 rounded-2xl text-white/50 hover:text-white transition-all shadow-[0_6px_0_rgba(0,0,0,0.4)] active:translate-y-[6px] active:shadow-none hover:-translate-y-1 hover:bg-white/5">
                        <SkipForward className="w-5 h-5 md:w-6 md:h-6 fill-current" />
+                    </button>
+                    <button 
+                       onClick={() => setIsLooping(!isLooping)}
+                       className={`w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-2xl transition-all shadow-[0_4px_0_rgba(0,0,0,0.4)] active:translate-y-[4px] active:shadow-none hover:-translate-y-1 hover:bg-white/5 ${isLooping ? 'bg-accent/20 border-accent/40 text-accent' : 'bg-surface border-white/10 text-white/50'}`}
+                    >
+                       <Repeat className="w-4 h-4 md:w-5 md:h-5" />
                     </button>
                  </div>
 
                  {/* Tabs: Licencias | Letra */}
-                 <div className="w-full pt-6 md:pt-8 px-2 md:px-0">
-                   <div className="flex gap-1 mb-4 bg-white/5 p-1 rounded-xl border border-white/5">
+                 <div className="w-full pt-6 md:pt-8 px-2 md:px-0 flex gap-3">
+                   <div className="flex-1 flex gap-1 bg-white/5 p-1 rounded-xl border border-white/5">
                      {[{id:'licenses',label:'Licencias'},{id:'lyrics',label:'Escribir Letra'}].map(tab => (
                        <button
                          key={tab.id}
                          onClick={() => setPlayerTab(tab.id)}
                          className="flex-1 py-2 rounded-lg font-ui text-xs font-bold tracking-wide transition-all duration-200"
                          style={{
-                           background: playerTab === tab.id ? currentTrack ? `rgba(${currentTrack.colors[0].join(',')},0.2)` : 'rgba(255,255,255,0.1)' : 'transparent',
+                           background: playerTab === tab.id ? 'rgba(255,255,255,0.1)' : 'transparent',
                            color: playerTab === tab.id ? '#fff' : 'rgba(255,255,255,0.4)',
-                           borderBottom: playerTab === tab.id && currentTrack ? `1px solid rgba(${currentTrack.colors[0].join(',')},0.5)` : '1px solid transparent',
+                           boxShadow: playerTab === tab.id ? '0 4px 12px rgba(0,0,0,0.5)' : 'none',
                          }}
-                       >
-                         {tab.label}
-                       </button>
+                       >{tab.label}</button>
                      ))}
                    </div>
+                 </div>
 
                    {playerTab === 'lyrics' ? (
                      <div className="flex flex-col gap-2">
@@ -936,7 +1113,6 @@ export default function BeatMarketplace() {
                      })}
                    </div>
                    )}
-                 </div>
 
                  {/* Vinyl Sleeve Up Next Queue */}
                  <div className="w-full pt-6 md:pt-8 px-2 md:px-0">
@@ -975,6 +1151,7 @@ export default function BeatMarketplace() {
                  </div>
 
               </div>
+             </div>
            </div>
          </div>
       </div>
@@ -1085,6 +1262,26 @@ export default function BeatMarketplace() {
               </div>
             )}
           </div>
+        </div>
+      )}
+      {/* FULL COVER MODAL */}
+      {showFullCover && currentTrack && (
+        <div 
+           className="fixed inset-0 z-[10000] flex items-center justify-center p-4 md:p-10 bg-black/95 backdrop-blur-2xl animate-in fade-in duration-300"
+           onClick={() => setShowFullCover(false)}
+        >
+          <img 
+            src={currentTrack.image} 
+            className="w-full max-w-[80vmin] h-auto aspect-square object-contain rounded-2xl shadow-[0_0_100px_rgba(255,255,255,0.1)] cursor-zoom-out animate-in zoom-in-95 duration-500 ring-1 ring-white/10" 
+            alt="Full Cover" 
+            onClick={(e) => { e.stopPropagation(); setShowFullCover(false); }}
+          />
+          <button 
+            className="absolute top-6 right-6 md:top-10 md:right-10 w-12 h-12 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white/50 hover:text-white transition-colors cursor-pointer"
+            onClick={() => setShowFullCover(false)}
+          >
+            <X className="w-6 h-6" />
+          </button>
         </div>
       )}
     </div>
