@@ -1,10 +1,6 @@
 // Edge Function: create-stripe-checkout
-// Crea una sesión de Stripe Checkout vinculada a un booking_id
-// Input:  { studioId, studioName, bookingId, artistName, totalPrice }
-// Output: { url: string }
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import Stripe from "https://esm.sh/stripe@14.21.0?target=deno";
+import Stripe from "https://esm.sh/stripe?target=deno&no-check";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -12,55 +8,75 @@ const CORS = {
 };
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: CORS });
-  }
+  if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
 
   try {
-    const { studioId, studioName, bookingId, artistName, totalPrice } = await req.json();
+    const body = await req.json();
+    const { type = 'studio' } = body;
+    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
 
-    if (!bookingId) {
-      return Response.json({ error: "bookingId es requerido" }, { status: 400, headers: CORS });
+    if (!stripeKey) {
+      return Response.json({ error: "STRIPE_SECRET_KEY no configurada" }, { status: 500, headers: CORS });
     }
 
-    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY")!, {
+    const stripe = new Stripe(stripeKey, {
       apiVersion: "2024-06-20",
+      httpClient: Stripe.createFetchHttpClient(),
     });
 
     const origin = req.headers.get("origin") ?? "http://localhost:5173";
 
-    const session = await stripe.checkout.sessions.create({
+    let sessionConfig: any = {
       payment_method_types: ["card"],
-      line_items: [
-        {
+      mode: "payment",
+      expires_at: Math.floor(Date.now() / 1000) + 1800,
+      metadata: { type },
+      customer_email: body.customerEmail || null, // Pre-rellenar email si viene del frontend
+    };
+
+    if (type === 'beat') {
+      const { beatId, beatTitle, licenseType, price, producerName } = body;
+
+      sessionConfig = {
+        ...sessionConfig,
+        line_items: [{
           price_data: {
             currency: "eur",
             product_data: {
-              name: `Sesión en ${studioName}`,
-              description: `Reserva para ${artistName}`,
+              name: `Beat: ${beatTitle || 'Sin título'}`,
+              description: `Licencia ${licenseType} - Prod. by ${producerName || 'Producer'}`,
             },
-            unit_amount: Math.round(totalPrice * 100), // Stripe trabaja en céntimos
+            unit_amount: Math.round(price * 100),
           },
           quantity: 1,
-        },
-      ],
-      mode: "payment",
-      success_url: `${origin}/book-studio?success=true&booking=${bookingId}`,
-      cancel_url: `${origin}/book-studio?cancelled=true&booking=${bookingId}`,
-      client_reference_id: bookingId,  // Para recuperarlo en el webhook
-      metadata: {
-        booking_id: bookingId,
-        studio_id: studioId,
-        studio_name: studioName,
-        artist_name: artistName,
-      },
-      // Sesión expira en 30 min — pg_cron cancela el booking pending tras 15 min
-      expires_at: Math.floor(Date.now() / 1000) + 1800,
-    });
+        }],
+        success_url: `${origin}/beats?success=true&beat=${beatId}`,
+        cancel_url: `${origin}/beats?cancelled=true`,
+        metadata: { ...sessionConfig.metadata, beat_id: beatId, license_type: licenseType, beat_title: beatTitle },
+      };
+    } else {
+      const { studioName, bookingId, totalPrice } = body;
+      sessionConfig = {
+        ...sessionConfig,
+        line_items: [{
+          price_data: {
+            currency: "eur",
+            product_data: { name: `Sesión en ${studioName}`, description: `Booking ID: ${bookingId}` },
+            unit_amount: Math.round(totalPrice * 100),
+          },
+          quantity: 1,
+        }],
+        success_url: `${origin}/book-studio?success=true&booking=${bookingId}`,
+        cancel_url: `${origin}/book-studio?cancelled=true&booking=${bookingId}`,
+        metadata: { ...sessionConfig.metadata, booking_id: bookingId },
+      };
+    }
 
+    const session = await stripe.checkout.sessions.create(sessionConfig);
     return Response.json({ url: session.url }, { headers: CORS });
+
   } catch (err) {
-    console.error("create-stripe-checkout error:", err);
-    return Response.json({ error: "Error al crear la sesión de pago" }, { status: 500, headers: CORS });
+    console.error("Error create-stripe:", err);
+    return Response.json({ error: err.message }, { status: 500, headers: CORS });
   }
 });

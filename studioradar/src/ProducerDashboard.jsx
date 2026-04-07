@@ -39,6 +39,7 @@ export default function ProducerDashboard() {
   const [beats, setBeats]           = useState([])
   const [beatsLoading, setBeatsLoading] = useState(false)
   const [addingBeat, setAddingBeat] = useState(false)
+  const [editingBeat, setEditingBeat] = useState(null)
 
   const activeStudio = studios.find(s => s.id === activeStudioId) ?? studios[0] ?? null
 
@@ -346,7 +347,7 @@ export default function ProducerDashboard() {
           {/* ── BEATS ── */}
           {tab === 'beats' && (
             <div className="space-y-4">
-              {!addingBeat ? (
+              {!addingBeat && !editingBeat ? (
                 <>
                   <div className="flex items-center justify-between">
                     <h3 className="text-white font-bold text-sm font-mono uppercase tracking-widest">Mis Beats</h3>
@@ -392,30 +393,47 @@ export default function ProducerDashboard() {
                               {[beat.genre, beat.mood, beat.bpm && `${beat.bpm} BPM`, beat.key].filter(Boolean).join(' · ')}
                             </p>
                           </div>
-                          {beat.price != null && (
-                            <span className="text-accent text-sm font-mono font-bold shrink-0">{beat.price}€</span>
-                          )}
-                          <button
-                            onClick={async () => {
-                              await supabase.from('beats').update({ is_published: !beat.is_published }).eq('id', beat.id)
-                              setBeats(prev => prev.map(b => b.id === beat.id ? { ...b, is_published: !b.is_published } : b))
-                            }}
-                            className="text-text/30 hover:text-white transition-colors shrink-0"
-                            title={beat.is_published ? 'Ocultar' : 'Publicar'}
-                          >
-                            {beat.is_published ? <EyeOff size={15} /> : <Eye size={15} />}
-                          </button>
-                          <button
-                            onClick={async () => {
-                              if (!confirm('¿Eliminar este beat?')) return
-                              await supabase.from('beats').delete().eq('id', beat.id)
-                              setBeats(prev => prev.filter(b => b.id !== beat.id))
-                            }}
-                            className="text-text/30 hover:text-red-400 transition-colors shrink-0"
-                            title="Eliminar"
-                          >
-                            <Trash2 size={15} />
-                          </button>
+                          <div className="flex flex-col items-end gap-1 shrink-0">
+                             {beat.price_basic != null && (
+                               <span className="text-accent text-[11px] font-mono font-bold leading-none">{beat.price_basic}€ (B)</span>
+                             )}
+                             {(beat.price_premium || beat.price_exclusive) && (
+                               <span className="text-text/40 text-[9px] font-mono leading-none">
+                                 {beat.price_premium && `${beat.price_premium}€ (P)`}
+                                 {beat.price_exclusive && ` · ${beat.price_exclusive}€ (E)`}
+                               </span>
+                             )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => setEditingBeat(beat)}
+                              className="text-text/30 hover:text-white transition-colors"
+                              title="Editar"
+                            >
+                              <Pencil size={15} />
+                            </button>
+                            <button
+                              onClick={async () => {
+                                await supabase.from('beats').update({ is_published: !beat.is_published }).eq('id', beat.id)
+                                setBeats(prev => prev.map(b => b.id === beat.id ? { ...b, is_published: !b.is_published } : b))
+                              }}
+                              className="text-text/30 hover:text-white transition-colors shrink-0"
+                              title={beat.is_published ? 'Ocultar' : 'Publicar'}
+                            >
+                              {beat.is_published ? <EyeOff size={15} /> : <Eye size={15} />}
+                            </button>
+                            <button
+                              onClick={async () => {
+                                if (!confirm('¿Eliminar este beat?')) return
+                                await supabase.from('beats').delete().eq('id', beat.id)
+                                setBeats(prev => prev.filter(b => b.id !== beat.id))
+                              }}
+                              className="text-text/30 hover:text-red-400 transition-colors shrink-0"
+                              title="Eliminar"
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -424,18 +442,28 @@ export default function ProducerDashboard() {
               ) : (
                 <div>
                   <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-white font-bold text-sm font-mono uppercase tracking-widest">Subir Beat</h3>
-                    <button onClick={() => setAddingBeat(false)} className="flex items-center gap-1.5 text-text/40 text-xs font-mono hover:text-white transition-colors">
+                    <h3 className="text-white font-bold text-sm font-mono uppercase tracking-widest">
+                      {editingBeat ? `Editar: ${editingBeat.title}` : 'Subir Beat'}
+                    </h3>
+                    <button onClick={() => { setAddingBeat(false); setEditingBeat(null) }} className="flex items-center gap-1.5 text-text/40 text-xs font-mono hover:text-white transition-colors">
                       <ArrowLeft size={13} /> Volver
                     </button>
                   </div>
                   <BeatForm
                     producerId={producer?.id}
-                    onSaved={(newBeat) => {
-                      setBeats(prev => [newBeat, ...prev])
+                    beat={editingBeat}
+                    onSaved={(savedBeat) => {
+                      setBeats(prev => {
+                        const exists = prev.find(b => b.id === savedBeat.id)
+                        if (exists) {
+                          return prev.map(b => b.id === savedBeat.id ? savedBeat : b)
+                        }
+                        return [savedBeat, ...prev]
+                      })
                       setAddingBeat(false)
+                      setEditingBeat(null)
                     }}
-                    onCancel={() => setAddingBeat(false)}
+                    onCancel={() => { setAddingBeat(false); setEditingBeat(null) }}
                   />
                 </div>
               )}

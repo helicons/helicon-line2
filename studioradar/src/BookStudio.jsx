@@ -118,15 +118,21 @@ export default function BookStudio() {
   const handlePayment = async () => {
     setIsPaying(true);
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+
       const { data, error } = await supabase.functions.invoke('create-stripe-checkout', {
         body: {
           studioId: selectedStudio.id,
           studioName: selectedStudio.name,
           bookingId: pendingBookingId,
           artistName: artistName,
-          totalPrice: calculateTotal()
+          totalPrice: calculateTotal(),
+          customerEmail: clientEmail
         },
-        headers: { Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` }
+        headers: {
+          Authorization: `Bearer ${token || import.meta.env.VITE_SUPABASE_ANON_KEY}`
+        }
       });
 
       if (error) throw error;

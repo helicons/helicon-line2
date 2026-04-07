@@ -37,6 +37,9 @@ const mapBeat = (b) => ({
   mood: b.mood ?? '',
   tags: [b.genre, b.mood].filter(Boolean),
   price: parseFloat(b.price) || 0,
+  price_basic: parseFloat(b.price_basic) || parseFloat(b.price) || 0,
+  price_premium: parseFloat(b.price_premium) || 0,
+  price_exclusive: parseFloat(b.price_exclusive) || 0,
   plays: formatPlays(b.plays),
   image: b.image_url ?? 'https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?auto=format&fit=crop&q=80&w=200',
   audio_url: b.audio_url ?? null,
@@ -49,13 +52,15 @@ const LICENSES = [
     name: 'Basic',
     tag: 'MP3 Lease',
     multiplier: 1,
+    field: 'price_basic',
     features: ['MP3 320kbps', '2.500 copias físicas', '500K streams', 'No radio comercial', 'Crédito: "Prod. por [productor]"'],
   },
   {
-    id: 'standard',
-    name: 'Standard',
+    id: 'premium',
+    name: 'Premium',
     tag: 'WAV + Stems',
     multiplier: 2.5,
+    field: 'price_premium',
     features: ['WAV sin comprimir + stems', 'Copias ilimitadas', 'Streams ilimitados', 'Radio comercial incluida', 'Crédito: "Prod. por [productor]"'],
   },
   {
@@ -63,6 +68,7 @@ const LICENSES = [
     name: 'Exclusive',
     tag: 'Derechos Totales',
     multiplier: 5,
+    field: 'price_exclusive',
     features: ['WAV + stems + proyecto DAW', 'Derechos exclusivos totales', 'Beat retirado del mercado', 'TV / Sync / Publicidad', 'Sin crédito obligatorio'],
   },
 ];
@@ -79,6 +85,8 @@ export default function BeatMarketplace() {
   const [selectedLicense, setSelectedLicense] = useState('basic');
   const [showQueue, setShowQueue] = useState(false);
   const [showCheckout, setShowCheckout] = useState(false);
+  const [isPaying, setIsPaying] = useState(false);
+  const [user, setUser] = useState(null);
   
   const [wishlist, setWishlist] = useState(() => {
     try {
@@ -89,6 +97,17 @@ export default function BeatMarketplace() {
   
   const [lyrics, setLyrics] = useState({});
   const [playerTab, setPlayerTab] = useState('licenses'); // 'licenses' | 'lyrics'
+
+  // Auth session
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
 
   // Audio state
   const [currentTime, setCurrentTime] = useState(0);
@@ -222,6 +241,51 @@ export default function BeatMarketplace() {
     setPlayingId(id);
     setIsPlaying(true);
     setIsPlayerExpanded(true);
+  };
+
+  const handleBeatPurchase = async (beat, licenseId, price) => {
+    if (isPaying) return;
+    
+    // VERIFICACIÓN DE LOGIN
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+
+    setIsPaying(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      
+      console.log('Iniciando compra para:', session?.user?.email);
+
+      const { data, error } = await supabase.functions.invoke('create-stripe-checkout', {
+        body: {
+          type: 'beat',
+          beatId: beat.id,
+          beatTitle: beat.title,
+          licenseType: licenseId,
+          price: price,
+          producerName: beat.producer,
+          customerEmail: session?.user?.email
+        },
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      if (error) throw error;
+      if (data?.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error('No se recibió la URL de pago.');
+      }
+    } catch (err) {
+      console.error('Error iniciando compra:', err);
+      alert('Error al conectar con la pasarela: ' + (err.message || 'Error desconocido'));
+    } finally {
+      setIsPaying(false);
+    }
   };
 
   const currentTrack = beats.find(b => b.id === playingId) || null;
@@ -1045,7 +1109,16 @@ export default function BeatMarketplace() {
                    ) : (
                    <div className="flex flex-col gap-2">
                      {LICENSES.map(lic => {
-                       const price = currentTrack ? Math.round(currentTrack.price * lic.multiplier) : 0;
+                       let price = 0;
+                       if (currentTrack) {
+                         // Priorizamos el precio de la base de datos si es mayor a 0
+                         if (currentTrack[lic.field] > 0) {
+                           price = Math.round(currentTrack[lic.field]);
+                         } else {
+                           // Fallback al multiplicador original si el campo está vacío
+                           price = Math.round(currentTrack.price * lic.multiplier);
+                         }
+                       }
                        const isOpen = selectedLicense === lic.id;
                        return (
                          <div
@@ -1054,7 +1127,7 @@ export default function BeatMarketplace() {
                            className="rounded-xl border cursor-pointer transition-all duration-300 overflow-hidden"
                            style={{
                              borderColor: isOpen ? `rgba(${currentTrack?.colors[0].join(',')},0.5)` : 'rgba(255,255,255,0.07)',
-                             background: isOpen ? `rgba(${currentTrack?.colors[0].join(',')},0.08)` : 'rgba(255,255,255,0.03)',
+                             backgroundColor: isOpen ? `rgba(${currentTrack?.colors[0].join(',')},0.08)` : 'rgba(255,255,255,0.03)',
                            }}
                          >
                            {/* Row comprimida — siempre visible */}
@@ -1094,17 +1167,13 @@ export default function BeatMarketplace() {
                                <button
                                  onClick={e => {
                                    e.stopPropagation();
-                                   const item = { ...currentTrack, licenseId: lic.id, licensePrice: price };
-                                   const newCart = [...cart, item];
-                                   setCart(newCart);
-                                   localStorage.setItem('helicon_cart', JSON.stringify(newCart));
-                                   setShowLoading(true);
-                                   setTimeout(() => navigate('/checkout'), 1600);
+                                   handleBeatPurchase(currentTrack, lic.id, price);
                                  }}
-                                 className="w-full py-2.5 rounded-xl font-ui font-bold text-xs uppercase tracking-widest text-white transition-all"
-                                 style={{ background: `rgb(${currentTrack?.colors[0].join(',')})` }}
+                                 disabled={isPaying}
+                                 className="w-full py-2.5 rounded-xl font-ui font-bold text-xs uppercase tracking-widest text-white transition-all disabled:opacity-50"
+                                 style={{ backgroundColor: `rgb(${currentTrack?.colors[0].join(',')})` }}
                                >
-                                 Comprar por {price}€
+                                 {isPaying ? 'Procesando...' : `Comprar por ${price}€`}
                                </button>
                              </div>
                            </div>

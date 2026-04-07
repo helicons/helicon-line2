@@ -6,18 +6,20 @@ const GENRES = ['Trap', 'R&B', 'Drill', 'Synthwave', 'Techno', 'Industrial', 'Ha
 const MOODS = ['Dark', 'Aggressive', 'Chill', 'Sad', 'Energetic', 'Melancholic']
 const KEY_OPTIONS = ['C Maj','C Min','C# Maj','C# Min','D Maj','D Min','D# Maj','D# Min','E Maj','E Min','F Maj','F Min','F# Maj','F# Min','G Maj','G Min','G# Maj','G# Min','A Maj','A Min','A# Maj','A# Min','B Maj','B Min']
 
-export default function BeatForm({ producerId, onSaved, onCancel }) {
-  const [title, setTitle] = useState('')
-  const [bpm, setBpm] = useState('')
-  const [key, setKey] = useState('')
-  const [genre, setGenre] = useState('')
-  const [mood, setMood] = useState('')
-  const [price, setPrice] = useState('')
-  const [tags, setTags] = useState('')
+export default function BeatForm({ producerId, beat, onSaved, onCancel }) {
+  const [title, setTitle] = useState(beat?.title ?? '')
+  const [bpm, setBpm] = useState(beat?.bpm ?? '')
+  const [key, setKey] = useState(beat?.key ?? '')
+  const [genre, setGenre] = useState(beat?.genre ?? '')
+  const [mood, setMood] = useState(beat?.mood ?? '')
+  const [priceBasic, setPriceBasic] = useState(beat?.price_basic ?? beat?.price ?? '')
+  const [pricePremium, setPricePremium] = useState(beat?.price_premium ?? '')
+  const [priceExclusive, setPriceExclusive] = useState(beat?.price_exclusive ?? '')
+  const [tags, setTags] = useState(beat?.tags?.join(', ') ?? '')
 
   const [audioFile, setAudioFile] = useState(null)
   const [imageFile, setImageFile] = useState(null)
-  const [imagePreview, setImagePreview] = useState(null)
+  const [imagePreview, setImagePreview] = useState(beat?.image_url ?? null)
 
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState(null)
@@ -36,28 +38,30 @@ export default function BeatForm({ producerId, onSaved, onCancel }) {
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!title.trim()) { setError('El título es obligatorio'); return }
-    if (!audioFile) { setError('Sube el archivo de audio'); return }
+    if (!beat && !audioFile) { setError('Sube el archivo de audio'); return }
 
     setUploading(true)
     setError(null)
 
     try {
       const timestamp = Date.now()
-      let audio_url = null
-      let image_url = null
+      let audio_url = beat?.audio_url ?? null
+      let image_url = beat?.image_url ?? null
 
-      // Subir audio
-      setProgress('Subiendo audio…')
-      const audioExt = audioFile.name.split('.').pop()
-      const audioPath = `${producerId}/${timestamp}.${audioExt}`
-      const { error: audioErr } = await supabase.storage
-        .from('beats-audio')
-        .upload(audioPath, audioFile, { upsert: false })
-      if (audioErr) throw new Error('Error al subir audio: ' + audioErr.message)
-      const { data: audioData } = supabase.storage.from('beats-audio').getPublicUrl(audioPath)
-      audio_url = audioData.publicUrl
+      // Subir audio si hay uno nuevo
+      if (audioFile) {
+        setProgress('Subiendo audio…')
+        const audioExt = audioFile.name.split('.').pop()
+        const audioPath = `${producerId}/${timestamp}.${audioExt}`
+        const { error: audioErr } = await supabase.storage
+          .from('beats-audio')
+          .upload(audioPath, audioFile, { upsert: false })
+        if (audioErr) throw new Error('Error al subir audio: ' + audioErr.message)
+        const { data: audioData } = supabase.storage.from('beats-audio').getPublicUrl(audioPath)
+        audio_url = audioData.publicUrl
+      }
 
-      // Subir imagen (opcional)
+      // Subir imagen si hay una nueva
       if (imageFile) {
         setProgress('Subiendo portada…')
         const imgExt = imageFile.name.split('.').pop()
@@ -70,29 +74,45 @@ export default function BeatForm({ producerId, onSaved, onCancel }) {
         image_url = imgData.publicUrl
       }
 
-      // Insertar beat en DB
+      // Insertar o Actualizar beat en DB
       setProgress('Guardando beat…')
       const tagsArray = tags.split(',').map(t => t.trim()).filter(Boolean)
-      const { data: beat, error: dbErr } = await supabase
-        .from('beats')
-        .insert({
-          producer_id: producerId,
-          title: title.trim(),
-          bpm: bpm ? parseInt(bpm) : null,
-          key: key || null,
-          genre: genre || null,
-          mood: mood || null,
-          price: price ? parseFloat(price) : 0,
-          tags: tagsArray,
-          audio_url,
-          image_url,
-          is_published: true,
-        })
-        .select()
-        .single()
+      
+      const payload = {
+        producer_id: producerId,
+        title: title.trim(),
+        bpm: bpm ? parseInt(bpm) : null,
+        key: key || null,
+        genre: genre || null,
+        mood: mood || null,
+        price_basic: priceBasic ? parseFloat(priceBasic) : 0,
+        price_premium: pricePremium ? parseFloat(pricePremium) : 0,
+        price_exclusive: priceExclusive ? parseFloat(priceExclusive) : 0,
+        price: priceBasic ? parseFloat(priceBasic) : 0, // Fallback for old code
+        tags: tagsArray,
+        audio_url,
+        image_url,
+        is_published: beat ? beat.is_published : true,
+      }
 
-      if (dbErr) throw new Error('Error al guardar: ' + dbErr.message)
-      onSaved(beat)
+      let res
+      if (beat?.id) {
+        res = await supabase
+          .from('beats')
+          .update(payload)
+          .eq('id', beat.id)
+          .select()
+          .single()
+      } else {
+        res = await supabase
+          .from('beats')
+          .insert(payload)
+          .select()
+          .single()
+      }
+
+      if (res.error) throw new Error('Error al guardar: ' + res.error.message)
+      onSaved(res.data)
     } catch (err) {
       setError(err.message)
     } finally {
@@ -138,7 +158,7 @@ export default function BeatForm({ producerId, onSaved, onCancel }) {
 
       {/* Audio */}
       <div>
-        <label className={labelClass}>Archivo de audio *</label>
+        <label className={labelClass}>Archivo de audio {beat ? '(Opcional para actualizar)' : '*'}</label>
         <div
           onClick={() => audioRef.current?.click()}
           className={`flex items-center gap-3 h-14 rounded-xl border border-dashed cursor-pointer transition-colors px-4 ${audioFile ? 'border-accent/40 bg-accent/5' : 'border-white/15 hover:border-accent/40 bg-white/3'}`}
@@ -146,7 +166,7 @@ export default function BeatForm({ producerId, onSaved, onCancel }) {
           <Music2 size={18} className={audioFile ? 'text-accent' : 'text-text/30'} />
           <div className="flex-1 min-w-0">
             <span className={`text-sm font-mono truncate block ${audioFile ? 'text-white' : 'text-text/30'}`}>
-              {audioFile ? audioFile.name : 'Click para subir MP3'}
+              {audioFile ? audioFile.name : (beat ? 'Mantener actual / Click para cambiar MP3' : 'Click para subir MP3')}
             </span>
             {!audioFile && <span className="text-[10px] font-mono text-text/20">Solo MP3 · Máx. 45MB</span>}
           </div>
@@ -209,16 +229,26 @@ export default function BeatForm({ producerId, onSaved, onCancel }) {
         </div>
       </div>
 
-      {/* Precio + Tags */}
-      <div className="grid grid-cols-2 gap-3">
+      {/* Precios (3 licencias) */}
+      <div className="grid grid-cols-3 gap-3">
         <div>
-          <label className={labelClass}>Precio base (€)</label>
-          <input type="number" value={price} onChange={e => setPrice(e.target.value)} placeholder="29" min={0} step="0.01" className={inputClass} />
+          <label className={labelClass}>Basic (€)</label>
+          <input type="number" value={priceBasic} onChange={e => setPriceBasic(e.target.value)} placeholder="29" min={0} step="0.01" className={inputClass} />
         </div>
         <div>
-          <label className={labelClass}>Tags (separados por coma)</label>
-          <input type="text" value={tags} onChange={e => setTags(e.target.value)} placeholder="dark, melodic, trap" className={inputClass} />
+          <label className={labelClass}>Premium (€)</label>
+          <input type="number" value={pricePremium} onChange={e => setPricePremium(e.target.value)} placeholder="79" min={0} step="0.01" className={inputClass} />
         </div>
+        <div>
+          <label className={labelClass}>Exclusive (€)</label>
+          <input type="number" value={priceExclusive} onChange={e => setPriceExclusive(e.target.value)} placeholder="450" min={0} step="0.01" className={inputClass} />
+        </div>
+      </div>
+
+      {/* Tags */}
+      <div>
+        <label className={labelClass}>Tags (separados por coma)</label>
+        <input type="text" value={tags} onChange={e => setTags(e.target.value)} placeholder="dark, melodic, trap" className={inputClass} />
       </div>
 
       {error && <p className="text-red-400 text-xs font-mono">{error}</p>}
@@ -243,9 +273,10 @@ export default function BeatForm({ producerId, onSaved, onCancel }) {
           disabled={uploading}
           className="flex-1 py-3 rounded-xl bg-accent text-white font-mono font-bold text-xs uppercase tracking-widest hover:bg-[#9d3df2] transition-all shadow-lg shadow-accent/20 disabled:opacity-60 flex items-center justify-center gap-2"
         >
-          {uploading ? <><Loader size={13} className="animate-spin" /> Subiendo…</> : <><Upload size={13} /> Publicar Beat</>}
+          {uploading ? <><Loader size={13} className="animate-spin" /> Guardando…</> : <><Upload size={13} /> {beat ? 'Actualizar Beat' : 'Publicar Beat'}</>}
         </button>
       </div>
     </form>
   )
 }
+
