@@ -128,12 +128,7 @@ export default function ProducerDashboard() {
       })
   }, [tab, activeStudioId])
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut()
-    navigate('/producer/login')
-  }
-
-  const filteredBookings = bookingsFilter === 'all'
+const filteredBookings = bookingsFilter === 'all'
     ? bookings
     : bookings.filter(b => b.status === bookingsFilter)
 
@@ -163,7 +158,7 @@ export default function ProducerDashboard() {
       <header className="border-b border-white/5 bg-[#050505]/90 backdrop-blur sticky top-0 z-40">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <span className="font-mono text-lg font-bold tracking-[0.2em] text-white">HELICON</span>
+            <span onClick={() => navigate('/')} className="font-mono text-lg font-bold tracking-[0.2em] text-white cursor-pointer hover:text-accent transition-colors">HELICON</span>
             <span className="text-white/10">|</span>
             <span className="text-[11px] font-mono text-text/50 uppercase tracking-widest">Producer</span>
             {studios.length > 0 && (
@@ -173,7 +168,7 @@ export default function ProducerDashboard() {
               </>
             )}
           </div>
-          <button onClick={handleLogout} className="flex items-center gap-1.5 text-text/40 text-xs font-mono hover:text-white transition-colors">
+          <button onClick={() => navigate('/')} className="flex items-center gap-1.5 text-text/40 text-xs font-mono hover:text-white transition-colors">
             <LogOut size={14} /> Salir
           </button>
         </div>
