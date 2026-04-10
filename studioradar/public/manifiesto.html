@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Manifiesto Productores — Helicon Radar</title>
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+  <link href="https://api.fontshare.com/v2/css?f[]=clash-display@200,400,500,600,700&display=swap" rel="stylesheet">
+
+  <style>
+    /* ── Reset ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* ── Variables ── */
+    :root {
+      --bg:      #050505;
+      --surface: #111111;
+      --border:  #1e1e1e;
+      --accent:  #8A2BE2;
+      --accent2: #a64dff;
+      --text:    #E0E0E0;
+      --muted:   #888888;
+      --font-h:  'Clash Display', sans-serif;
+      --font-ui: 'Space Mono', monospace;
+    }
+
+    /* ── Page ── */
+    html { background: var(--bg); }
+    body {
+      font-family: var(--font-ui);
+      color: var(--text);
+      background: var(--bg);
+      padding: 48px 64px;
+      max-width: 860px;
+      margin: 0 auto;
+      line-height: 1.7;
+      font-size: 13.5px;
+    }
+
+    /* ── Header ── */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 28px;
+      margin-bottom: 36px;
+    }
+    .logo-block {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .logo-icon {
+      width: 48px;
+      height: 48px;
+      background: #111;
+      border: 1px solid var(--accent);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 24px -6px var(--accent);
+      flex-shrink: 0;
+    }
+    .logo-icon svg {
+      width: 28px;
+      height: 28px;
+    }
+    .logo-name {
+      font-family: var(--font-h);
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      color: #fff;
+    }
+    .logo-name span {
+      color: var(--accent);
+    }
+    .header-meta {
+      text-align: right;
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+    .header-meta strong {
+      display: block;
+      color: var(--accent2);
+      font-size: 12px;
+      letter-spacing: 0.06em;
+      margin-bottom: 4px;
+    }
+
+    /* ── Doc title ── */
+    .doc-title {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    .doc-title .tag {
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      color: var(--accent);
+      border: 1px solid var(--accent);
+      border-radius: 4px;
+      padding: 3px 10px;
+      display: inline-block;
+      margin-bottom: 14px;
+    }
+    .doc-title h1 {
+      font-family: var(--font-h);
+      font-size: 36px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: 0.02em;
+      line-height: 1.2;
+    }
+    .doc-title h1 .ufo { font-size: 30px; }
+    .doc-title .subtitle {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 8px;
+      letter-spacing: 0.08em;
+    }
+
+    /* ── Divider ── */
+    .divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 28px 0;
+    }
+    .divider-accent {
+      border: none;
+      height: 1px;
+      background: linear-gradient(90deg, var(--accent) 0%, transparent 100%);
+      margin: 28px 0;
+    }
+
+    /* ── Sections ── */
+    .section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 22px 26px;
+      margin-bottom: 18px;
+      position: relative;
+      overflow: hidden;
+    }
+    .section::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 3px;
+      background: var(--accent);
+      border-radius: 3px 0 0 3px;
+    }
+    .section-title {
+      font-family: var(--font-h);
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--accent2);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .section-num {
+      background: var(--accent);
+      color: #fff;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 4px;
+      letter-spacing: 0.05em;
+    }
+    .section p {
+      color: var(--text);
+      margin-bottom: 10px;
+    }
+    .section p:last-child { margin-bottom: 0; }
+
+    /* ── Lists ── */
+    ul, ol {
+      padding-left: 20px;
+      margin: 8px 0;
+    }
+    li {
+      margin-bottom: 7px;
+      color: var(--text);
+    }
+    li strong {
+      color: #fff;
+    }
+
+    /* ── Highlight box ── */
+    .highlight-box {
+      background: rgba(138, 43, 226, 0.08);
+      border: 1px solid rgba(138, 43, 226, 0.35);
+      border-radius: 8px;
+      padding: 18px 22px;
+      margin: 14px 0;
+    }
+    .highlight-box .split {
+      display: flex;
+      gap: 24px;
+      justify-content: center;
+    }
+    .split-item {
+      text-align: center;
+      flex: 1;
+    }
+    .split-item .pct {
+      font-family: var(--font-h);
+      font-size: 42px;
+      font-weight: 700;
+      color: var(--accent);
+      line-height: 1;
+      display: block;
+    }
+    .split-item .label {
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-top: 4px;
+      display: block;
+    }
+    .split-item .desc {
+      font-size: 11px;
+      color: #888;
+      margin-top: 3px;
+    }
+    .split-divider {
+      width: 1px;
+      background: var(--border);
+      align-self: stretch;
+    }
+
+    /* ── License table ── */
+    .license-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+      font-size: 12px;
+    }
+    .license-table th {
+      font-family: var(--font-h);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      color: var(--accent2);
+      text-transform: uppercase;
+      border-bottom: 1px solid var(--border);
+      padding: 8px 10px;
+      text-align: left;
+    }
+    .license-table td {
+      padding: 9px 10px;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      vertical-align: top;
+      color: var(--text);
+    }
+    .license-table tr:last-child td { border-bottom: none; }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+    }
+    .badge-basic   { background: rgba(255,255,255,0.08); color: #ccc; }
+    .badge-premium { background: rgba(138,43,226,0.2); color: var(--accent2); border: 1px solid rgba(138,43,226,0.4); }
+    .badge-excl    { background: rgba(138,43,226,0.35); color: #fff; border: 1px solid var(--accent); }
+
+    /* ── Footer ── */
+    .footer {
+      text-align: center;
+      margin-top: 44px;
+      padding-top: 28px;
+      border-top: 1px solid var(--border);
+    }
+    .footer .brand {
+      font-family: var(--font-h);
+      font-size: 22px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: 0.05em;
+    }
+    .footer .brand span { color: var(--accent); }
+    .footer .slogan {
+      font-family: var(--font-h);
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--muted);
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      margin-top: 6px;
+    }
+    .footer .legal-note {
+      font-size: 10px;
+      color: #555;
+      margin-top: 14px;
+      line-height: 1.5;
+    }
+
+    /* ── Print ── */
+    @media print {
+      @page {
+        size: A4;
+        margin: 20mm 18mm;
+      }
+      html, body {
+        background: #050505 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        color-adjust: exact;
+      }
+      .section { break-inside: avoid; }
+      .footer { break-before: avoid; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── HEADER ── -->
+  <header class="header">
+    <div class="logo-block">
+      <div class="logo-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+             stroke="#8A2BE2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+        </svg>
+      </div>
+      <div>
+        <div class="logo-name">HELICON<span>RADAR</span></div>
+      </div>
+    </div>
+    <div class="header-meta">
+      <strong>DOCUMENTO OFICIAL</strong>
+      Versión 1.0 · 2025<br>
+      Confidencial
+    </div>
+  </header>
+
+  <!-- ── DOC TITLE ── -->
+  <div class="doc-title">
+    <div class="tag">PRODUCTORES · TÉRMINOS Y CONDICIONES</div>
+    <h1><span class="ufo">🛸</span> MANIFIESTO Y CONDICIONES<br>PARA PRODUCTORES</h1>
+    <div class="subtitle">HELICON RADAR — DEL STUDIO AL ESTADIO</div>
+  </div>
+
+  <div class="divider-accent"></div>
+
+  <!-- ── SECCIÓN 1 ── -->
+  <div class="section">
+    <div class="section-title"><span class="section-num">01</span> INTRODUCCIÓN</div>
+    <p>En <strong>Helicon Radar</strong>, nuestro lema es: <strong>"Del Studio al Estadio"</strong>.</p>
+    <p>Nuestra misión es facilitar la conexión entre productores, artistas y el mercado, creando un entorno transparente y profesional. La base de esta relación es la <strong>confianza</strong>; por ello, este documento establece las condiciones para los productores que operan dentro de nuestro ecosistema.</p>
+  </div>
+
+  <!-- ── SECCIÓN 2 ── -->
+  <div class="section">
+    <div class="section-title"><span class="section-num">02</span> PROPIEDAD INTELECTUAL Y DERECHOS</div>
+    <ul>
+      <li><strong>2.1 Autoría:</strong> El productor conserva el <strong>100% de la propiedad intelectual</strong> de las obras. Helicon Radar actúa exclusivamente como intermediario.</li>
+      <li><strong>2.2 Uso de Samples:</strong> El productor garantiza que las obras son originales. El uso de samples que requieran "clearance" es <strong>responsabilidad exclusiva del productor</strong>.</li>
+      <li><strong>2.3 Derechos de Autor (Publishing):</strong> El productor mantiene el <strong>50% del "Writer's Share"</strong> (derechos de composición), incluso en licencias exclusivas, salvo acuerdo de <em>buyout</em> independiente.</li>
+    </ul>
+  </div>
+
+  <!-- ── SECCIÓN 3 ── -->
+  <div class="section">
+    <div class="section-title"><span class="section-num">03</span> ESTRUCTURA DE COMISIONES — BENEFICIO EARLY ADOPTER</div>
+    <p>Para premiar a los productores que se unen a <strong>Helicon Radar</strong> mediante invitación en esta fase de lanzamiento:</p>
+    <div class="highlight-box">
+      <div class="split">
+        <div class="split-item">
+          <span class="pct">90%</span>
+          <span class="label">Productor</span>
+          <p class="desc">Valor neto de cada venta</p>
+        </div>
+        <div class="split-divider"></div>
+        <div class="split-item">
+          <span class="pct" style="color:#6b21a8">10%</span>
+          <span class="label">Helicon Radar</span>
+          <p class="desc">Gestión · Marketing · Mantenimiento</p>
+        </div>
+      </div>
+    </div>
+    <p>Los retiros pueden solicitarse cada <strong>15 días</strong> vía PayPal o transferencia bancaria. Las ganancias se reflejan en tiempo real.</p>
+  </div>
+
+  <!-- ── SECCIÓN 4 ── -->
+  <div class="section">
+    <div class="section-title"><span class="section-num">04</span> SISTEMA DE LICENCIAS</div>
+    <table class="license-table">
+      <thead>
+        <tr>
+          <th>Licencia</th>
+          <th>Formato</th>
+          <th>Detalles</th>
+          <th>Disponibilidad</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="badge badge-basic">BASIC</span></td>
+          <td>MP3</td>
+          <td>Uso no exclusivo. Limitado a streaming básico.</td>
+          <td>Beat sigue a la venta</td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-premium">PREMIUM</span></td>
+          <td>WAV</td>
+          <td>Uso no exclusivo. Alta calidad y mayores derechos.</td>
+          <td>Beat sigue a la venta</td>
+        </tr>
+        <tr>
+          <td><span class="badge badge-excl">EXCLUSIVE</span></td>
+          <td>WAV + Stems</td>
+          <td>Cesión exclusiva. El productor mantiene crédito de autoría.</td>
+          <td>Se retira de la plataforma</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ── SECCIÓN 5 ── -->
+  <div class="section">
+    <div class="section-title"><span class="section-num">05</span> PROTECCIÓN DE DERECHOS — CONTENT ID</div>
+    <ul>
+      <li><strong>Prohibición de Registro:</strong> Los productores <strong>no deben registrar</strong> beats no exclusivos en sistemas de Content ID (YouTube/otros) para evitar conflictos con los compradores.</li>
+      <li><strong>Ventas Exclusivas:</strong> En caso de venta exclusiva, la gestión de estos derechos se acordará de forma privada entre las partes.</li>
+    </ul>
+  </div>
+
+  <!-- ── SECCIÓN 6 ── -->
+  <div class="section">
+    <div class="section-title"><span class="section-num">06</span> ESTÁNDARES DE CALIDAD Y CRÉDITOS</div>
+    <ul>
+      <li><strong>Calidad:</strong> Mínimo <strong>44.1 kHz / 24-bit</strong>. En licencias Premium y Exclusive es obligatorio incluir los <em>stems</em>.</li>
+      <li><strong>Reconocimiento:</strong> Todo artista debe incluir: <strong>"Prod. by [Nombre del Productor]"</strong>. Helicon Radar velará por el cumplimiento de esta autoría.</li>
+    </ul>
+  </div>
+
+  <!-- ── SECCIÓN 7 ── -->
+  <div class="section">
+    <div class="section-title"><span class="section-num">07</span> INTEGRACIÓN CON ESTUDIOS FÍSICOS</div>
+    <p>Tus beats serán promocionados activamente entre los artistas que reserven sesiones en nuestra <strong>red de estudios físicos</strong> (Madrid y asociados), uniendo el mercado digital con la grabación real.</p>
+  </div>
+
+  <!-- ── SECCIÓN 8 ── -->
+  <div class="section">
+    <div class="section-title"><span class="section-num">08</span> LIBERTAD Y PERMANENCIA</div>
+    <p>No existe compromiso de permanencia. Puedes retirar tus obras en cualquier momento. Las licencias ya vendidas seguirán siendo válidas para proteger al comprador legal.</p>
+  </div>
+
+  <!-- ── FOOTER ── -->
+  <footer class="footer">
+    <div class="brand">HELICON<span>RADAR</span></div>
+    <div class="slogan">Del Studio al Estadio 🚀</div>
+    <p class="legal-note">
+      Este documento es de carácter informativo y establece los términos de colaboración entre Helicon Radar y sus productores.<br>
+      Al operar dentro de la plataforma, el productor acepta las condiciones aquí descritas.
+    </p>
+  </footer>
+
+</body>
+</html>
