@@ -119,13 +119,32 @@ export default function BeatMarketplace() {
   const [showFullCover, setShowFullCover] = useState(false);
 
   const audioRef = useRef(null);
+  const seekingRef = useRef(false);
+
+  // helpers para skip
+  const skipPrev = () => {
+    if (!playingId) return;
+    const idx = beats.findIndex(b => b.id === playingId);
+    if (idx > 0) { setPlayingId(beats[idx - 1].id); setIsPlaying(true); }
+    else if (audioRef.current) { audioRef.current.currentTime = 0; }
+  };
+  const skipNext = () => {
+    if (!playingId) return;
+    if (isShuffle) {
+      const nextIdx = Math.floor(Math.random() * beats.length);
+      if (beats[nextIdx]) { setPlayingId(beats[nextIdx].id); setIsPlaying(true); }
+      return;
+    }
+    const idx = beats.findIndex(b => b.id === playingId);
+    if (idx !== -1 && idx < beats.length - 1) { setPlayingId(beats[idx + 1].id); setIsPlaying(true); }
+  };
 
   // Motor de audio real
   useEffect(() => {
     if (!audioRef.current) audioRef.current = new Audio();
     const audio = audioRef.current;
-    
-    const onTimeUpdate = () => setCurrentTime(audio.currentTime);
+
+    const onTimeUpdate = () => { if (!seekingRef.current) setCurrentTime(audio.currentTime); };
     const onLoadedMetadata = () => setDuration(audio.duration);
     const onEnded = () => {
       if (isLooping) {
@@ -861,38 +880,51 @@ export default function BeatMarketplace() {
 
         {/* Center: Playback Controls */}
         <div className="flex flex-col items-center gap-2 w-1/3 max-w-xl">
-          <div className="flex items-center gap-8">
-            <button className="text-white/40 hover:text-white transition-colors hover:scale-110"><SkipBack className="w-5 h-5 fill-current" /></button>
+          <div className="flex items-center gap-5">
+            <button onClick={(e) => { e.stopPropagation(); setIsShuffle(s => !s); }} className={`transition-colors hover:scale-110 ${isShuffle ? 'text-accent' : 'text-white/30 hover:text-white'}`} title="Aleatorio"><Shuffle className="w-4 h-4" /></button>
+            <button onClick={(e) => { e.stopPropagation(); skipPrev(); }} className="text-white/40 hover:text-white transition-colors hover:scale-110"><SkipBack className="w-5 h-5 fill-current" /></button>
             <button
               onClick={(e) => { e.stopPropagation(); setIsPlaying(!isPlaying); }}
               className="w-12 h-12 rounded-full bg-white text-black flex items-center justify-center hover:scale-105 transition-all shadow-lg shadow-white/10"
             >
               {isPlaying ? <Pause className="w-6 h-6 fill-current" /> : <Play className="w-6 h-6 fill-current ml-1" />}
             </button>
-            <button className="text-white/40 hover:text-white transition-colors hover:scale-110"><SkipForward className="w-5 h-5 fill-current" /></button>
+            <button onClick={(e) => { e.stopPropagation(); skipNext(); }} className="text-white/40 hover:text-white transition-colors hover:scale-110"><SkipForward className="w-5 h-5 fill-current" /></button>
+            <button onClick={(e) => { e.stopPropagation(); setIsLooping(l => !l); }} className={`transition-colors hover:scale-110 ${isLooping ? 'text-accent' : 'text-white/30 hover:text-white'}`} title="Repetir"><Repeat className="w-4 h-4" /></button>
           </div>
           <div className="w-full hidden md:flex items-center gap-3 font-ui text-[10px] text-white/30 font-medium">
             <span className="w-8 text-right">{Math.floor(currentTime/60)}:{(Math.floor(currentTime%60)).toString().padStart(2, '0')}</span>
-            <div className="flex-1 h-1.5 relative flex items-center group">
-               <div className="absolute inset-0 bg-white/5 rounded-full overflow-hidden pointer-events-none">
+            <div className="flex-1 h-4 relative flex items-center group cursor-pointer" onClick={e => e.stopPropagation()}>
+               <div className="absolute left-0 right-0 h-1.5 top-1/2 -translate-y-1/2 bg-white/5 rounded-full overflow-hidden pointer-events-none">
                  <div
-                   className="absolute left-0 top-0 bottom-0 rounded-full animate-smoke"
+                   className="absolute left-0 top-0 bottom-0 rounded-full"
                    style={{
                      width: duration ? `${(currentTime / duration) * 100}%` : '0%',
                      background: `linear-gradient(90deg, #8A2BE2, #C471ED, #8A2BE2)`,
                      backgroundSize: '200% 100%',
-                     transition: 'width 0.1s linear',
+                     transition: seekingRef.current ? 'none' : 'width 0.1s linear',
                    }}
                  />
                </div>
-               <input 
-                  type="range" min="0" max={duration || 100} value={currentTime}
-                  onChange={e => { if (audioRef.current) audioRef.current.currentTime = e.target.value; }}
+               <input
+                  type="range" min="0" max={duration || 100} step="0.1"
+                  value={currentTime}
+                  onMouseDown={() => { seekingRef.current = true; }}
+                  onChange={e => {
+                    const v = Number(e.target.value);
+                    setCurrentTime(v);
+                    if (audioRef.current) audioRef.current.currentTime = v;
+                  }}
+                  onMouseUp={e => {
+                    seekingRef.current = false;
+                    if (audioRef.current) audioRef.current.currentTime = Number(e.target.value);
+                  }}
+                  onTouchEnd={() => { seekingRef.current = false; }}
                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                />
-               <div 
+               <div
                   className="w-3 h-3 rounded-full bg-white shadow-[0_0_10px_white] absolute pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity"
-                  style={{ left: `calc(${(currentTime / duration) * 100 || 0}% - 6px)` }}
+                  style={{ left: `calc(${(currentTime / (duration || 1)) * 100}% - 6px)` }}
                />
             </div>
             <span className="w-8">{duration ? `${Math.floor(duration/60)}:${(Math.floor(duration%60)).toString().padStart(2, '0')}` : '0:00'}</span>
@@ -918,24 +950,24 @@ export default function BeatMarketplace() {
               {cart.length > 0 && <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-accent rounded-full font-ui text-[9px] font-bold flex items-center justify-center text-white">{cart.length}</span>}
            </button>
            <div className="flex items-center gap-3">
-              <button 
+              <button
                 onClick={(e) => { e.stopPropagation(); toggleWishlist(currentTrack.id); }}
                 className="text-white/40 hover:text-accent transition-colors hidden lg:block mr-2"
                 title="Me gusta"
               >
                 <Heart className="w-5 h-5" style={{ color: wishlist.includes(currentTrack?.id) ? '#8A2BE2' : '', fill: wishlist.includes(currentTrack?.id) ? '#8A2BE2' : 'none' }} />
               </button>
-              <Volume2 className="w-5 h-5 text-white/40" />
-              <div className="relative w-24 h-1.5 flex items-center group" onClick={(e) => e.stopPropagation()}>
-                 <div className="absolute inset-0 bg-white/5 rounded-full overflow-hidden pointer-events-none">
-                    <div className="h-full bg-white/40 group-hover:bg-accent transition-colors rounded-full" style={{ width: `${volume * 100}%` }}></div>
+              <Volume2 className="w-5 h-5 text-white/40 shrink-0" />
+              <div className="relative w-24 h-5 flex items-center group cursor-pointer" onClick={(e) => e.stopPropagation()}>
+                 <div className="absolute left-0 right-0 h-1.5 top-1/2 -translate-y-1/2 bg-white/5 rounded-full overflow-hidden pointer-events-none">
+                    <div className="h-full rounded-full transition-colors" style={{ width: `${volume * 100}%`, background: 'rgba(255,255,255,0.4)' }} />
                  </div>
-                 <input 
+                 <input
                     type="range" min="0" max="1" step="0.01" value={volume}
                     onChange={e => setVolume(Number(e.target.value))}
                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                  />
-                 <div 
+                 <div
                     className="w-2.5 h-2.5 rounded-full bg-white shadow-[0_0_8px_white] absolute pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity"
                     style={{ left: `calc(${volume * 100}% - 5px)` }}
                  />
@@ -1019,27 +1051,38 @@ export default function BeatMarketplace() {
                        <span>{Math.floor(currentTime/60)}:{(Math.floor(currentTime%60)).toString().padStart(2, '0')}</span>
                        <span>{duration ? `${Math.floor(duration/60)}:${(Math.floor(duration%60)).toString().padStart(2, '0')}` : '0:00'}</span>
                      </div>
-                     <div className="w-full relative h-2.5 flex items-center group">
-                        <div className="absolute inset-0 bg-black/40 rounded-full overflow-hidden pointer-events-none shadow-inner border border-white/5">
+                     <div className="w-full relative h-5 flex items-center group cursor-pointer">
+                        <div className="absolute left-0 right-0 h-2.5 top-1/2 -translate-y-1/2 bg-black/40 rounded-full overflow-hidden pointer-events-none shadow-inner border border-white/5">
                            <div
-                             className="absolute left-0 top-0 bottom-0 rounded-full animate-smoke"
+                             className="absolute left-0 top-0 bottom-0 rounded-full"
                              style={{
                                width: duration ? `${(currentTime / duration) * 100}%` : '0%',
                                background: currentTrack ? `linear-gradient(90deg, rgba(${currentTrack.colors[0].join(',')}, 0.8), rgba(${currentTrack.colors[1].join(',')}, 1), rgba(${currentTrack.colors[0].join(',')}, 0.8))` : '#8A2BE2',
                                backgroundSize: '200% 100%',
                                boxShadow: currentTrack && isPlaying ? `0 0 16px rgba(${currentTrack.colors[0].join(',')},0.8)` : 'none',
-                               transition: 'width 0.1s linear',
+                               transition: seekingRef.current ? 'none' : 'width 0.1s linear',
                              }}
                            />
                         </div>
-                        <input 
-                           type="range" min="0" max={duration || 100} value={currentTime}
-                           onChange={e => { if (audioRef.current) audioRef.current.currentTime = e.target.value; }}
+                        <input
+                           type="range" min="0" max={duration || 100} step="0.1"
+                           value={currentTime}
+                           onMouseDown={() => { seekingRef.current = true; }}
+                           onChange={e => {
+                             const v = Number(e.target.value);
+                             setCurrentTime(v);
+                             if (audioRef.current) audioRef.current.currentTime = v;
+                           }}
+                           onMouseUp={e => {
+                             seekingRef.current = false;
+                             if (audioRef.current) audioRef.current.currentTime = Number(e.target.value);
+                           }}
+                           onTouchEnd={() => { seekingRef.current = false; }}
                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                         />
-                        <div 
+                        <div
                            className="w-4 h-4 rounded-full bg-white shadow-[0_0_15px_white] absolute pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity"
-                           style={{ left: `calc(${(currentTime / duration) * 100 || 0}% - 8px)` }}
+                           style={{ left: `calc(${(currentTime / (duration || 1)) * 100}% - 8px)` }}
                         />
                      </div>
                  </div>
@@ -1052,16 +1095,16 @@ export default function BeatMarketplace() {
                     >
                        <Shuffle className="w-4 h-4 md:w-5 md:h-5" />
                     </button>
-                    <button className="w-12 h-12 md:w-14 md:h-14 flex items-center justify-center bg-surface border border-white/10 rounded-2xl text-white/50 hover:text-white transition-all shadow-[0_6px_0_rgba(0,0,0,0.4)] active:translate-y-[6px] active:shadow-none hover:-translate-y-1 hover:bg-white/5">
+                    <button onClick={skipPrev} className="w-12 h-12 md:w-14 md:h-14 flex items-center justify-center bg-surface border border-white/10 rounded-2xl text-white/50 hover:text-white transition-all shadow-[0_6px_0_rgba(0,0,0,0.4)] active:translate-y-[6px] active:shadow-none hover:-translate-y-1 hover:bg-white/5">
                        <SkipBack className="w-5 h-5 md:w-6 md:h-6 fill-current" />
                     </button>
-                    <button 
-                       onClick={() => setIsPlaying(!isPlaying)} 
+                    <button
+                       onClick={() => setIsPlaying(!isPlaying)}
                        className="w-20 h-20 md:w-24 md:h-24 rounded-[2rem] flex items-center justify-center transition-all bg-gradient-to-b from-white to-gray-300 hover:from-white hover:to-white border border-white/40 text-black shadow-[0_12px_0_rgba(200,200,200,0.2),0_20px_40px_rgba(0,0,0,0.6)] active:translate-y-[12px] active:shadow-[0_0_0_rgba(200,200,200,0.2),0_5px_10px_rgba(0,0,0,0.6)]"
                     >
                        {isPlaying ? <Pause className="w-8 h-8 md:w-10 md:h-10 fill-current drop-shadow-md" /> : <Play className="w-8 h-8 md:w-10 md:h-10 fill-current ml-2 drop-shadow-md" />}
                     </button>
-                    <button className="w-12 h-12 md:w-14 md:h-14 flex items-center justify-center bg-surface border border-white/10 rounded-2xl text-white/50 hover:text-white transition-all shadow-[0_6px_0_rgba(0,0,0,0.4)] active:translate-y-[6px] active:shadow-none hover:-translate-y-1 hover:bg-white/5">
+                    <button onClick={skipNext} className="w-12 h-12 md:w-14 md:h-14 flex items-center justify-center bg-surface border border-white/10 rounded-2xl text-white/50 hover:text-white transition-all shadow-[0_6px_0_rgba(0,0,0,0.4)] active:translate-y-[6px] active:shadow-none hover:-translate-y-1 hover:bg-white/5">
                        <SkipForward className="w-5 h-5 md:w-6 md:h-6 fill-current" />
                     </button>
                     <button 

@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Helicon — Guía de Inversión</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --dark: #0e0b14;
+      --purple: #9b6dff;
+      --purple-light: #c4a3ff;
+      --white: #f5f5f5;
+      --muted: #888;
+      --border: #2a1f3d;
+    }
+    body {
+      font-family: 'Georgia', serif;
+      background: #0a0814;
+      color: var(--white);
+      display: flex;
+      justify-content: center;
+      padding: 40px 20px;
+    }
+    .page {
+      width: 780px;
+    }
+    .header {
+      background: var(--dark);
+      border: 1px solid var(--border);
+      padding: 40px 56px;
+      margin-bottom: 24px;
+      position: relative;
+    }
+    .header::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--purple), transparent);
+    }
+    .logo {
+      font-size: 28px;
+      letter-spacing: 8px;
+      text-transform: uppercase;
+      color: var(--white);
+    }
+    .logo span { color: var(--purple); }
+    .doc-title {
+      font-size: 13px;
+      color: var(--muted);
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      margin-top: 6px;
+    }
+    .section {
+      background: var(--dark);
+      border: 1px solid var(--border);
+      padding: 36px 56px;
+      margin-bottom: 16px;
+      position: relative;
+    }
+    .section-num {
+      font-family: 'Courier New', monospace;
+      font-size: 10px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--purple);
+      margin-bottom: 6px;
+    }
+    h2 {
+      font-size: 26px;
+      font-weight: normal;
+      color: var(--white);
+      margin-bottom: 20px;
+      line-height: 1.2;
+    }
+    h3 {
+      font-size: 17px;
+      font-weight: normal;
+      color: var(--purple-light);
+      margin: 24px 0 10px;
+    }
+    p {
+      font-size: 15px;
+      line-height: 1.8;
+      color: #b0b0b0;
+      margin-bottom: 12px;
+    }
+    .highlight {
+      background: #1a0f2e;
+      border-left: 3px solid var(--purple);
+      padding: 16px 20px;
+      margin: 16px 0;
+      font-size: 15px;
+      color: var(--white);
+      line-height: 1.7;
+    }
+    .example {
+      background: #0d1a0d;
+      border-left: 3px solid #4caf50;
+      padding: 16px 20px;
+      margin: 16px 0;
+      font-size: 14px;
+      color: #a0c8a0;
+      line-height: 1.7;
+      font-family: 'Courier New', monospace;
+    }
+    .warning {
+      background: #1a0f00;
+      border-left: 3px solid #c9a84c;
+      padding: 16px 20px;
+      margin: 16px 0;
+      font-size: 14px;
+      color: #c9a84c;
+      line-height: 1.7;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+    }
+    th {
+      text-align: left;
+      font-family: 'Courier New', monospace;
+      font-size: 10px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--purple);
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    td {
+      padding: 12px 0;
+      font-size: 14px;
+      color: #b0b0b0;
+      border-bottom: 1px solid #1a1a1a;
+      vertical-align: top;
+      padding-right: 20px;
+    }
+    td:last-child { color: var(--purple-light); padding-right: 0; }
+    .checklist {
+      list-style: none;
+      margin: 12px 0;
+    }
+    .checklist li {
+      font-size: 15px;
+      color: #b0b0b0;
+      padding: 8px 0;
+      border-bottom: 1px solid #1a1a1a;
+      display: flex;
+      gap: 12px;
+      line-height: 1.5;
+    }
+    .checklist li .check { color: var(--purple); flex-shrink: 0; }
+    .checklist li .todo { color: #c9a84c; flex-shrink: 0; }
+    .step {
+      display: flex;
+      gap: 20px;
+      margin: 16px 0;
+      align-items: flex-start;
+    }
+    .step-num {
+      background: var(--purple);
+      color: #000;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-family: 'Courier New', monospace;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .step-content h3 { margin-top: 0; }
+    @media print {
+      body { background: white; padding: 0; }
+      .page { width: 100%; }
+      .header, .section {
+        background: var(--dark);
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        page-break-inside: avoid;
+      }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <div class="header">
+    <div class="logo">HELIC<span>O</span>N</div>
+    <div class="doc-title">Guía de inversión · Para uso interno · Harold & Moises</div>
+  </div>
+
+  <!-- ─── 1. CONCEPTOS ─── -->
+  <div class="section">
+    <div class="section-num">01 · Conceptos clave</div>
+    <h2>Las palabras que vas a escuchar<br/>y lo que significan de verdad</h2>
+
+    <h3>ARR — Annual Recurring Revenue</h3>
+    <p>Es cuánto dinero entra en tu empresa cada año de forma predecible y repetida. No ventas puntuales — ingresos que se renuevan.</p>
+    <div class="example">
+      Ejemplo Helicon:<br/>
+      100 productores × 3 beats/mes × €150 × 15% comisión = €6,750/mes<br/>
+      €6,750 × 12 meses = €81,000 ARR solo de beats<br/>
+      Con studios + membresías → €180,000–300,000 ARR fin de año
+    </div>
+    <p>El ARR es la métrica más importante para un inversor. Es lo que demuestra que el negocio funciona de verdad.</p>
+
+    <h3>Valoración pre-money</h3>
+    <p>Es lo que vale tu empresa <strong style="color:var(--white)">antes</strong> de que entre el dinero del inversor. Tú decides este número — pero tiene que ser defendible con tracción real.</p>
+    <div class="highlight">
+      Helicon hoy vale €2.5M pre-money.<br/>
+      ¿Por qué? Plataforma funcionando + 7 productores élite + 5 studios + equipo fundador técnico. No es un número inventado — es lo que justifica la tracción.
+    </div>
+
+    <h3>Valoración post-money</h3>
+    <p>Es lo que vale la empresa <strong style="color:var(--white)">después</strong> de que entre el dinero.</p>
+    <div class="example">
+      Pre-money: €2,500,000<br/>
+      + Inversión: €400,000<br/>
+      = Post-money: €2,900,000<br/><br/>
+      El inversor tiene: €400K / €2,900K = 13.8% de la empresa
+    </div>
+
+    <h3>Dilución</h3>
+    <p>Es el porcentaje de la empresa que le das al inversor a cambio del dinero. Cuanto más pides o menos vales, más diluyes.</p>
+    <div class="warning">
+      Ojo: cada ronda te diluye. Si en pre-seed das 15%, en seed das otro 20%, en Serie A otro 20%... al final los fundadores pueden quedarse con el 40-50%. Eso es normal y está bien si la empresa vale mucho más.
+    </div>
+
+    <h3>SAFE</h3>
+    <p>Simple Agreement for Future Equity. Es un instrumento de inversión donde el inversor pone dinero ahora pero no recibe acciones hasta la siguiente ronda. Más sencillo que negociar equity directo. Muy común en pre-seed.</p>
+
+    <h3>Runway</h3>
+    <p>Cuántos meses puedes sobrevivir con el dinero que tienes. Con €400K y gastos controlados de dos fundadores, tienes 18–24 meses de runway. Eso es lo que necesitas para llegar a la siguiente ronda.</p>
+
+    <h3>Ticket mínimo</h3>
+    <p>Lo mínimo que invierte un fondo en una operación. Un fondo de €5B no invierte €50K — su ticket mínimo puede ser €1M–5M. Por eso hay que saber a qué fondos acercarse según el tamaño de tu ronda.</p>
+  </div>
+
+  <!-- ─── 2. RONDAS ─── -->
+  <div class="section">
+    <div class="section-num">02 · Las rondas de inversión</div>
+    <h2>Dónde estáis y<br/>a dónde vais</h2>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Ronda</th>
+          <th>Cuándo</th>
+          <th>Cuánto se pide</th>
+          <th>Quién invierte</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong style="color:var(--white)">Pre-seed ← AQUÍ</strong></td>
+          <td>Idea + producto básico + primeros clientes</td>
+          <td>€100K – €500K</td>
+          <td>Angels, family offices, asesores</td>
+        </tr>
+        <tr>
+          <td>Seed</td>
+          <td>Producto validado + ARR creciendo</td>
+          <td>€500K – €2M</td>
+          <td>Fondos seed, super-angels</td>
+        </tr>
+        <tr>
+          <td>Serie A</td>
+          <td>€1M ARR + equipo + modelo probado</td>
+          <td>€3M – €10M</td>
+          <td>VCs</td>
+        </tr>
+        <tr>
+          <td>Serie B+</td>
+          <td>Escala probada, expansión internacional</td>
+          <td>€10M+</td>
+          <td>VCs grandes, fondos de €5B</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="highlight">
+      El fondo de €5B del que habla el asesor probablemente entra en Serie A o B — no en pre-seed. Pero si el asesor tiene relación con ellos, puede conseguir que os conozcan ahora y os tengan en el radar para cuando llegue el momento. Eso tiene un valor enorme.
+    </div>
+  </div>
+
+  <!-- ─── 3. PLAN DE ACCIÓN ─── -->
+  <div class="section">
+    <div class="section-num">03 · Plan de acción</div>
+    <h2>Qué hacer, en qué orden</h2>
+
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-content">
+        <h3>Inmediato — antes de cualquier reunión</h3>
+        <ul class="checklist">
+          <li><span class="check">✓</span> Plataforma live en heliconradar.com</li>
+          <li><span class="check">✓</span> Pitch deck preparado</li>
+          <li><span class="check">✓</span> One-pager preparado</li>
+          <li><span class="todo">○</span> Registrar Helicon como marca en OEPM (~€150)</li>
+          <li><span class="todo">○</span> Constituir SL antes de captar inversión</li>
+          <li><span class="todo">○</span> LinkedIn de Harold y Moises actualizados con Helicon</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-content">
+        <h3>El asesor — sacarle el máximo</h3>
+        <ul class="checklist">
+          <li><span class="todo">○</span> Manda la web cuando te la pida — ya está</li>
+          <li><span class="todo">○</span> Cuando pida el deck — mandas el PDF</li>
+          <li><span class="todo">○</span> En la reunión pregunta: ¿qué fondos encajan? ¿SAFE o equity? ¿cuánto pedir?</li>
+          <li><span class="todo">○</span> No dependas solo de él — muévete en paralelo</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-content">
+        <h3>Fondos a los que puedes ir tú solo (España)</h3>
+        <ul class="checklist">
+          <li><span class="todo">○</span> <strong style="color:var(--white)">Lanzadera</strong> (Juan Roig, Valencia) — aceleradora + inversión, muy accesible</li>
+          <li><span class="todo">○</span> <strong style="color:var(--white)">Wayra</strong> (Telefónica) — pre-seed, España, aplicación online</li>
+          <li><span class="todo">○</span> <strong style="color:var(--white)">K Fund</strong> — seed stage español, buenos en tech</li>
+          <li><span class="todo">○</span> <strong style="color:var(--white)">Bonsai Partners</strong> — pre-seed/seed, España</li>
+          <li><span class="todo">○</span> <strong style="color:var(--white)">SoundVentures</strong> (EEUU) — fondo específico de música tech</li>
+          <li><span class="todo">○</span> <strong style="color:var(--white)">Plug and Play Spain</strong> — entretenimiento y música</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-content">
+        <h3>Cómo contactar a un fondo en frío</h3>
+        <p>Busca en LinkedIn al <strong style="color:var(--white)">Partner o Associate</strong> del fondo que lleva el sector entretenimiento/música. Manda conexión + mensaje corto:</p>
+        <div class="example">
+          Hola [nombre], soy Harold, co-fundador de Helicon — la red privada de productores de élite. Tenemos plataforma live, 7 productores con millones de views y 5 studios activos en España. Buscamos €400K pre-seed. ¿Te mando el one-pager?
+        </div>
+        <p>Si dicen sí — mandas el one-pager. Si piden más — mandas el deck. Si piden reunión — vas con el pitch.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">5</div>
+      <div class="step-content">
+        <h3>Mientras tanto — sigue construyendo</h3>
+        <div class="highlight">
+          La mejor forma de conseguir inversión es no necesitarla urgentemente. Cada productor que confirmas, cada studio que entra, cada euro que entra por comisiones hace el pitch más fácil. Sigue ejecutando Fase I mientras buscas inversión.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── 4. TUS NÚMEROS ─── -->
+  <div class="section">
+    <div class="section-num">04 · Los números de Helicon explicados</div>
+    <h2>Por qué pedís €400K<br/>y no más ni menos</h2>
+
+    <h3>¿Por qué €400K?</h3>
+    <p>Con €400K y dos fundadores sin salarios de ejecutivo, tienes 18 meses de runway. Eso da tiempo para:</p>
+    <ul class="checklist">
+      <li><span class="check">→</span> Cerrar 100 productores y studios en toda España</li>
+      <li><span class="check">→</span> Lanzar Talent Zone (Fase II) y validar las membresías</li>
+      <li><span class="check">→</span> Llegar a €500K–800K ARR</li>
+      <li><span class="check">→</span> Ir a una ronda Seed de €1M–2M desde una posición de fuerza</li>
+    </ul>
+
+    <h3>¿Por qué €2.5M de valoración?</h3>
+    <p>No es un número inventado. Se justifica con:</p>
+    <ul class="checklist">
+      <li><span class="check">→</span> Plataforma funcionando y en producción</li>
+      <li><span class="check">→</span> 7 productores élite con millones de views</li>
+      <li><span class="check">→</span> 5 studios activos, 25 productores en validación</li>
+      <li><span class="check">→</span> Dos fundadores técnicos que construyeron todo sin inversión</li>
+      <li><span class="check">→</span> Mercado global de €5B+ sin competidor directo en el nicho</li>
+    </ul>
+
+    <h3>¿Qué pasa si el fondo quiere más del 14%?</h3>
+    <div class="warning">
+      Puedes negociar. Si quieren el 20%, pídeles €580K a la misma valoración. Si bajan la valoración, aguanta — cada punto de valoración que pierdes hoy vale mucho más en la Serie A. No malvendas.
+    </div>
+
+    <h3>Proyección a fin de año (Fase I completa)</h3>
+    <table>
+      <thead>
+        <tr><th>Fuente</th><th>Cálculo</th><th>ARR</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Beats (100 prod.)</td>
+          <td>100 × 4 ventas × €150 × 15%</td>
+          <td>€108,000</td>
+        </tr>
+        <tr>
+          <td>Studios (toda España)</td>
+          <td>100 studios × 8 reservas × €200 × 10%</td>
+          <td>€192,000</td>
+        </tr>
+        <tr>
+          <td>Custom beats</td>
+          <td>estimado conservador</td>
+          <td>€20,000</td>
+        </tr>
+        <tr>
+          <td><strong style="color:var(--white)">Total</strong></td>
+          <td></td>
+          <td><strong style="color:var(--purple-light)">€280,000–320,000</strong></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ─── 5. RECAP ─── -->
+  <div class="section">
+    <div class="section-num">05 · Para recordar</div>
+    <h2>Lo esencial en 6 líneas</h2>
+    <ul class="checklist" style="margin-top: 8px;">
+      <li><span class="check">1</span> El ARR es lo que entra cada año de forma recurrente — esa es la métrica que importa</li>
+      <li><span class="check">2</span> Pre-money €2.5M es lo que vales hoy — defiéndelo con la tracción real</li>
+      <li><span class="check">3</span> Pides €400K a cambio del 14% de Helicon — no más</li>
+      <li><span class="check">4</span> El asesor abre puertas — tú muévete también por tu cuenta en paralelo</li>
+      <li><span class="check">5</span> El one-pager va primero — el deck solo cuando lo pidan</li>
+      <li><span class="check">6</span> Sigue ejecutando Fase I mientras buscas inversión — la tracción es tu mejor argumento</li>
+    </ul>
+
+    <div class="highlight" style="margin-top: 28px; font-size: 17px; font-style: italic;">
+      "No necesitas entenderlo todo antes de la reunión. Necesitas entender tu negocio, tu tracción y lo que pides. El resto lo aprenderás en el camino."
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

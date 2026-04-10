@@ -443,6 +443,270 @@ const Workflow = () => {
   );
 };
 
+// -------------------------------------------------------------
+// CREDITS — Producer cards with vinyl + artist credits
+// -------------------------------------------------------------
+const PRODUCERS_CREDITS = [
+  {
+    name:    'Helicon Origin',
+    ig:      'heliconorigin',
+    igUrl:   'https://www.instagram.com/heliconorigin',
+    image:   '/images/prod1.jpeg',
+    color:   '#8A2BE2',
+    credits: [
+      { artist: 'Yan Block',    track: 'En La Noche', views: '6.2M', url: 'https://www.youtube.com/results?search_query=yan+block+en+la+noche' },
+      { artist: 'Dei V',        track: 'Sin Ti',       views: '3.1M', url: 'https://www.youtube.com/results?search_query=dei+v+sin+ti' },
+      { artist: 'ROA',          track: 'Zona Cero',    views: '3.9M', url: 'https://www.youtube.com/results?search_query=roa+zona+cero' },
+    ],
+  },
+  {
+    name:    'Metro Shadows',
+    ig:      'metroshadows',
+    igUrl:   'https://www.instagram.com/metroshadows',
+    image:   '/images/prod2.jpeg',
+    color:   '#a64dff',
+    credits: [
+      { artist: 'Hades66',      track: 'Madrugá',      views: '4.8M', url: 'https://www.youtube.com/results?search_query=hades66+madruga' },
+      { artist: 'Young Chimi',  track: 'Modo Avión',   views: '2.7M', url: 'https://www.youtube.com/results?search_query=young+chimi+modo+avion' },
+    ],
+  },
+  {
+    name:    'Cloud Nine',
+    ig:      'cloudninebeats',
+    igUrl:   'https://www.instagram.com/cloudninebeats',
+    image:   '/images/prod3.jpeg',
+    color:   '#00c2ff',
+    credits: [
+      { artist: 'Yan Block',    track: 'Cielo Roto',   views: '2.4M', url: 'https://www.youtube.com/results?search_query=yan+block+cielo+roto' },
+      { artist: 'Dei V',        track: 'Lejos',        views: '1.9M', url: 'https://www.youtube.com/results?search_query=dei+v+lejos' },
+    ],
+  },
+];
+
+const ProducerVinylCard = ({ producer }) => {
+  const [spinning, setSpinning] = React.useState(false);
+  const [hovered, setHovered] = React.useState(false);
+
+  return (
+    <div
+      className="credits-card flex flex-col items-center"
+      onMouseEnter={() => { setSpinning(true); setHovered(true); }}
+      onMouseLeave={() => { setSpinning(false); setHovered(false); }}
+    >
+      {/* Vinyl + photo */}
+      <div className="relative w-44 h-44 lg:w-52 lg:h-52 mb-5">
+        {/* Outer glow */}
+        <div
+          className="absolute inset-0 rounded-full blur-2xl transition-opacity duration-500"
+          style={{ background: producer.color, opacity: hovered ? 0.35 : 0.1 }}
+        />
+        {/* Disc */}
+        <div
+          className="relative w-full h-full rounded-full select-none"
+          style={{
+            background: 'radial-gradient(circle at 30% 30%, #2a2a2a 0%, #111 50%, #060606 100%)',
+            border: `2px solid ${hovered ? producer.color + '66' : 'rgba(255,255,255,0.06)'}`,
+            animation: spinning ? 'vinylSpin 2.4s linear infinite' : 'none',
+            boxShadow: hovered
+              ? `0 0 50px -10px ${producer.color}, inset 0 0 30px rgba(0,0,0,0.9)`
+              : 'inset 0 0 30px rgba(0,0,0,0.9)',
+            transition: 'border-color 0.4s, box-shadow 0.4s',
+          }}
+        >
+          {/* Groove rings */}
+          {[16, 24, 33, 42].map(r => (
+            <div
+              key={r}
+              className="absolute inset-0 rounded-full border"
+              style={{ margin: `${r}%`, borderColor: hovered ? producer.color + '18' : 'rgba(255,255,255,0.03)' }}
+            />
+          ))}
+          {/* Label — producer photo */}
+          <div
+            className="absolute rounded-full overflow-hidden"
+            style={{ inset: '26%', border: `3px solid ${producer.color}88`, boxShadow: `0 0 20px ${producer.color}55` }}
+          >
+            <img
+              src={producer.image}
+              alt={producer.name}
+              className="w-full h-full object-cover"
+              style={{ filter: 'contrast(1.1) saturate(1.2)' }}
+            />
+            {/* Overlay tint */}
+            <div className="absolute inset-0" style={{ background: `${producer.color}22` }} />
+            {/* Center hole */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="w-2.5 h-2.5 rounded-full bg-black/70 border border-white/10" />
+            </div>
+          </div>
+          {/* Play hint */}
+          <div
+            className="absolute inset-0 rounded-full flex items-center justify-center transition-opacity duration-300"
+            style={{ opacity: hovered ? 0 : 0 }} // hidden — interact via credit links
+          />
+        </div>
+
+        {/* Floating views badge */}
+        <div
+          className="absolute -top-2 -right-2 flex items-center gap-1.5 px-2.5 py-1 rounded-full font-ui text-[10px] font-bold tracking-widest transition-all duration-300"
+          style={{
+            background: hovered ? producer.color : 'rgba(255,255,255,0.06)',
+            color: '#fff',
+            border: `1px solid ${producer.color}`,
+            transform: hovered ? 'scale(1.08)' : 'scale(1)',
+          }}
+        >
+          <Activity style={{ width: 10, height: 10 }} />
+          {producer.credits.reduce((acc, c) => {
+            const n = parseFloat(c.views);
+            return acc + n;
+          }, 0).toFixed(1)}M
+        </div>
+      </div>
+
+      {/* Producer name + IG */}
+      <p className="font-heading font-bold text-white text-base tracking-wide mb-1">{producer.name}</p>
+      <a
+        href={producer.igUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center gap-1.5 font-ui text-[11px] tracking-wider mb-5 transition-colors group/ig"
+        style={{ color: hovered ? producer.color : '#666' }}
+      >
+        <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M12 2c2.717 0 3.056.01 4.122.06 1.065.05 1.79.217 2.428.492a4.9 4.9 0 0 1 1.772 1.153 4.9 4.9 0 0 1 1.153 1.772c.275.638.442 1.363.492 2.428.05 1.066.06 1.405.06 4.122 0 2.717-.01 3.056-.06 4.122-.05 1.065-.217 1.79-.492 2.428a4.9 4.9 0 0 1-1.153 1.772 4.9 4.9 0 0 1-1.772 1.153c-.638.275-1.363.442-2.428.492-1.066.05-1.405.06-4.122.06-2.717 0-3.056-.01-4.122-.06-1.065-.05-1.79-.217-2.428-.492a4.9 4.9 0 0 1-1.772-1.153A4.9 4.9 0 0 1 2.552 19.35c-.275-.638-.442-1.363-.492-2.428C2.01 15.856 2 15.517 2 12c0-2.717.01-3.056.06-4.122.05-1.065.217-1.79.492-2.428A4.9 4.9 0 0 1 3.705 3.678 4.9 4.9 0 0 1 5.477 2.525c.638-.275 1.363-.442 2.428-.492C8.944 2.01 9.283 2 12 2zm0 1.802c-2.67 0-2.986.01-4.04.058-.976.045-1.505.207-1.858.344-.466.182-.8.398-1.15.748-.35.35-.566.683-.748 1.15-.137.353-.3.882-.344 1.857-.047 1.055-.058 1.37-.058 4.041 0 2.67.011 2.986.058 4.04.045.977.207 1.505.344 1.858.182.466.399.8.748 1.15.35.35.683.566 1.15.748.353.137.882.3 1.857.344 1.054.048 1.37.058 4.041.058 2.67 0 2.987-.01 4.04-.058.977-.045 1.505-.207 1.858-.344.466-.182.8-.398 1.15-.748.35-.35.566-.683.748-1.15.137-.353.3-.882.344-1.857.048-1.055.058-1.37.058-4.041 0-2.67-.01-2.986-.058-4.04-.045-.977-.207-1.505-.344-1.858a3.1 3.1 0 0 0-.748-1.15 3.1 3.1 0 0 0-1.15-.748c-.353-.137-.881-.3-1.857-.344-1.054-.048-1.37-.058-4.04-.058zm0 3.063a5.135 5.135 0 1 1 0 10.27 5.135 5.135 0 0 1 0-10.27zm0 1.802a3.333 3.333 0 1 0 0 6.666 3.333 3.333 0 0 0 0-6.666zm5.338-3.205a1.2 1.2 0 1 1 0 2.4 1.2 1.2 0 0 1 0-2.4z"/>
+        </svg>
+        @{producer.ig}
+      </a>
+
+      {/* Credit tags */}
+      <div className="flex flex-col gap-2 w-full max-w-[200px]">
+        {producer.credits.map((c, i) => (
+          <a
+            key={i}
+            href={c.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg border transition-all duration-200 group/track"
+            style={{
+              background: 'rgba(255,255,255,0.03)',
+              borderColor: 'rgba(255,255,255,0.07)',
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.background = producer.color + '15';
+              e.currentTarget.style.borderColor = producer.color + '55';
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.background = 'rgba(255,255,255,0.03)';
+              e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)';
+            }}
+          >
+            <div className="flex items-center gap-2 min-w-0">
+              <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24" style={{ color: producer.color }}>
+                <path d="M8 5v14l11-7z"/>
+              </svg>
+              <div className="min-w-0">
+                <p className="font-heading text-white text-[11px] font-semibold leading-none truncate">{c.artist}</p>
+                <p className="font-ui text-[9px] text-text/40 mt-0.5 truncate">"{c.track}"</p>
+              </div>
+            </div>
+            <span className="font-ui text-[9px] font-bold shrink-0 tracking-wide" style={{ color: producer.color }}>{c.views}</span>
+          </a>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const Credits = () => {
+  const sectionRef = React.useRef(null);
+
+  React.useLayoutEffect(() => {
+    const ctx = gsap.context(() => {
+      gsap.from('.credits-card', {
+        opacity: 0,
+        y: 50,
+        scale: 0.88,
+        stagger: 0.15,
+        duration: 0.8,
+        ease: 'power3.out',
+        scrollTrigger: {
+          trigger: sectionRef.current,
+          start: 'top 78%',
+        },
+      });
+      gsap.from('.credits-headline', {
+        opacity: 0,
+        y: 24,
+        duration: 0.7,
+        ease: 'power2.out',
+        scrollTrigger: {
+          trigger: sectionRef.current,
+          start: 'top 82%',
+        },
+      });
+    }, sectionRef);
+    return () => ctx.revert();
+  }, []);
+
+  const totalViews = PRODUCERS_CREDITS.flatMap(p => p.credits)
+    .reduce((acc, c) => acc + parseFloat(c.views), 0);
+
+  return (
+    <section ref={sectionRef} className="py-24 relative overflow-hidden" style={{ background: 'linear-gradient(180deg, #050505 0%, #0a0a0a 50%, #050505 100%)' }}>
+      {/* Top accent line */}
+      <div className="absolute top-0 left-0 right-0 h-px" style={{ background: 'linear-gradient(90deg, transparent, #8A2BE2 50%, transparent)' }} />
+
+      {/* Background blobs */}
+      <div className="absolute top-1/2 left-1/4 w-96 h-96 rounded-full blur-[120px] pointer-events-none" style={{ background: '#8A2BE210', transform: 'translateY(-50%)' }} />
+      <div className="absolute top-1/2 right-1/4 w-64 h-64 rounded-full blur-[100px] pointer-events-none" style={{ background: '#00c2ff08', transform: 'translateY(-50%)' }} />
+
+      <div className="max-w-6xl mx-auto px-6">
+        {/* Header */}
+        <div className="credits-headline flex flex-col md:flex-row md:items-end md:justify-between mb-16 gap-6">
+          <div>
+            <p className="font-ui text-[11px] tracking-[0.3em] text-accent mb-3 uppercase">Nuestros Productores</p>
+            <h2 className="font-heading font-bold text-4xl lg:text-5xl text-white leading-tight">
+              Beats que ya suenan<br className="hidden md:block" />
+              <span style={{ color: '#8A2BE2' }}> en el circuito.</span>
+            </h2>
+            <p className="font-ui text-text/50 text-sm mt-3">
+              Productores con historial real. Escucha en qué canciones han trabajado.
+            </p>
+          </div>
+          <div className="flex gap-6 shrink-0">
+            <div className="text-center">
+              <p className="font-heading font-bold text-3xl text-white">+{Math.floor(totalViews)}M</p>
+              <p className="font-ui text-[10px] text-text/40 tracking-widest mt-1">PLAYS TOTALES</p>
+            </div>
+            <div className="w-px bg-white/10 self-stretch" />
+            <div className="text-center">
+              <p className="font-heading font-bold text-3xl text-white">{PRODUCERS_CREDITS.flatMap(p => p.credits).length}+</p>
+              <p className="font-ui text-[10px] text-text/40 tracking-widest mt-1">ARTISTAS TOP</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Producer cards */}
+        <div className="flex flex-wrap justify-center gap-10 lg:gap-16">
+          {PRODUCERS_CREDITS.map((producer, i) => (
+            <ProducerVinylCard key={i} producer={producer} index={i} />
+          ))}
+        </div>
+      </div>
+
+      <style>{`
+        @keyframes vinylSpin {
+          from { transform: rotate(0deg); }
+          to   { transform: rotate(360deg); }
+        }
+      `}</style>
+
+      <div className="absolute bottom-0 left-0 right-0 h-px" style={{ background: 'linear-gradient(90deg, transparent, #8A2BE220 50%, transparent)' }} />
+    </section>
+  );
+};
+
 const Commerce = () => {
   return (
     <section className="py-24 bg-primary/80 backdrop-blur-md" id="beats">
@@ -707,6 +971,7 @@ function App() {
       <div className="relative z-10 w-full">
         <Navbar />
         <Hero />
+        <Credits />
         <Features />
         <Workflow />
         <Commerce />

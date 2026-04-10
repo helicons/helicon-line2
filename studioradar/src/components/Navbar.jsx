@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { Activity, MapPin, ShoppingCart, Menu, X, ArrowRight, LogOut, User } from 'lucide-react'
+import { Activity, MapPin, ShoppingCart, Menu, X, ArrowRight, LogOut, User, LayoutDashboard } from 'lucide-react'
 import { gsap } from 'gsap'
 import { supabase } from '../lib/supabase'
 
@@ -15,6 +15,7 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false)
   const [open, setOpen] = useState(false)
   const [clientUser, setClientUser] = useState(null)
+  const [isProducer, setIsProducer] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const location = useLocation()
   const navigate = useNavigate()
@@ -40,19 +41,22 @@ export default function Navbar() {
     }
 
     async function loadClientUser(event, session) {
-      if (!session) { setClientUser(null); return }
-      // Solo crear fila en users si el login NO vino del portal de productores
+      if (!session) { setClientUser(null); setIsProducer(false); return }
       if (event === 'SIGNED_IN' && !window.location.pathname.startsWith('/producer')) {
         await ensureUserRow(session.user)
       }
-      const { data } = await supabase
-        .from('users')
-        .select('name, email')
-        .eq('user_id', session.user.id)
-        .maybeSingle()
-      if (data) {
+      const [{ data: userRow }, { data: producerRow }] = await Promise.all([
+        supabase.from('users').select('name, email').eq('user_id', session.user.id).maybeSingle(),
+        supabase.from('producers').select('id').eq('user_id', session.user.id).maybeSingle(),
+      ])
+      setIsProducer(!!producerRow)
+      if (userRow) {
+        setClientUser({ ...userRow, avatar: session.user.user_metadata?.avatar_url ?? null })
+      } else if (producerRow) {
+        // Producer logged in without a users row — still show their Google profile
         setClientUser({
-          ...data,
+          name: session.user.user_metadata?.full_name ?? session.user.email?.split('@')[0] ?? 'Productor',
+          email: session.user.email,
           avatar: session.user.user_metadata?.avatar_url ?? null,
         })
       } else {
@@ -215,6 +219,16 @@ export default function Navbar() {
                         <User size={13} />
                         Perfil
                       </Link>
+                      {isProducer && (
+                        <Link
+                          to="/producer/dashboard"
+                          onClick={() => setUserMenuOpen(false)}
+                          className="w-full flex items-center gap-2.5 px-3 py-2.5 text-xs font-ui text-accent hover:text-white hover:bg-accent/10 transition-all border-t border-white/5"
+                        >
+                          <LayoutDashboard size={13} />
+                          Dashboard Productor
+                        </Link>
+                      )}
                       <button
                         onClick={handleLogout}
                         className="w-full flex items-center gap-2.5 px-3 py-2.5 text-xs font-ui text-text/60 hover:text-white hover:bg-white/5 transition-all border-t border-white/5"
@@ -316,6 +330,12 @@ export default function Navbar() {
                 <User size={14} />
                 Perfil
               </Link>
+              {isProducer && (
+                <Link to="/producer/dashboard" className="w-full flex items-center justify-center gap-2 py-3 text-sm font-ui text-accent hover:text-white border border-accent/25 hover:border-accent/50 hover:bg-accent/10 rounded-xl transition-all">
+                  <LayoutDashboard size={14} />
+                  Dashboard Productor
+                </Link>
+              )}
               <button
                 onClick={handleLogout}
                 className="w-full flex items-center justify-center gap-2 py-3 text-sm font-ui text-text/60 hover:text-white border border-white/8 hover:border-white/15 rounded-xl transition-all"

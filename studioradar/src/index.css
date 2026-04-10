@@ -134,3 +134,22 @@
 .animate-propulsion-bg {
   animation: propulsion-bg 1.6s ease forwards;
 }
+
+/* ── Smooth Smoke Scrubber Animation ── */
+@keyframes smoke {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.animate-smoke {
+  animation: smoke 3s ease-in-out infinite;
+}
+
+/* Hide scrollbar for elements with scrollbar-none but allow scrolling */
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-none {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}

@@ -22,6 +22,8 @@ export default function UserProfile() {
   const [bookings, setBookings] = useState([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all')
+  const [activeTab, setActiveTab] = useState('bookings')
+  const [likedBeats, setLikedBeats] = useState([])
 
   useEffect(() => {
     async function load() {
@@ -56,7 +58,25 @@ export default function UserProfile() {
 
       if (bookingError) console.error('Error cargando reservas:', bookingError)
 
+      let savedBeats = []
+      try {
+        const wishlistStr = localStorage.getItem('helicon_wishlist')
+        if (wishlistStr) {
+          const likedIds = JSON.parse(wishlistStr)
+          if (likedIds && likedIds.length > 0) {
+            const { data: beatsData } = await supabase
+              .from('beats')
+              .select('*, producers(name)')
+              .in('id', likedIds)
+            savedBeats = beatsData || []
+          }
+        }
+      } catch (err) {
+        console.error('Error cargando likes:', err)
+      }
+
       setBookings(bookingData ?? [])
+      setLikedBeats(savedBeats)
       setLoading(false)
     }
     load()
@@ -122,23 +142,47 @@ export default function UserProfile() {
           ))}
         </div>
 
-        {/* Filtros */}
-        <div className="flex items-center gap-2 mb-6">
-          <p className="text-xs font-mono text-text/40 uppercase tracking-widest mr-2">Filtrar:</p>
-          {['all', 'confirmed', 'pending', 'cancelled'].map(f => (
-            <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className={`text-[10px] font-mono px-3 py-1.5 rounded-full border transition-all ${filter === f ? 'bg-accent border-accent text-white' : 'border-white/10 text-text/40 hover:text-white hover:border-white/20'}`}
-            >
-              {f === 'all' ? 'Todas' : STATUS[f]?.label ?? f}
-            </button>
-          ))}
+        {/* Pestañas (Tabs) */}
+        <div className="flex items-center gap-6 border-b border-white/10 mb-8 pb-3 relative">
+          <button 
+             onClick={() => setActiveTab('bookings')} 
+             className={`font-heading font-bold text-lg transition-colors ${activeTab === 'bookings' ? 'text-white' : 'text-white/40 hover:text-white/70'}`}
+          >
+             Mis Reservas
+          </button>
+          <button 
+             onClick={() => setActiveTab('likes')} 
+             className={`font-heading font-bold text-lg transition-colors flex items-center gap-2 ${activeTab === 'likes' ? 'text-white' : 'text-white/40 hover:text-white/70'}`}
+          >
+             Mis Likes <span className="text-[10px] font-mono bg-white/10 px-2 py-0.5 rounded-full">{likedBeats.length}</span>
+          </button>
+          <div className="absolute -bottom-[1px] h-[2px] bg-accent transition-all duration-300" 
+               style={{ 
+                  width: activeTab === 'bookings' ? '120px' : '90px', 
+                  left: activeTab === 'bookings' ? '0px' : '143px' 
+               }} 
+          ></div>
         </div>
 
-        {/* Lista de reservas */}
-        {filtered.length === 0 ? (
-          <div className="text-center py-20">
+        {activeTab === 'bookings' ? (
+        <>
+          {/* Filtros */}
+          <div className="flex items-center gap-2 mb-6">
+            <p className="text-xs font-mono text-text/40 uppercase tracking-widest mr-2">Filtrar:</p>
+            {['all', 'confirmed', 'pending', 'cancelled'].map(f => (
+              <button
+                key={f}
+                onClick={() => setFilter(f)}
+                className={`text-[10px] font-mono px-3 py-1.5 rounded-full border transition-all ${filter === f ? 'bg-accent border-accent text-white' : 'border-white/10 text-text/40 hover:text-white hover:border-white/20'}`}
+              >
+                {f === 'all' ? 'Todas' : STATUS[f]?.label ?? f}
+              </button>
+            ))}
+          </div>
+
+          {/* Lista de reservas */}
+          {filtered.length === 0 ? (
+            <div className="text-center py-20">
             <div className="w-16 h-16 rounded-full bg-white/3 border border-white/8 flex items-center justify-center mx-auto mb-4">
               <Music2 className="w-7 h-7 text-text/20" />
             </div>
@@ -218,6 +262,40 @@ export default function UserProfile() {
                 </div>
               )
             })}
+          </div>
+        )}
+        </>
+        ) : (
+          /* Lista de Beats */
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+             {likedBeats.length === 0 ? (
+               <div className="col-span-1 sm:col-span-2 text-center py-20">
+                  <Music2 className="w-10 h-10 text-white/20 mx-auto mb-4" />
+                  <p className="font-mono text-sm text-white/30">Aún no tienes beats guardados.</p>
+               </div>
+             ) : (
+               likedBeats.map(beat => {
+                 const imageUrl = beat.image_url ?? 'https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?auto=format&fit=crop&q=80&w=200';
+                 return (
+                   <div key={beat.id} className="bg-[#111] border border-white/8 rounded-2xl overflow-hidden hover:border-white/20 transition-all flex items-center p-3 gap-4 group">
+                      <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0 relative">
+                         <img src={imageUrl} alt={beat.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                         <h3 className="font-heading font-bold text-white text-base truncate pr-2">{beat.title}</h3>
+                         <p className="text-[10px] font-mono text-text/50 uppercase tracking-widest">{beat.producers?.name || 'Productor'}</p>
+                         <div className="flex gap-2 mt-1">
+                           <span className="text-[9px] font-mono px-2 py-0.5 rounded-full border border-white/10 text-white/40">{beat.bpm || '--'} BPM</span>
+                           <span className="text-[9px] font-mono px-2 py-0.5 rounded-full border border-white/10 text-white/40">{beat.key || '--'}</span>
+                         </div>
+                      </div>
+                      <Link to="/beats" className="shrink-0 w-10 h-10 rounded-full border border-white/10 flex items-center justify-center text-white/40 hover:text-accent hover:border-accent/40 hover:bg-accent/10 transition-all mr-2">
+                         <Play className="w-4 h-4 ml-0.5 fill-current" />
+                      </Link>
+                   </div>
+                 );
+               })
+             )}
           </div>
         )}
       </div>

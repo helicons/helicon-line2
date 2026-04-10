@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run:*)",
+      "Bash(\"c:\\\\Users\\\\ttrac\\\\helicon line\\\\studioradar\\\\.env\":*)",
+      "Bash(npm install:*)",
+      "Bash(ls \"C:\\\\Users\\\\ttrac\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-ttrac-helicon-line\\\\26fb1542-631a-499d-970a-30d01bb6ea32\\\\tasks\"\" 2>/dev/null || echo \"dir not found \")"
+    ]
+  }
+}

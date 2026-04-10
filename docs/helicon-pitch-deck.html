@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Helicon — Pitch Deck 2026</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --black: #0a0a0a;
+      --dark: #0e0b14;
+      --card: #150f20;
+      --gold: #9b6dff;
+      --gold-light: #c4a3ff;
+      --white: #f5f5f5;
+      --muted: #888888;
+      --border: #2a1f3d;
+    }
+
+    body {
+      font-family: 'Georgia', serif;
+      background: #0a0814;
+      color: var(--white);
+    }
+
+    .slide {
+      width: 1040px;
+      min-height: 585px;
+      margin: 32px auto;
+      background: var(--dark);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 64px 72px;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      overflow: hidden;
+      page-break-after: always;
+    }
+
+    /* Gold top line accent */
+    .slide::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--gold), transparent);
+    }
+
+    /* Slide number */
+    .slide-num {
+      position: absolute;
+      bottom: 28px;
+      right: 36px;
+      font-family: 'Courier New', monospace;
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 2px;
+    }
+
+    /* Helicon watermark bottom left */
+    .slide-brand {
+      position: absolute;
+      bottom: 26px;
+      left: 36px;
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 3px;
+      text-transform: uppercase;
+    }
+
+    /* ─── TYPOGRAPHY ─── */
+    .label {
+      font-family: 'Courier New', monospace;
+      font-size: 11px;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      font-size: 64px;
+      font-weight: normal;
+      letter-spacing: -1px;
+      line-height: 1;
+      color: var(--white);
+    }
+
+    h1 span { color: var(--gold); }
+
+    h2 {
+      font-size: 40px;
+      font-weight: normal;
+      color: var(--white);
+      line-height: 1.1;
+      margin-bottom: 28px;
+    }
+
+    h3 {
+      font-size: 18px;
+      font-weight: normal;
+      color: var(--gold-light);
+      margin-bottom: 10px;
+    }
+
+    p {
+      font-size: 16px;
+      line-height: 1.75;
+      color: #b0b0b0;
+      max-width: 680px;
+    }
+
+    .tagline {
+      font-size: 20px;
+      color: var(--muted);
+      margin-top: 20px;
+      font-style: italic;
+      letter-spacing: 1px;
+    }
+
+    /* ─── COVER ─── */
+    .cover-logo {
+      font-size: 80px;
+      font-weight: normal;
+      letter-spacing: 12px;
+      text-transform: uppercase;
+      color: var(--white);
+      margin-bottom: 8px;
+    }
+
+    .cover-logo span { color: var(--gold); }
+
+    .cover-line {
+      width: 80px;
+      height: 1px;
+      background: var(--gold);
+      margin: 28px 0;
+    }
+
+    .cover-subtitle {
+      font-size: 17px;
+      color: var(--muted);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    .cover-meta {
+      margin-top: 48px;
+      font-size: 13px;
+      color: #555;
+      letter-spacing: 1px;
+    }
+
+    /* ─── GRID LAYOUTS ─── */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+      margin-top: 36px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 28px;
+      margin-top: 36px;
+    }
+
+    .card {
+      background: #1e1e1e;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 28px;
+    }
+
+    .card .icon {
+      font-size: 28px;
+      margin-bottom: 14px;
+    }
+
+    .card h3 { font-size: 16px; margin-bottom: 8px; }
+
+    .card p {
+      font-size: 14px;
+      line-height: 1.6;
+      color: #888;
+      max-width: none;
+    }
+
+    /* ─── BIG STAT ─── */
+    .stats {
+      display: flex;
+      gap: 60px;
+      margin-top: 40px;
+    }
+
+    .stat-block .number {
+      font-size: 52px;
+      color: var(--gold);
+      line-height: 1;
+    }
+
+    .stat-block .desc {
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 6px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    /* ─── SPLIT LAYOUT ─── */
+    .split {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 60px;
+      align-items: center;
+    }
+
+    /* ─── LIST ─── */
+    .check-list {
+      list-style: none;
+      margin-top: 28px;
+    }
+
+    .check-list li {
+      font-size: 16px;
+      color: #b0b0b0;
+      padding: 10px 0;
+      border-bottom: 1px solid #1e1e1e;
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      line-height: 1.5;
+    }
+
+    .check-list li::before {
+      content: '—';
+      color: var(--gold);
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    /* ─── REVENUE TABLE ─── */
+    .rev-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 32px;
+    }
+
+    .rev-table th {
+      text-align: left;
+      font-family: 'Courier New', monospace;
+      font-size: 11px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--gold);
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .rev-table td {
+      padding: 14px 0;
+      font-size: 15px;
+      color: #b0b0b0;
+      border-bottom: 1px solid #1a1a1a;
+    }
+
+    .rev-table td:last-child {
+      color: var(--gold-light);
+    }
+
+    /* ─── TEAM CARDS ─── */
+    .team-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+      margin-top: 40px;
+    }
+
+    .team-card {
+      background: #1e1e1e;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 32px;
+    }
+
+    .team-avatar {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--gold), #3d1a7a);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      color: var(--black);
+      font-weight: bold;
+      margin-bottom: 20px;
+      letter-spacing: 1px;
+    }
+
+    .team-name {
+      font-size: 22px;
+      color: var(--white);
+      margin-bottom: 4px;
+    }
+
+    .team-role {
+      font-family: 'Courier New', monospace;
+      font-size: 11px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 16px;
+    }
+
+    .team-bio {
+      font-size: 14px;
+      color: #888;
+      line-height: 1.65;
+      max-width: none;
+    }
+
+    /* ─── ASK SLIDE ─── */
+    .ask-amount {
+      font-size: 72px;
+      color: var(--gold);
+      line-height: 1;
+      margin: 20px 0 8px;
+    }
+
+    .ask-use {
+      margin-top: 36px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+
+    .ask-item {
+      border-left: 2px solid var(--gold);
+      padding-left: 16px;
+    }
+
+    .ask-item .pct {
+      font-size: 28px;
+      color: var(--gold-light);
+    }
+
+    .ask-item .use {
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 4px;
+      line-height: 1.4;
+    }
+
+    /* ─── QUOTE ─── */
+    .quote {
+      font-size: 26px;
+      font-style: italic;
+      color: var(--white);
+      line-height: 1.5;
+      border-left: 3px solid var(--gold);
+      padding-left: 28px;
+      margin: 32px 0;
+    }
+
+    /* ─── PRINT ─── */
+    @media print {
+      body { background: white; }
+      .slide {
+        width: 100%;
+        margin: 0;
+        border-radius: 0;
+        border: none;
+        page-break-after: always;
+        min-height: 100vh;
+        background: var(--dark);
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ─── 01 COVER ─── -->
+<div class="slide" style="justify-content: space-between; padding-top: 80px; padding-bottom: 80px;">
+  <div>
+    <div class="cover-logo">HELIC<span>O</span>N</div>
+    <div class="cover-line"></div>
+    <div class="cover-subtitle">Fase I · Investor Pitch · 2026</div>
+  </div>
+  <div>
+    <p style="font-size:22px; color: #ccc; max-width:560px; line-height:1.6; font-style:italic;">
+      "La red privada donde los mejores productores trabajan, venden y se conectan."
+    </p>
+    <div class="cover-meta">Harold Estela · CEO &nbsp;&nbsp;|&nbsp;&nbsp; Moises Alarcon · CTO &nbsp;&nbsp;|&nbsp;&nbsp; heliconradar.com</div>
+  </div>
+  <div class="slide-brand">HELICON · CONFIDENTIAL</div>
+  <div class="slide-num">01</div>
+</div>
+
+<!-- ─── 02 PROBLEMA ─── -->
+<div class="slide">
+  <div class="label">El Problema</div>
+  <h2>La industria del beat está<br/>inundada de ruido</h2>
+  <div class="grid-3">
+    <div class="card">
+      <div class="icon">🌊</div>
+      <h3>Saturación</h3>
+      <p>Plataformas como BeatStars tienen millones de productores. Los buenos se pierden entre los mediocres.</p>
+    </div>
+    <div class="card">
+      <div class="icon">🎯</div>
+      <h3>Falta de confianza</h3>
+      <p>Los artistas no saben si el productor es legítimo. No hay señal de calidad ni curación.</p>
+    </div>
+    <div class="card">
+      <div class="icon">🏙️</div>
+      <h3>Studios invisibles</h3>
+      <p>Los mejores estudios de grabación no tienen presencia digital optimizada para productores en movimiento.</p>
+    </div>
+  </div>
+  <div class="slide-brand">HELICON</div>
+  <div class="slide-num">02</div>
+</div>
+
+<!-- ─── 03 SOLUCIÓN ─── -->
+<div class="slide">
+  <div class="label">La Solución</div>
+  <h2>Una red exclusiva, cerrada<br/>y curada de élite</h2>
+  <div class="quote">
+    Helicon no es un marketplace abierto.<br/>Es una membresía privada donde solo entran los mejores.
+  </div>
+  <ul class="check-list">
+    <li>Solo productores seleccionados por Helicon pueden vender — calidad garantizada</li>
+    <li>Studio Radar: mapa interactivo con estudios verificados en cualquier ciudad</li>
+    <li>Custom beats directos entre productor y artista, con Helicon como intermediario</li>
+    <li>La marca de Helicon es la señal de calidad — si estás aquí, eres élite</li>
+  </ul>
+  <div class="slide-brand">HELICON</div>
+  <div class="slide-num">03</div>
+</div>
+
+<!-- ─── 04 PRODUCTO ─── -->
+<div class="slide">
+  <div class="label">El Producto</div>
+  <h2>Tres pilares, un ecosistema</h2>
+  <div class="grid-3">
+    <div class="card">
+      <div class="icon">🎵</div>
+      <h3>Beat Marketplace</h3>
+      <p>Compra/venta de beats con licencias (Basic, Standard, Premium). Solo productores verificados. Pagos via Stripe.</p>
+    </div>
+    <div class="card">
+      <div class="icon">📍</div>
+      <h3>Studio Radar</h3>
+      <p>Mapa interactivo de estudios de grabación de élite. Reservas directas, calendario y gestión de slots.</p>
+    </div>
+    <div class="card">
+      <div class="icon">🤝</div>
+      <h3>Custom Beats</h3>
+      <p>Conexión directa productor–artista para proyectos a medida. Helicon gestiona la relación y el pago.</p>
+    </div>
+  </div>
+  <div class="slide-brand">HELICON</div>
+  <div class="slide-num">04</div>
+</div>
+
+<!-- ─── 05 MERCADO ─── -->
+<div class="slide">
+  <div class="label">Oportunidad de Mercado</div>
+  <h2>Un mercado de $XX,000M<br/>sin un líder premium</h2>
+  <div class="stats">
+    <div class="stat-block">
+      <div class="number">$5.3B</div>
+      <div class="desc">Mercado global de licencias<br/>de música (2025)</div>
+    </div>
+    <div class="stat-block">
+      <div class="number">+18%</div>
+      <div class="desc">Crecimiento anual<br/>del mercado de beats</div>
+    </div>
+    <div class="stat-block">
+      <div class="number">100M+</div>
+      <div class="desc">Artistas independientes<br/>activos globalmente</div>
+    </div>
+    <div class="stat-block">
+      <div class="number">7+5</div>
+      <div class="desc">Productores élite + Studios<br/>ya en la plataforma hoy</div>
+    </div>
+  </div>
+  <p style="margin-top: 32px;">Ninguna plataforma actual combina <strong style="color:var(--gold-light)">marketplace de beats curado + infraestructura de studios</strong> en un solo producto premium. Helicon captura ese espacio vacío.</p>
+  <div class="slide-brand">HELICON</div>
+  <div class="slide-num">05</div>
+</div>
+
+<!-- ─── 06 MODELO DE NEGOCIO ─── -->
+<div class="slide">
+  <div class="label">Modelo de Negocio</div>
+  <h2>Comisiones + Servicios</h2>
+  <table class="rev-table">
+    <thead>
+      <tr>
+        <th>Línea de ingresos</th>
+        <th>Mecánica</th>
+        <th>Comisión / Fee</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Venta de beats</td>
+        <td>Productor vende licencia — Helicon cobra comisión por transacción</td>
+        <td>15% por venta</td>
+      </tr>
+      <tr>
+        <td>Studio Radar</td>
+        <td>Reservas de estudio a través de la plataforma</td>
+        <td>% a definir</td>
+      </tr>
+      <tr>
+        <td>Custom Beats</td>
+        <td>Helicon como intermediario en proyectos a medida</td>
+        <td>% a definir</td>
+      </tr>
+      <tr>
+        <td>Membresía productor (Fase 2)</td>
+        <td>Suscripción mensual para acceso y herramientas premium</td>
+        <td>TBD</td>
+      </tr>
+    </tbody>
+  </table>
+  <div class="slide-brand">HELICON</div>
+  <div class="slide-num">06</div>
+</div>
+
+<!-- ─── 07 TRACCIÓN ─── -->
+<div class="slide">
+  <div class="label">Tracción</div>
+  <h2>Fase I en marcha — validación desde el día uno</h2>
+  <div class="grid-2" style="margin-top: 28px;">
+    <div>
+      <ul class="check-list">
+        <li>Plataforma live en <strong style="color:var(--gold-light)">heliconradar.com</strong> — funcional al 100%, construida por los propios fundadores</li>
+        <li><strong style="color:var(--gold-light)">7 productores de élite confirmados</strong>, 25 en proceso de validación — todos con millones de visualizaciones</li>
+        <li><strong style="color:var(--gold-light)">5 estudios activos</strong> en Madrid, Barcelona y Cantabria — validando presencia en Galicia, Valencia y más ciudades</li>
+        <li>Studio Radar operativo con mapas, reservas y gestión de slots en tiempo real</li>
+        <li>Infraestructura de pagos con Stripe completamente operativa</li>
+      </ul>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      <div class="card" style="text-align:center; padding: 20px;">
+        <div style="font-size: 42px; color: var(--gold); line-height:1;">7 <span style="font-size:16px; color:#888">confirmados</span></div>
+        <div style="font-size: 13px; color: #666; margin-top: 4px;">+ 25 en validación</div>
+        <div style="font-size: 11px; color: var(--gold-light); margin-top: 6px; letter-spacing:1px; text-transform:uppercase;">Productores élite · millones de views</div>
+      </div>
+      <div class="card" style="text-align:center; padding: 20px;">
+        <div style="font-size: 42px; color: var(--gold); line-height:1;">5 <span style="font-size:16px; color:#888">activos</span></div>
+        <div style="font-size: 13px; color: #666; margin-top: 4px;">+ Galicia · Valencia · más ciudades</div>
+        <div style="font-size: 11px; color: var(--gold-light); margin-top: 6px; letter-spacing:1px; text-transform:uppercase;">Studios · Madrid · BCN · Cantabria</div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-brand">HELICON</div>
+  <div class="slide-num">07</div>
+</div>
+
+<!-- ─── 08 ROADMAP ─── -->
+<div class="slide">
+  <div class="label">Roadmap · Fase I — Hoy</div>
+  <h2>Construir la red.<br/>Probar el modelo.</h2>
+  <div class="grid-2" style="margin-top: 24px; gap: 24px;">
+    <div>
+      <ul class="check-list">
+        <li><strong style="color:var(--gold-light)">100 productores de élite</strong> con millones de views — cerrar el año con la red activa</li>
+        <li><strong style="color:var(--gold-light)">Studios en todas las capitales de España</strong> — mínimo 5 por ciudad</li>
+        <li>Comisiones activas: 15% beats · % studios · custom beats</li>
+        <li>Validar el modelo de negocio con tracción real antes de escalar</li>
+      </ul>
+    </div>
+    <div class="card" style="display:flex; flex-direction:column; gap:14px; justify-content:center;">
+      <div>
+        <div style="font-size:11px; letter-spacing:3px; text-transform:uppercase; color:var(--gold); margin-bottom:4px;">ARR proyectado fin de año</div>
+        <div style="font-size:32px; color:var(--white);">€180K – €300K</div>
+      </div>
+      <div>
+        <div style="font-size:11px; letter-spacing:3px; text-transform:uppercase; color:var(--gold); margin-bottom:4px;">Objetivo de esta ronda</div>
+        <div style="font-size:32px; color:var(--white);">Lanzar Fase II</div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-brand">HELICON</div>
+  <div class="slide-num">08</div>
+</div>
+
+<!-- ─── 09 VISIÓN ─── -->
+<div class="slide">
+  <div class="label">Visión · El destino</div>
+  <h2>De España al mundo.<br/>La infraestructura de la música independiente.</h2>
+  <div style="margin-top: 28px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px;">
+    <div class="card" style="border-left: 2px solid var(--gold); padding: 20px;">
+      <div style="font-family:'Courier New',monospace; font-size:10px; letter-spacing:3px; color:var(--gold); margin-bottom:8px;">FASE II · +6M</div>
+      <div style="font-size:15px; color:var(--white); margin-bottom:8px;">Talent Zone + Subastas</div>
+      <p style="font-size:13px; color:#777; max-width:none;">Membresía €50/mes para productores. Artistas pujan por canciones en tiempo real. Primeras fuentes de ingresos recurrentes masivos.</p>
+    </div>
+    <div class="card" style="border-left: 2px solid var(--gold); padding: 20px;">
+      <div style="font-family:'Courier New',monospace; font-size:10px; letter-spacing:3px; color:var(--gold); margin-bottom:8px;">FASE III · +12M</div>
+      <div style="font-size:15px; color:var(--white); margin-bottom:8px;">Membership Premium + Europa</div>
+      <p style="font-size:13px; color:#777; max-width:none;">€500/mes · 2 tracks producidos en cualquier parte del mundo. Expansión a capitales europeas con el mismo modelo curado.</p>
+    </div>
+    <div class="card" style="border-left: 2px solid var(--gold); padding: 20px;">
+      <div style="font-family:'Courier New',monospace; font-size:10px; letter-spacing:3px; color:var(--gold); margin-bottom:8px;">FASE IV · +18M</div>
+      <div style="font-size:15px; color:var(--white); margin-bottom:8px;">Publishing propio</div>
+      <p style="font-size:13px; color:#777; max-width:none;">Helicon como publisher. Royalties, sync licensing para cine y publicidad. Catálogo propio generando ingresos perpetuos.</p>
+    </div>
+    <div class="card" style="border-left: 2px solid #6d3fff; padding: 20px;">
+      <div style="font-family:'Courier New',monospace; font-size:10px; letter-spacing:3px; color:#9b6dff; margin-bottom:8px;">FASE V · +2–3 AÑOS</div>
+      <div style="font-size:15px; color:var(--white); margin-bottom:8px;">Studios propios globales</div>
+      <p style="font-size:13px; color:#777; max-width:none;">Studios Helicon en capitales de todo el mundo. Control total de la cadena de valor: el productor aprende, graba, vende y cobra en el mismo ecosistema.</p>
+    </div>
+    <div class="card" style="border-left: 2px solid #6d3fff; padding: 20px; grid-column: span 2;">
+      <div style="font-family:'Courier New',monospace; font-size:10px; letter-spacing:3px; color:#9b6dff; margin-bottom:8px;">FASE VI · +3–5 AÑOS · IA</div>
+      <div style="font-size:15px; color:var(--white); margin-bottom:8px;">Helicon AI Coach — aprende a mezclar desde tu DAW</div>
+      <p style="font-size:13px; color:#777; max-width:none;">IA integrada directamente en tu DAW (Ableton, Logic, FL Studio). Te graba mientras produces, analiza tu mezcla en tiempo real y te enseña como un ingeniero de sonido senior. €29–79/mes. Sin competidor directo en el mercado.</p>
+    </div>
+  </div>
+  <div class="slide-brand">HELICON</div>
+  <div class="slide-num">09</div>
+</div>
+
+<!-- ─── 10 POTENCIAL ─── -->
+<div class="slide">
+  <div class="label">Potencial · Proyección realista a 5 años</div>
+  <h2>Un ecosistema de<br/>€270M+ en ingresos anuales</h2>
+  <div style="margin-top: 28px; display:grid; grid-template-columns: 1fr 1fr; gap: 32px;">
+    <div>
+      <table class="rev-table">
+        <thead>
+          <tr>
+            <th>Línea de ingreso</th>
+            <th>ARR estimado</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Studios propios (200 globales)</td>
+            <td style="color:var(--gold-light)">€100M–140M</td>
+          </tr>
+          <tr>
+            <td>Publishing + royalties + sync</td>
+            <td style="color:var(--gold-light)">€50M–70M</td>
+          </tr>
+          <tr>
+            <td>Membresías productores + artistas</td>
+            <td style="color:var(--gold-light)">€60M–90M</td>
+          </tr>
+          <tr>
+            <td>IA Coach (DAW)</td>
+            <td style="color:var(--gold-light)">€30M–50M</td>
+          </tr>
+          <tr>
+            <td>Subastas + custom beats</td>
+            <td style="color:var(--gold-light)">€10M–20M</td>
+          </tr>
+        </tbody>
+      </table>
+      <div style="margin-top:16px; padding:14px; background:#1a0f2e; border-radius:4px; border:1px solid var(--border);">
+        <span style="font-size:11px; letter-spacing:2px; text-transform:uppercase; color:var(--muted);">Total proyectado</span>
+        <div style="font-size:28px; color:var(--gold); margin-top:4px;">€250M – €370M / año</div>
+      </div>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:20px; justify-content:center;">
+      <div class="card" style="text-align:center; padding:24px;">
+        <div style="font-size:11px; letter-spacing:3px; text-transform:uppercase; color:var(--muted); margin-bottom:8px;">Valoración proyectada (8x)</div>
+        <div style="font-size:38px; color:var(--gold);">€2B – €3B</div>
+        <div style="font-size:12px; color:#555; margin-top:6px;">comparable: Splice €500M · DistroKid €1.3B</div>
+      </div>
+      <div class="card" style="padding:20px;">
+        <div style="font-size:13px; color:#777; line-height:1.6; max-width:none;">Ninguna empresa en el mundo combina beats curados + studios físicos + publishing + IA de aprendizaje en un solo ecosistema. <strong style="color:var(--gold-light)">Helicon no tiene competidor directo.</strong></div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-brand">HELICON</div>
+  <div class="slide-num">10</div>
+</div>
+
+<!-- ─── 11 EQUIPO ─── -->
+<div class="slide">
+  <div class="label">El Equipo</div>
+  <h2>Dos fundadores.<br/>Visión compartida.</h2>
+  <div class="team-grid">
+    <div class="team-card">
+      <div class="team-avatar">HE</div>
+      <div class="team-name">Harold Estela</div>
+      <div class="team-role">Co-Founder · CEO</div>
+      <p class="team-bio">
+        Visión de negocio, estrategia de producto y co-desarrollador de la plataforma. Ha liderado gran parte de la lógica y el diseño de heliconradar.com. Responsable del go-to-market, relaciones con la industria musical y crecimiento de la comunidad.
+      </p>
+    </div>
+    <div class="team-card">
+      <div class="team-avatar">MA</div>
+      <div class="team-name">Moises Alarcon</div>
+      <div class="team-role">Co-Founder · CTO</div>
+      <p class="team-bio">
+        Arquitectura técnica y desarrollo del producto. Responsable de la plataforma full-stack (React, Supabase, Stripe), Studio Radar y la infraestructura de pagos.
+      </p>
+    </div>
+  </div>
+  <div class="slide-brand">HELICON</div>
+  <div class="slide-num">11</div>
+</div>
+
+<!-- ─── 12 THE ASK ─── -->
+<div class="slide">
+  <div class="label">La Inversión · Fase I</div>
+  <h2>Lo que pedimos hoy</h2>
+  <div class="ask-amount">€400,000</div>
+  <p style="color: var(--muted); font-style: italic; margin-bottom: 4px;">Ronda pre-seed · Valoración pre-money: €2.5M</p>
+  <p style="color: #555; font-size:13px; margin-bottom: 28px;">Dilución: ~14% · Instrumento: a definir con el inversor (SAFE / equity directo)</p>
+  <div class="ask-use">
+    <div class="ask-item">
+      <div class="pct">40%</div>
+      <div class="use">Producto & Tecnología<br/>Fase II · mobile · escala</div>
+    </div>
+    <div class="ask-item">
+      <div class="pct">35%</div>
+      <div class="use">Crecimiento & Marketing<br/>adquisición · partnerships</div>
+    </div>
+    <div class="ask-item">
+      <div class="pct">25%</div>
+      <div class="use">Operaciones & Equipo<br/>contrataciones clave</div>
+    </div>
+  </div>
+  <p style="margin-top:28px; font-size:14px; color:#555; font-style:italic;">
+    Esta ronda cubre 18 meses de runway para lanzar Fase II (Talent Zone + subastas) y llegar a los números que justifican una ronda seed de €1M–2M.
+  </p>
+  <div class="slide-brand">HELICON</div>
+  <div class="slide-num">12</div>
+</div>
+
+<!-- ─── 13 CIERRE ─── -->
+<div class="slide" style="justify-content: center; align-items: flex-start;">
+  <div class="label">Contacto</div>
+  <div class="cover-logo" style="font-size: 60px; margin-bottom: 12px;">HELIC<span>O</span>N</div>
+  <div class="cover-line"></div>
+  <p style="font-size: 18px; color: #888; margin-bottom: 36px;">
+    heliconradar.com &nbsp;·&nbsp; heliconbusiness@gmail.com
+  </p>
+  <div class="quote" style="font-size: 20px; margin: 0;">
+    "No somos una plataforma de beats más.<br/>Somos la infraestructura de la música independiente global."
+  </div>
+  <div class="slide-brand">HELICON · CONFIDENTIAL · 2026</div>
+  <div class="slide-num">13</div>
+</div>
+
+</body>
+</html>

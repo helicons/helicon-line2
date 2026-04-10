@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Helicon — One Pager</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --dark: #0e0b14;
+      --purple: #9b6dff;
+      --purple-light: #c4a3ff;
+      --white: #f5f5f5;
+      --muted: #888;
+      --border: #2a1f3d;
+      --card: #150f20;
+    }
+    body {
+      font-family: 'Georgia', serif;
+      background: #0a0814;
+      color: var(--white);
+      display: flex;
+      justify-content: center;
+      padding: 40px 20px;
+    }
+    .page {
+      width: 720px;
+      background: var(--dark);
+      border: 1px solid var(--border);
+      padding: 56px 64px;
+      position: relative;
+    }
+    .page::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--purple), transparent);
+    }
+    .logo {
+      font-size: 32px;
+      letter-spacing: 10px;
+      text-transform: uppercase;
+      color: var(--white);
+      margin-bottom: 4px;
+    }
+    .logo span { color: var(--purple); }
+    .tagline {
+      font-size: 13px;
+      color: var(--muted);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 36px;
+      padding-bottom: 28px;
+      border-bottom: 1px solid var(--border);
+    }
+    .label {
+      font-family: 'Courier New', monospace;
+      font-size: 10px;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: var(--purple);
+      margin-bottom: 8px;
+    }
+    .section {
+      margin-bottom: 28px;
+    }
+    p {
+      font-size: 15px;
+      line-height: 1.75;
+      color: #b0b0b0;
+    }
+    .arrows {
+      list-style: none;
+      margin-top: 8px;
+    }
+    .arrows li {
+      font-size: 15px;
+      color: #b0b0b0;
+      padding: 5px 0;
+      display: flex;
+      gap: 12px;
+      line-height: 1.5;
+    }
+    .arrows li::before {
+      content: '→';
+      color: var(--purple);
+      flex-shrink: 0;
+    }
+    .numbers {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 16px;
+      margin-top: 8px;
+    }
+    .num-block {
+      background: #1a0f2e;
+      border: 1px solid var(--border);
+      padding: 16px;
+      text-align: center;
+    }
+    .num-block .n {
+      font-size: 26px;
+      color: var(--purple);
+      line-height: 1;
+    }
+    .num-block .d {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 4px;
+      line-height: 1.4;
+    }
+    .divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 28px 0;
+    }
+    .cta {
+      font-size: 20px;
+      color: var(--white);
+      font-style: italic;
+      margin-bottom: 24px;
+    }
+    .footer {
+      margin-top: 36px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+    .footer .name {
+      font-size: 16px;
+      color: var(--white);
+    }
+    .footer .role {
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-top: 2px;
+    }
+    .footer .contact {
+      font-size: 13px;
+      color: var(--muted);
+      text-align: right;
+      line-height: 1.8;
+    }
+    .footer .contact a {
+      color: var(--purple-light);
+      text-decoration: none;
+    }
+    @media print {
+      body { background: white; padding: 0; }
+      .page {
+        width: 100%;
+        border: none;
+        padding: 48px 56px;
+        background: var(--dark);
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <div class="logo">HELIC<span>O</span>N</div>
+  <div class="tagline">La red privada de la música de élite · heliconradar.com</div>
+
+  <div class="section">
+    <div class="label">El problema</div>
+    <p>BeatStars tiene 2 millones de productores. Los buenos se pierden entre los mediocres. Los artistas no saben en quién confiar. Los mejores estudios de grabación son invisibles para los productores que los necesitan.</p>
+  </div>
+
+  <div class="section">
+    <div class="label">Lo que hemos construido</div>
+    <ul class="arrows">
+      <li>Plataforma live en heliconradar.com — beat marketplace + studio radar + pagos Stripe</li>
+      <li>7 productores de élite confirmados con millones de visualizaciones — 25 en validación</li>
+      <li>5 studios activos en Madrid, Barcelona y Cantabria — expandiendo a toda España</li>
+      <li>Red cerrada y curada: solo entran los mejores, esa exclusividad es el producto</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <div class="label">Tracción</div>
+    <div class="numbers">
+      <div class="num-block">
+        <div class="n">7</div>
+        <div class="d">Productores élite<br/>confirmados</div>
+      </div>
+      <div class="num-block">
+        <div class="n">5</div>
+        <div class="d">Studios activos<br/>Madrid · BCN · Cantabria</div>
+      </div>
+      <div class="num-block">
+        <div class="n">€300K</div>
+        <div class="d">ARR proyectado<br/>fin de año</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="label">La visión</div>
+    <ul class="arrows">
+      <li>Talent Zone (membresías €50/mes) + subastas de canciones — Fase II</li>
+      <li>Publishing propio + sync licensing para cine, series y videojuegos — Fase IV</li>
+      <li>Studios propios en capitales del mundo + IA Coach integrada en DAW — Fase V–VI</li>
+      <li>Potencial: €250M–370M ARR · valoración proyectada €2B–3B a 5–7 años</li>
+    </ul>
+  </div>
+
+  <hr class="divider"/>
+
+  <div class="section">
+    <div class="label">Lo que buscamos</div>
+    <ul class="arrows">
+      <li><strong style="color:var(--white)">€400,000</strong> en ronda pre-seed · valoración pre-money €2.5M · dilución ~14%</li>
+      <li>Para: cerrar Fase I (100 productores · studios en toda España) y lanzar Fase II</li>
+      <li>Runway de 18 meses hacia una ronda seed de €1M–2M</li>
+    </ul>
+  </div>
+
+  <div class="cta">"¿Tienen 20 minutos para una llamada?"</div>
+
+  <div class="footer">
+    <div>
+      <div class="name">Harold Estela</div>
+      <div class="role">Co-Founder · CEO</div>
+      <div style="margin-top:8px;">
+        <div class="name" style="font-size:14px;">Moises Alarcon</div>
+        <div class="role">Co-Founder · CTO</div>
+      </div>
+    </div>
+    <div class="contact">
+      heliconradar.com<br/>
+      heliconbusiness@gmail.com<br/>
+      <span style="color:#444; font-size:11px;">Confidencial · 2026</span>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
