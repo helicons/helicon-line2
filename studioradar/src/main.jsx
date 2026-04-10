@@ -15,6 +15,7 @@ import Legal from './Legal.jsx'
 import UserLogin from './UserLogin.jsx'
 import UserProfile from './UserProfile.jsx'
 import ProducerOnboarding from './ProducerOnboarding.jsx'
+import ProducerPublicProfile from './ProducerPublicProfile.jsx'
 import './index.css'
 
 createRoot(document.getElementById('root')).render(
@@ -36,6 +37,7 @@ createRoot(document.getElementById('root')).render(
         <Route path="/login" element={<UserLogin />} />
         <Route path="/perfil" element={<UserProfile />} />
         <Route path="/onboarding" element={<ProducerOnboarding />} />
+        <Route path="/producer/:producerId" element={<ProducerPublicProfile />} />
       </Routes>
     </BrowserRouter>
   </StrictMode>,

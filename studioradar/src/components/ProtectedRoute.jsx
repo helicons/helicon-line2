@@ -30,6 +30,7 @@ async function checkAndLinkProducer(user) {
     .update({
       user_id: user.id,
       name: user.user_metadata?.full_name ?? user.email.split('@')[0],
+      avatar_url: user.user_metadata?.avatar_url ?? null,
     })
     .eq('id', byEmail.id)
 

@@ -31,6 +31,8 @@ const mapBeat = (b) => ({
   id: b.id,
   title: b.title,
   producer: b.producers?.name ?? 'Productor',
+  producer_id: b.producers?.id ?? null,
+  producer_avatar: b.producers?.avatar_url ?? null,
   bpm: b.bpm ?? 0,
   key: b.key ?? '—',
   genre: b.genre ?? '',
@@ -224,7 +226,7 @@ export default function BeatMarketplace() {
   useEffect(() => {
     supabase
       .from('beats')
-      .select('*, producers(name)')
+      .select('*, producers(id, name, avatar_url)')
       .eq('is_published', true)
       .order('created_at', { ascending: false })
       .then(({ data }) => {
@@ -727,7 +729,12 @@ export default function BeatMarketplace() {
                       <div className="flex items-start justify-between gap-2 mb-3">
                         <div className="min-w-0">
                           <h3 className="font-heading font-bold text-lg text-white truncate leading-tight">{beat.title}</h3>
-                          <p className="font-ui text-xs text-white/50 truncate mt-0.5">{beat.producer} · {beat.plays}</p>
+                          <p className="font-ui text-xs text-white/50 truncate mt-0.5">
+                            <span
+                              className="hover:text-accent transition-colors cursor-pointer"
+                              onClick={e => { e.stopPropagation(); if (beat.producer_id) navigate(`/producer/${beat.producer_id}`) }}
+                            >{beat.producer}</span> · {beat.plays}
+                          </p>
                         </div>
                         <button
                           onClick={e => { e.stopPropagation(); setCart([...cart, beat]); }}
@@ -857,7 +864,10 @@ export default function BeatMarketplace() {
               </div>
               <div className="flex flex-col min-w-0 pr-2">
                 <span className="font-heading font-bold text-base text-white truncate drop-shadow-sm">{currentTrack.title}</span>
-                <span className="font-ui text-xs text-white/50 truncate uppercase tracking-wider">{currentTrack.producer}</span>
+                <span
+                  className="font-ui text-xs text-white/50 truncate uppercase tracking-wider hover:text-accent transition-colors cursor-pointer"
+                  onClick={e => { e.stopPropagation(); if (currentTrack.producer_id) navigate(`/producer/${currentTrack.producer_id}`) }}
+                >{currentTrack.producer}</span>
               </div>
               <button 
                  onClick={(e) => {
