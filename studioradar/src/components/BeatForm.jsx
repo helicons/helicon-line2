@@ -1,10 +1,173 @@
 import { useState, useRef } from 'react'
 import { supabase } from '../lib/supabase'
-import { Upload, Music2, Image, X, Loader } from 'lucide-react'
+import { Upload, Music2, Image, X, Loader, ChevronDown, Plus } from 'lucide-react'
 
 const GENRES = ['Trap', 'R&B', 'Drill', 'Synthwave', 'Techno', 'Industrial', 'Hard', 'Bouncy', 'Chill']
 const MOODS = ['Dark', 'Aggressive', 'Chill', 'Sad', 'Energetic', 'Melancholic']
 const KEY_OPTIONS = ['C Maj','C Min','C# Maj','C# Min','D Maj','D Min','D# Maj','D# Min','E Maj','E Min','F Maj','F Min','F# Maj','F# Min','G Maj','G Min','G# Maj','G# Min','A Maj','A Min','A# Maj','A# Min','B Maj','B Min']
+
+const DEFAULT_CONDITIONS = {
+  basic:     { tag: 'MP3 Lease',        features: ['MP3 320kbps', '2.500 copias físicas', '500K streams', 'No radio comercial', 'Crédito: "Prod. por [productor]"'] },
+  premium:   { tag: 'WAV + Stems',      features: ['WAV sin comprimir + stems', 'Copias ilimitadas', 'Streams ilimitados', 'Radio comercial incluida', 'Crédito: "Prod. por [productor]"'] },
+  exclusive: { tag: 'Derechos Totales', features: ['WAV + stems + proyecto DAW', 'Derechos exclusivos totales', 'Beat retirado del mercado', 'TV / Sync / Publicidad', 'Sin crédito obligatorio'] },
+}
+
+// Condiciones predefinidas disponibles para seleccionar
+const PRESET_CONDITIONS = {
+  basic: [
+    'MP3 320kbps', 'WAV sin comprimir', '2.500 copias físicas', '5.000 copias físicas',
+    '500K streams', '1M streams', 'Streams ilimitados', 'No radio comercial',
+    'Radio comercial incluida', 'Crédito: "Prod. por [productor]"', 'Sin crédito obligatorio',
+    '1 vídeo musical', 'Uso no comercial', 'Distribución digital',
+  ],
+  premium: [
+    'WAV sin comprimir + stems', 'MP3 320kbps', 'Copias ilimitadas', '10.000 copias físicas',
+    'Streams ilimitados', '1M streams', 'Radio comercial incluida', 'No radio comercial',
+    'Crédito: "Prod. por [productor]"', '1 vídeo musical', 'Distribución digital',
+    'Uso en sync (vídeo)', 'Sin crédito obligatorio',
+  ],
+  exclusive: [
+    'WAV + stems + proyecto DAW', 'WAV sin comprimir + stems', 'Derechos exclusivos totales',
+    'Beat retirado del mercado', 'TV / Sync / Publicidad', 'Sin crédito obligatorio',
+    'Crédito: "Prod. por [productor]"', 'Copias ilimitadas', 'Streams ilimitados',
+    'Radio comercial incluida', 'Distribución digital', 'Uso comercial completo',
+  ],
+}
+
+const LICENSE_LABELS = { basic: 'Basic', premium: 'Premium', exclusive: 'Exclusive' }
+const LICENSE_COLORS = {
+  basic:     { text: 'text-blue-400',   border: 'border-blue-500/40',   bg: 'bg-blue-500/10'   },
+  premium:   { text: 'text-purple-400', border: 'border-purple-500/40', bg: 'bg-purple-500/10' },
+  exclusive: { text: 'text-amber-400',  border: 'border-amber-500/40',  bg: 'bg-amber-500/10'  },
+}
+
+function LicenseConditionEditor({ licenseId, value, onChange }) {
+  const [open, setOpen] = useState(false)
+  const [customInput, setCustomInput] = useState('')
+  const inputRef = useRef()
+
+  const label  = LICENSE_LABELS[licenseId]
+  const colors = LICENSE_COLORS[licenseId]
+  const presets = PRESET_CONDITIONS[licenseId]
+
+  const addFeature = (feat) => {
+    const trimmed = feat.trim()
+    if (!trimmed || value.features.includes(trimmed)) return
+    onChange({ ...value, features: [...value.features, trimmed] })
+  }
+
+  const removeFeature = (feat) => {
+    onChange({ ...value, features: value.features.filter(f => f !== feat) })
+  }
+
+  const handleCustomAdd = () => {
+    addFeature(customInput)
+    setCustomInput('')
+    inputRef.current?.focus()
+  }
+
+  return (
+    <div className={`border rounded-xl overflow-hidden transition-colors ${open ? colors.border : 'border-white/10'}`}>
+      {/* Header acordeón */}
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center justify-between px-4 py-3 bg-white/3 hover:bg-white/5 transition-colors"
+      >
+        <div className="flex items-center gap-2">
+          <span className={`font-mono text-xs font-bold uppercase tracking-widest ${colors.text}`}>{label}</span>
+          <span className="font-mono text-[10px] text-text/30">{value.tag}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="font-mono text-[10px] text-text/20">{value.features.length} condiciones</span>
+          <ChevronDown size={13} className={`text-text/40 transition-transform ${open ? 'rotate-180' : ''}`} />
+        </div>
+      </button>
+
+      {open && (
+        <div className="px-4 pb-4 pt-3 space-y-4 bg-white/2">
+
+          {/* Subtítulo */}
+          <div>
+            <label className="font-mono text-[10px] text-text/40 uppercase tracking-widest block mb-1.5">Subtítulo</label>
+            <input
+              type="text"
+              value={value.tag}
+              onChange={e => onChange({ ...value, tag: e.target.value })}
+              placeholder="ej. MP3 Lease"
+              className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-xs text-white font-mono outline-none focus:border-accent transition-colors placeholder:text-text/20"
+            />
+          </div>
+
+          {/* Chips seleccionados */}
+          <div>
+            <label className="font-mono text-[10px] text-text/40 uppercase tracking-widest block mb-2">Condiciones elegidas</label>
+            {value.features.length === 0 ? (
+              <p className="text-text/20 text-[11px] font-mono italic">Ninguna seleccionada</p>
+            ) : (
+              <div className="flex flex-wrap gap-1.5">
+                {value.features.map(feat => (
+                  <span
+                    key={feat}
+                    className={`flex items-center gap-1.5 text-[11px] font-mono px-2.5 py-1 rounded-full border ${colors.border} ${colors.bg} ${colors.text}`}
+                  >
+                    {feat}
+                    <button
+                      type="button"
+                      onClick={() => removeFeature(feat)}
+                      className="hover:opacity-60 transition-opacity"
+                    >
+                      <X size={10} />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Presets disponibles (los no seleccionados) */}
+          <div>
+            <label className="font-mono text-[10px] text-text/40 uppercase tracking-widest block mb-2">Añadir condición</label>
+            <div className="flex flex-wrap gap-1.5 mb-3">
+              {presets.filter(p => !value.features.includes(p)).map(preset => (
+                <button
+                  key={preset}
+                  type="button"
+                  onClick={() => addFeature(preset)}
+                  className="flex items-center gap-1 text-[11px] font-mono px-2.5 py-1 rounded-full border border-white/10 text-text/40 hover:border-white/30 hover:text-white transition-all"
+                >
+                  <Plus size={9} /> {preset}
+                </button>
+              ))}
+            </div>
+
+            {/* Input condición personalizada */}
+            <div className="flex gap-2">
+              <input
+                ref={inputRef}
+                type="text"
+                value={customInput}
+                onChange={e => setCustomInput(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleCustomAdd() } }}
+                placeholder="Escribe una condición propia…"
+                className="flex-1 bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-xs text-white font-mono outline-none focus:border-accent transition-colors placeholder:text-text/20"
+              />
+              <button
+                type="button"
+                onClick={handleCustomAdd}
+                disabled={!customInput.trim()}
+                className={`px-3 py-2 rounded-lg border font-mono text-xs transition-all ${customInput.trim() ? `${colors.border} ${colors.bg} ${colors.text} hover:opacity-80` : 'border-white/10 text-text/20 cursor-not-allowed'}`}
+              >
+                <Plus size={13} />
+              </button>
+            </div>
+          </div>
+
+        </div>
+      )}
+    </div>
+  )
+}
 
 export default function BeatForm({ producerId, beat, onSaved, onCancel }) {
   const [title, setTitle] = useState(beat?.title ?? '')
@@ -16,6 +179,7 @@ export default function BeatForm({ producerId, beat, onSaved, onCancel }) {
   const [pricePremium, setPricePremium] = useState(beat?.price_premium ?? '')
   const [priceExclusive, setPriceExclusive] = useState(beat?.price_exclusive ?? '')
   const [tags, setTags] = useState(beat?.tags?.join(', ') ?? '')
+  const [conditions, setConditions] = useState(beat?.license_conditions ?? DEFAULT_CONDITIONS)
 
   const [audioFile, setAudioFile] = useState(null)
   const [imageFile, setImageFile] = useState(null)
@@ -48,7 +212,6 @@ export default function BeatForm({ producerId, beat, onSaved, onCancel }) {
       let audio_url = beat?.audio_url ?? null
       let image_url = beat?.image_url ?? null
 
-      // Subir audio si hay uno nuevo
       if (audioFile) {
         setProgress('Subiendo audio…')
         const audioExt = audioFile.name.split('.').pop()
@@ -61,7 +224,6 @@ export default function BeatForm({ producerId, beat, onSaved, onCancel }) {
         audio_url = audioData.publicUrl
       }
 
-      // Subir imagen si hay una nueva
       if (imageFile) {
         setProgress('Subiendo portada…')
         const imgExt = imageFile.name.split('.').pop()
@@ -74,10 +236,16 @@ export default function BeatForm({ producerId, beat, onSaved, onCancel }) {
         image_url = imgData.publicUrl
       }
 
-      // Insertar o Actualizar beat en DB
       setProgress('Guardando beat…')
       const tagsArray = tags.split(',').map(t => t.trim()).filter(Boolean)
-      
+
+      // Limpiar features vacíos antes de guardar
+      const cleanConditions = Object.fromEntries(
+        Object.entries(conditions).map(([k, v]) => [
+          k, { ...v, features: v.features.filter(f => f.trim() !== '') }
+        ])
+      )
+
       const payload = {
         producer_id: producerId,
         title: title.trim(),
@@ -88,27 +256,19 @@ export default function BeatForm({ producerId, beat, onSaved, onCancel }) {
         price_basic: priceBasic ? parseFloat(priceBasic) : 0,
         price_premium: pricePremium ? parseFloat(pricePremium) : 0,
         price_exclusive: priceExclusive ? parseFloat(priceExclusive) : 0,
-        price: priceBasic ? parseFloat(priceBasic) : 0, // Fallback for old code
+        price: priceBasic ? parseFloat(priceBasic) : 0,
         tags: tagsArray,
         audio_url,
         image_url,
         is_published: beat ? beat.is_published : true,
+        license_conditions: cleanConditions,
       }
 
       let res
       if (beat?.id) {
-        res = await supabase
-          .from('beats')
-          .update(payload)
-          .eq('id', beat.id)
-          .select()
-          .single()
+        res = await supabase.from('beats').update(payload).eq('id', beat.id).select().single()
       } else {
-        res = await supabase
-          .from('beats')
-          .insert(payload)
-          .select()
-          .single()
+        res = await supabase.from('beats').insert(payload).select().single()
       }
 
       if (res.error) throw new Error('Error al guardar: ' + res.error.message)
@@ -229,7 +389,7 @@ export default function BeatForm({ producerId, beat, onSaved, onCancel }) {
         </div>
       </div>
 
-      {/* Precios (3 licencias) */}
+      {/* Precios */}
       <div className="grid grid-cols-3 gap-3">
         <div>
           <label className={labelClass}>Basic (€)</label>
@@ -242,6 +402,21 @@ export default function BeatForm({ producerId, beat, onSaved, onCancel }) {
         <div>
           <label className={labelClass}>Exclusive (€)</label>
           <input type="number" value={priceExclusive} onChange={e => setPriceExclusive(e.target.value)} placeholder="450" min={0} step="0.01" className={inputClass} />
+        </div>
+      </div>
+
+      {/* Condiciones de licencia */}
+      <div>
+        <label className={labelClass}>Condiciones por licencia</label>
+        <div className="space-y-2">
+          {['basic', 'premium', 'exclusive'].map(id => (
+            <LicenseConditionEditor
+              key={id}
+              licenseId={id}
+              value={conditions[id]}
+              onChange={val => setConditions(prev => ({ ...prev, [id]: val }))}
+            />
+          ))}
         </div>
       </div>
 
@@ -279,4 +454,3 @@ export default function BeatForm({ producerId, beat, onSaved, onCancel }) {
     </form>
   )
 }
-

@@ -2,27 +2,36 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 
-// Comprueba si el email está pre-registrado en producers.
-// Si está pero sin user_id vinculado (primer login), lo vincula ahora.
-// Devuelve true si el acceso está permitido, false si no.
+// Comprueba si el usuario tiene acceso al portal de productores.
+// Caso 1: ya tiene user_id vinculado (productor existente) → acceso directo.
+// Caso 2: está pre-registrado por email sin user_id (onboarding) → vincula y da acceso.
+// Caso 3: no existe en ningún caso → bloqueado.
 async function checkAndLinkProducer(user) {
-  const { data: producer } = await supabase
+  // Caso 1: productor ya vinculado (la mayoría de logins normales)
+  const { data: byUserId } = await supabase
+    .from('producers')
+    .select('id')
+    .eq('user_id', user.id)
+    .maybeSingle()
+
+  if (byUserId) return true
+
+  // Caso 2: pre-registrado por email, primer login
+  const { data: byEmail } = await supabase
     .from('producers')
     .select('id, user_id')
     .eq('email', user.email)
     .maybeSingle()
 
-  if (!producer) return false
+  if (!byEmail) return false
 
-  if (!producer.user_id) {
-    await supabase
-      .from('producers')
-      .update({
-        user_id: user.id,
-        name: user.user_metadata?.full_name ?? user.email.split('@')[0],
-      })
-      .eq('id', producer.id)
-  }
+  await supabase
+    .from('producers')
+    .update({
+      user_id: user.id,
+      name: user.user_metadata?.full_name ?? user.email.split('@')[0],
+    })
+    .eq('id', byEmail.id)
 
   return true
 }

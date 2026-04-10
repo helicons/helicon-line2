@@ -44,6 +44,7 @@ const mapBeat = (b) => ({
   image: b.image_url ?? 'https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?auto=format&fit=crop&q=80&w=200',
   audio_url: b.audio_url ?? null,
   colors: GENRE_COLORS[b.genre] ?? DEFAULT_COLORS,
+  license_conditions: b.license_conditions ?? null,
 })
 
 const LICENSES = [
@@ -1154,14 +1155,16 @@ export default function BeatMarketplace() {
                      {LICENSES.map(lic => {
                        let price = 0;
                        if (currentTrack) {
-                         // Priorizamos el precio de la base de datos si es mayor a 0
                          if (currentTrack[lic.field] > 0) {
                            price = Math.round(currentTrack[lic.field]);
                          } else {
-                           // Fallback al multiplicador original si el campo está vacío
                            price = Math.round(currentTrack.price * lic.multiplier);
                          }
                        }
+                       // Usar condiciones personalizadas del beat si existen, si no las por defecto
+                       const customCond = currentTrack?.license_conditions?.[lic.id];
+                       const tag = customCond?.tag ?? lic.tag;
+                       const features = customCond?.features?.filter(f => f.trim()) ?? lic.features;
                        const isOpen = selectedLicense === lic.id;
                        return (
                          <div
@@ -1181,7 +1184,7 @@ export default function BeatMarketplace() {
                                  style={{ background: isOpen ? `rgb(${currentTrack?.colors[0].join(',')})` : 'rgba(255,255,255,0.2)' }}
                                />
                                <span className="font-heading font-bold text-sm text-white truncate">{lic.name}</span>
-                               <span className="font-ui text-[10px] px-2 py-0.5 rounded-full border border-white/10 text-white/40 hidden sm:inline">{lic.tag}</span>
+                               <span className="font-ui text-[10px] px-2 py-0.5 rounded-full border border-white/10 text-white/40 hidden sm:inline">{tag}</span>
                              </div>
                              <div className="flex items-center gap-3 shrink-0">
                                <span className="font-heading font-bold text-sm" style={{ color: isOpen ? `rgb(${currentTrack?.colors[0].join(',')})` : 'rgba(255,255,255,0.6)' }}>
@@ -1200,7 +1203,7 @@ export default function BeatMarketplace() {
                            >
                              <div className="px-4 pb-4 flex flex-col gap-3">
                                <ul className="space-y-1.5">
-                                 {lic.features.map(f => (
+                                 {features.map(f => (
                                    <li key={f} className="flex items-center gap-2 font-ui text-xs text-white/60">
                                      <CheckCircle2 className="w-3.5 h-3.5 shrink-0" style={{ color: `rgb(${currentTrack?.colors[0].join(',')})` }} />
                                      {f}
