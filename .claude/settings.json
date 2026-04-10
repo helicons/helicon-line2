@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls -lh /c/Users/moise/OneDrive/Documentos/antigravity/helicon-line2/supabase/migrations/*.sql)"
+    ]
+  }
+}

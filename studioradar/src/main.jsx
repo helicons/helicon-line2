@@ -14,6 +14,7 @@ import CheckoutPage from './CheckoutPage.jsx'
 import Legal from './Legal.jsx'
 import UserLogin from './UserLogin.jsx'
 import UserProfile from './UserProfile.jsx'
+import ProducerOnboarding from './ProducerOnboarding.jsx'
 import './index.css'
 
 createRoot(document.getElementById('root')).render(
@@ -34,6 +35,7 @@ createRoot(document.getElementById('root')).render(
         <Route path="/legal" element={<Legal />} />
         <Route path="/login" element={<UserLogin />} />
         <Route path="/perfil" element={<UserProfile />} />
+        <Route path="/onboarding" element={<ProducerOnboarding />} />
       </Routes>
     </BrowserRouter>
   </StrictMode>,

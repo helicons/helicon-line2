@@ -2,21 +2,29 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 
-// Crea el row en la tabla `producers` la primera vez que el productor hace login con Google
-async function ensureProducerRow(user) {
-  const { data: existing } = await supabase
+// Comprueba si el email está pre-registrado en producers.
+// Si está pero sin user_id vinculado (primer login), lo vincula ahora.
+// Devuelve true si el acceso está permitido, false si no.
+async function checkAndLinkProducer(user) {
+  const { data: producer } = await supabase
     .from('producers')
-    .select('id')
-    .eq('user_id', user.id)
+    .select('id, user_id')
+    .eq('email', user.email)
     .maybeSingle()
 
-  if (!existing) {
-    await supabase.from('producers').insert({
-      user_id: user.id,
-      name: user.user_metadata?.full_name ?? user.email.split('@')[0],
-      email: user.email,
-    })
+  if (!producer) return false
+
+  if (!producer.user_id) {
+    await supabase
+      .from('producers')
+      .update({
+        user_id: user.id,
+        name: user.user_metadata?.full_name ?? user.email.split('@')[0],
+      })
+      .eq('id', producer.id)
   }
+
+  return true
 }
 
 export default function ProtectedRoute({ children }) {
@@ -29,7 +37,14 @@ export default function ProtectedRoute({ children }) {
         navigate('/producer/login', { replace: true })
         return
       }
-      await ensureProducerRow(session.user)
+
+      const allowed = await checkAndLinkProducer(session.user)
+      if (!allowed) {
+        await supabase.auth.signOut()
+        navigate('/producer/login?error=no_access', { replace: true })
+        return
+      }
+
       setReady(true)
     })
   }, [navigate])

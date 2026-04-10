@@ -12,6 +12,12 @@ export default function ProducerLogin() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) navigate('/producer/dashboard', { replace: true })
     })
+
+    // Mostrar mensaje si viene de un acceso denegado
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('error') === 'no_access') {
+      setError('Tu cuenta no tiene acceso al portal de productores. Contacta con el equipo de Helicon.')
+    }
   }, [navigate])
 
   const handleGoogleLogin = async () => {
