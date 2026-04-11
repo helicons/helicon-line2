@@ -1,8 +1,17 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { supabase } from './lib/supabase'
 import Navbar from './components/Navbar'
-import { Calendar, Clock, MapPin, Music2, CheckCircle2, XCircle, Hourglass, ArrowRight, LogOut } from 'lucide-react'
+import { Calendar, Clock, MapPin, Music2, CheckCircle2, XCircle, Hourglass, ArrowRight, LogOut, Play, Pause, Heart, ShoppingCart } from 'lucide-react'
+
+const GENRE_COLORS = {
+  'Trap':       [255,0,60],   'R&B':       [0,200,255],
+  'Drill':      [138,43,226], 'Synthwave': [138,43,226],
+  'Techno':     [255,215,0],  'Industrial':[255,140,0],
+  'Hard':       [255,60,0],   'Bouncy':    [0,255,150],
+  'Chill':      [0,240,255],
+}
+const DEFAULT_COLOR = [138,43,226]
 
 const STATUS = {
   confirmed: { label: 'Confirmada', color: 'text-green-400 bg-green-400/10 border-green-400/20' },
@@ -24,6 +33,35 @@ export default function UserProfile() {
   const [filter, setFilter] = useState('all')
   const [activeTab, setActiveTab] = useState('bookings')
   const [likedBeats, setLikedBeats] = useState([])
+  const [playingId, setPlayingId] = useState(null)
+  const [isPlaying, setIsPlaying] = useState(false)
+  const audioRef = useRef(null)
+
+  const togglePlay = (beat) => {
+    if (!audioRef.current) audioRef.current = new Audio()
+    const audio = audioRef.current
+    if (playingId === beat.id) {
+      if (isPlaying) { audio.pause(); setIsPlaying(false) }
+      else { audio.play().catch(() => {}); setIsPlaying(true) }
+    } else {
+      audio.pause()
+      audio.src = beat.audio_url ?? ''
+      audio.play().catch(() => {})
+      setPlayingId(beat.id)
+      setIsPlaying(true)
+    }
+  }
+
+  const unlikeBeat = async (beatId) => {
+    if (!user) return
+    await supabase.from('user_likes').delete().eq('user_id', user.id).eq('beat_id', beatId)
+    setLikedBeats(prev => prev.filter(b => b.id !== beatId))
+    if (playingId === beatId) { audioRef.current?.pause(); setPlayingId(null); setIsPlaying(false) }
+  }
+
+  useEffect(() => {
+    return () => { audioRef.current?.pause() }
+  }, [])
 
   useEffect(() => {
     async function load() {
@@ -41,6 +79,7 @@ export default function UserProfile() {
 
       setUser({
         ...userRow,
+        id: session.user.id,
         avatar: session.user.user_metadata?.avatar_url ?? null,
       })
 
@@ -60,17 +99,12 @@ export default function UserProfile() {
 
       let savedBeats = []
       try {
-        const wishlistStr = localStorage.getItem('helicon_wishlist')
-        if (wishlistStr) {
-          const likedIds = JSON.parse(wishlistStr)
-          if (likedIds && likedIds.length > 0) {
-            const { data: beatsData } = await supabase
-              .from('beats')
-              .select('*, producers(name)')
-              .in('id', likedIds)
-            savedBeats = beatsData || []
-          }
-        }
+        const { data: likesData } = await supabase
+          .from('user_likes')
+          .select('beat_id, beats(*, producers(id, name))')
+          .eq('user_id', session.user.id)
+          .order('created_at', { ascending: false })
+        savedBeats = likesData?.map(r => r.beats).filter(Boolean) ?? []
       } catch (err) {
         console.error('Error cargando likes:', err)
       }
@@ -266,36 +300,82 @@ export default function UserProfile() {
         )}
         </>
         ) : (
-          /* Lista de Beats */
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-             {likedBeats.length === 0 ? (
-               <div className="col-span-1 sm:col-span-2 text-center py-20">
-                  <Music2 className="w-10 h-10 text-white/20 mx-auto mb-4" />
-                  <p className="font-mono text-sm text-white/30">Aún no tienes beats guardados.</p>
-               </div>
-             ) : (
-               likedBeats.map(beat => {
-                 const imageUrl = beat.image_url ?? 'https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?auto=format&fit=crop&q=80&w=200';
-                 return (
-                   <div key={beat.id} className="bg-[#111] border border-white/8 rounded-2xl overflow-hidden hover:border-white/20 transition-all flex items-center p-3 gap-4 group">
-                      <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0 relative">
-                         <img src={imageUrl} alt={beat.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+          /* Lista de Beats — estilo New Releases */
+          <div>
+            {likedBeats.length === 0 ? (
+              <div className="text-center py-20">
+                <Music2 className="w-10 h-10 text-white/20 mx-auto mb-4" />
+                <p className="font-mono text-sm text-white/30">Aún no tienes beats guardados.</p>
+              </div>
+            ) : (
+              <>
+                <div className="hidden md:grid grid-cols-[40px_40px_1fr_80px_60px_60px_28px_70px_36px] gap-4 px-3 pb-2 border-b border-white/5 font-mono text-[10px] text-white/25 uppercase tracking-widest">
+                  <span/><span/><span>Título</span><span>Género</span><span>BPM</span><span>Key</span><span/><span className="text-right">Precio</span><span/>
+                </div>
+                {likedBeats.map((beat) => {
+                  const color = GENRE_COLORS[beat.genre] ?? DEFAULT_COLOR
+                  const [r,g,b] = color
+                  const isActive = playingId === beat.id
+                  const playing = isActive && isPlaying
+                  const imageUrl = beat.image_url ?? 'https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?auto=format&fit=crop&q=80&w=200'
+                  const price = parseFloat(beat.price_basic) || parseFloat(beat.price) || 0
+                  return (
+                    <div
+                      key={beat.id}
+                      className="grid grid-cols-[40px_40px_1fr_auto] md:grid-cols-[40px_40px_1fr_80px_60px_60px_28px_70px_36px] gap-4 px-3 py-3 items-center rounded-xl cursor-pointer transition-all duration-200"
+                      style={{ background: isActive ? `rgba(${r},${g},${b},0.08)` : 'transparent' }}
+                      onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = 'rgba(255,255,255,0.03)' }}
+                      onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = isActive ? `rgba(${r},${g},${b},0.08)` : 'transparent' }}
+                      onClick={() => togglePlay(beat)}
+                    >
+                      {/* Play/pause */}
+                      <button
+                        onClick={e => { e.stopPropagation(); togglePlay(beat) }}
+                        className="w-8 h-8 rounded-full flex items-center justify-center border border-white/10 bg-white/5 hover:bg-white/10 transition-colors shrink-0"
+                      >
+                        {playing
+                          ? <Pause className="w-3.5 h-3.5" style={{ color: `rgb(${r},${g},${b})` }}/>
+                          : <Play className="w-3.5 h-3.5 ml-0.5 text-white/60" />}
+                      </button>
+                      {/* Thumb */}
+                      <img src={imageUrl} alt={beat.title} className="w-10 h-10 rounded-lg object-cover border border-white/10"/>
+                      {/* Title + producer */}
+                      <div className="min-w-0">
+                        <p className="font-heading font-bold text-sm truncate leading-tight" style={{ color: isActive ? `rgb(${r},${g},${b})` : '#fff' }}>{beat.title}</p>
+                        <p className="font-mono text-[10px] text-white/40 truncate"
+                           onClick={e => { e.stopPropagation(); if (beat.producers?.id) navigate(`/producer/${beat.producers.id}`) }}>
+                          {beat.producers?.name || 'Productor'}
+                        </p>
                       </div>
-                      <div className="min-w-0 flex-1">
-                         <h3 className="font-heading font-bold text-white text-base truncate pr-2">{beat.title}</h3>
-                         <p className="text-[10px] font-mono text-text/50 uppercase tracking-widest">{beat.producers?.name || 'Productor'}</p>
-                         <div className="flex gap-2 mt-1">
-                           <span className="text-[9px] font-mono px-2 py-0.5 rounded-full border border-white/10 text-white/40">{beat.bpm || '--'} BPM</span>
-                           <span className="text-[9px] font-mono px-2 py-0.5 rounded-full border border-white/10 text-white/40">{beat.key || '--'}</span>
-                         </div>
-                      </div>
-                      <Link to="/beats" className="shrink-0 w-10 h-10 rounded-full border border-white/10 flex items-center justify-center text-white/40 hover:text-accent hover:border-accent/40 hover:bg-accent/10 transition-all mr-2">
-                         <Play className="w-4 h-4 ml-0.5 fill-current" />
-                      </Link>
-                   </div>
-                 );
-               })
-             )}
+                      {/* Genre */}
+                      <span className="hidden md:inline font-mono text-[10px] px-2 py-1 rounded-full border border-white/10 text-white/40 bg-white/3 truncate">{beat.genre || '—'}</span>
+                      {/* BPM */}
+                      <span className="hidden md:inline font-mono text-xs text-white/30">{beat.bpm || '—'}</span>
+                      {/* Key */}
+                      <span className="hidden md:inline font-mono text-xs text-white/30">{beat.key || '—'}</span>
+                      {/* Unlike */}
+                      <button
+                        onClick={e => { e.stopPropagation(); unlikeBeat(beat.id) }}
+                        className="hidden md:flex items-center justify-center transition-colors"
+                        title="Quitar de favoritos"
+                      >
+                        <Heart className="w-3.5 h-3.5" style={{ color: `rgb(${r},${g},${b})`, fill: `rgb(${r},${g},${b})` }}/>
+                      </button>
+                      {/* Price */}
+                      <span className="font-heading font-bold text-sm text-right" style={{ color: `rgb(${r},${g},${b})` }}>{price}€</span>
+                      {/* Cart */}
+                      <button
+                        onClick={e => { e.stopPropagation(); navigate(`/beats?beat=${beat.id}`) }}
+                        className="w-8 h-8 rounded-full flex items-center justify-center border border-white/10 bg-white/5 hover:bg-white/10 transition-colors text-white/40 hover:text-white"
+                        title="Comprar"
+                      >
+                        <ShoppingCart className="w-3.5 h-3.5"/>
+                      </button>
+                    </div>
+                  )
+                })}
+              </>
+            )}
           </div>
         )}
       </div>

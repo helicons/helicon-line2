@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { CalendarDays, Layers, Clock, BookOpen, LogOut, ChevronDown, Building2, Pencil, PlusCircle, ArrowLeft, Music2, Trash2, Eye, EyeOff } from 'lucide-react'
+import { CalendarDays, Layers, Clock, BookOpen, LogOut, ChevronDown, Building2, Pencil, PlusCircle, ArrowLeft, Music2, Trash2, Eye, EyeOff, UserCircle, ExternalLink, Upload, Loader } from 'lucide-react'
 import { supabase } from './lib/supabase'
 import SpaceManager from './components/SpaceManager'
 import AvailabilityManager from './components/AvailabilityManager'
@@ -8,8 +8,139 @@ import ProducerCalendar from './components/ProducerCalendar'
 import StudioForm from './components/StudioForm'
 import BeatForm from './components/BeatForm'
 
+function ProfileEditor({ producer, onSaved, navigate }) {
+  const [name, setName] = useState(producer.name ?? '')
+  const [bio, setBio] = useState(producer.bio ?? '')
+  const [avatarPreview, setAvatarPreview] = useState(producer.avatar_url ?? null)
+  const [avatarFile, setAvatarFile] = useState(null)
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+  const fileRef = useRef()
+
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setAvatarFile(file)
+    setAvatarPreview(URL.createObjectURL(file))
+  }
+
+  const handleSave = async (e) => {
+    e.preventDefault()
+    setSaving(true)
+    let avatar_url = producer.avatar_url ?? null
+
+    if (avatarFile) {
+      const ext = avatarFile.name.split('.').pop()
+      const path = `${producer.id}/avatar.${ext}`
+      const { error: uploadErr } = await supabase.storage
+        .from('beats-images')
+        .upload(path, avatarFile, { upsert: true })
+      if (!uploadErr) {
+        const { data } = supabase.storage.from('beats-images').getPublicUrl(path)
+        avatar_url = data.publicUrl
+      }
+    }
+
+    const { data } = await supabase
+      .from('producers')
+      .update({ name: name.trim(), bio: bio.trim(), avatar_url })
+      .eq('id', producer.id)
+      .select()
+      .single()
+
+    if (data) {
+      onSaved(data)
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2500)
+    }
+    setSaving(false)
+  }
+
+  return (
+    <form onSubmit={handleSave} className="max-w-lg space-y-6">
+      <div className="flex items-center justify-between">
+        <h3 className="text-white font-bold text-sm font-mono uppercase tracking-widest">Mi Perfil Público</h3>
+        <button
+          type="button"
+          onClick={() => navigate(`/producer/${producer.id}`)}
+          className="flex items-center gap-1.5 text-text/40 text-xs font-mono hover:text-accent transition-colors"
+        >
+          <ExternalLink size={12} /> Ver perfil público
+        </button>
+      </div>
+
+      {/* Avatar */}
+      <div>
+        <label className="font-mono text-[10px] text-text/50 uppercase tracking-widest block mb-3">Foto de perfil</label>
+        <div className="flex items-center gap-4">
+          <div
+            onClick={() => fileRef.current?.click()}
+            className="relative w-20 h-20 rounded-full overflow-hidden border-2 border-white/10 hover:border-accent/40 cursor-pointer transition-colors group shrink-0"
+          >
+            {avatarPreview ? (
+              <img src={avatarPreview} alt="avatar" className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full bg-white/5 flex items-center justify-center">
+                <UserCircle size={32} className="text-text/20" />
+              </div>
+            )}
+            <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-full">
+              <Upload size={14} className="text-white" />
+            </div>
+          </div>
+          <div>
+            <button
+              type="button"
+              onClick={() => fileRef.current?.click()}
+              className="text-xs font-mono text-accent hover:text-white transition-colors border border-accent/30 px-3 py-1.5 rounded-lg hover:border-accent"
+            >
+              Cambiar foto
+            </button>
+            <p className="text-text/30 text-[10px] font-mono mt-1.5">JPG, PNG · Máx. 2MB</p>
+          </div>
+          <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+        </div>
+      </div>
+
+      {/* Nombre */}
+      <div>
+        <label className="font-mono text-[10px] text-text/50 uppercase tracking-widest block mb-2">Nombre artístico</label>
+        <input
+          type="text"
+          value={name}
+          onChange={e => setName(e.target.value)}
+          placeholder="Tu nombre o alias"
+          className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-sm text-white font-mono outline-none focus:border-accent transition-colors placeholder:text-text/20"
+        />
+      </div>
+
+      {/* Bio */}
+      <div>
+        <label className="font-mono text-[10px] text-text/50 uppercase tracking-widest block mb-2">Biografía / Introducción</label>
+        <textarea
+          value={bio}
+          onChange={e => setBio(e.target.value)}
+          placeholder="Cuéntale a los artistas quién eres, tu estilo, tus influencias…"
+          rows={4}
+          className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-sm text-white font-mono outline-none focus:border-accent transition-colors placeholder:text-text/20 resize-none"
+        />
+        <p className="text-text/20 text-[10px] font-mono mt-1 text-right">{bio.length}/300</p>
+      </div>
+
+      <button
+        type="submit"
+        disabled={saving}
+        className="flex items-center gap-2 bg-accent text-white font-mono font-bold text-xs px-6 py-3 rounded-xl hover:bg-[#9d3df2] transition-all shadow-lg shadow-accent/20 disabled:opacity-60"
+      >
+        {saving ? <><Loader size={13} className="animate-spin" /> Guardando…</> : saved ? '✓ Guardado' : 'Guardar perfil'}
+      </button>
+    </form>
+  )
+}
+
 const TABS = [
-  { id: 'studio',       label: 'Mis Estudios',   Icon: Building2   },
+  { id: 'profile',      label: 'Mi Perfil',       Icon: UserCircle  },
+  { id: 'studio',       label: 'Mis Estudios',    Icon: Building2   },
   { id: 'calendar',     label: 'Calendario',      Icon: CalendarDays },
   { id: 'spaces',       label: 'Espacios',        Icon: Layers      },
   { id: 'availability', label: 'Disponibilidad',  Icon: Clock       },
@@ -190,6 +321,11 @@ const filteredBookings = bookingsFilter === 'all'
 
         {/* Panel de contenido */}
         <div className="bg-[#1A1A1A] border border-white/5 rounded-2xl p-6 shadow-xl">
+
+          {/* ── MI PERFIL ── */}
+          {tab === 'profile' && producer && (
+            <ProfileEditor producer={producer} onSaved={setProducer} navigate={navigate} />
+          )}
 
           {/* ── MIS ESTUDIOS ── */}
           {tab === 'studio' && (

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Play, Pause, Search, Filter, SlidersHorizontal, ShoppingCart, Heart, MoreHorizontal, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, SkipBack, SkipForward, Volume2, Activity, ArrowLeft, TrendingUp, Music, Keyboard, Zap, Pencil, X, Eye, Repeat, Shuffle, List, User } from 'lucide-react';
+import { Play, Pause, Search, Filter, SlidersHorizontal, ShoppingCart, Heart, MoreHorizontal, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, SkipBack, SkipForward, Volume2, Activity, ArrowLeft, TrendingUp, Music, Keyboard, Zap, Pencil, X, Eye, Repeat, Shuffle, List, User, Trash2 } from 'lucide-react';
 import { PRODUCERS, PokemonCard } from './ProducerProfiles';
 import { supabase } from './lib/supabase';
 
@@ -91,12 +91,7 @@ export default function BeatMarketplace() {
   const [isPaying, setIsPaying] = useState(false);
   const [user, setUser] = useState(null);
   
-  const [wishlist, setWishlist] = useState(() => {
-    try {
-      const w = localStorage.getItem('helicon_wishlist');
-      return w ? JSON.parse(w) : [];
-    } catch (e) { return []; }
-  });
+  const [wishlist, setWishlist] = useState([]);
   
   const [lyrics, setLyrics] = useState({});
   const [playerTab, setPlayerTab] = useState('licenses'); // 'licenses' | 'lyrics'
@@ -111,6 +106,13 @@ export default function BeatMarketplace() {
     });
     return () => subscription.unsubscribe();
   }, []);
+
+  // Cargar likes desde Supabase cuando el usuario está autenticado
+  useEffect(() => {
+    if (!user) return;
+    supabase.from('user_likes').select('beat_id').eq('user_id', user.id)
+      .then(({ data }) => { if (data) setWishlist(data.map(r => r.beat_id)); });
+  }, [user]);
 
   // Audio state
   const [currentTime, setCurrentTime] = useState(0);
@@ -203,12 +205,20 @@ export default function BeatMarketplace() {
     return () => { audioRef.current?.pause(); };
   }, []);
 
-  const toggleWishlist = (id) => {
-    setWishlist(w => {
-      const newW = w.includes(id) ? w.filter(x => x !== id) : [...w, id];
-      localStorage.setItem('helicon_wishlist', JSON.stringify(newW));
-      return newW;
-    });
+  const toggleWishlist = async (id) => {
+    const isLiked = wishlist.includes(id);
+    if (user) {
+      if (isLiked) {
+        await supabase.from('user_likes').delete().eq('user_id', user.id).eq('beat_id', id);
+        setWishlist(w => w.filter(x => x !== id));
+      } else {
+        await supabase.from('user_likes').insert({ user_id: user.id, beat_id: id });
+        setWishlist(w => [...w, id]);
+      }
+    } else {
+      // sin login: solo estado local
+      setWishlist(w => w.includes(id) ? w.filter(x => x !== id) : [...w, id]);
+    }
   };
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -264,6 +274,22 @@ export default function BeatMarketplace() {
     setIsPlaying(true);
     setIsPlayerExpanded(true);
   };
+
+  const addToCart = (beat, licenseId = 'basic', licensePrice = null) => {
+    const price = licensePrice ?? beat.price_basic ?? beat.price
+    setCart(c => {
+      const exists = c.some(i => i.id === beat.id && i.licenseId === licenseId)
+      if (exists) return c
+      return [...c, { ...beat, licenseId, licensePrice: price }]
+    })
+    setShowCheckout(true)
+  }
+
+  const handleCartCheckout = async () => {
+    if (cart.length === 0 || isPaying) return
+    const item = cart[0]
+    await handleBeatPurchase(item, item.licenseId || 'basic', item.licensePrice || item.price)
+  }
 
   const handleBeatPurchase = async (beat, licenseId, price) => {
     if (isPaying) return;
@@ -416,7 +442,7 @@ export default function BeatMarketplace() {
               <ChevronDown className="w-3 h-3 text-white/40 rotate-180 group-hover:text-white transition-colors" />
             </button>
           )}
-          <button className="relative p-2 rounded-full hover:bg-white/5 transition-colors">
+          <button onClick={() => setShowCheckout(true)} className="relative p-2 rounded-full hover:bg-white/5 transition-colors">
             <ShoppingCart className="w-5 h-5 text-text/80 hover:text-white" />
             {cart.length > 0 && (
               <span className="absolute top-0 right-0 w-4 h-4 rounded-full bg-accent text-[10px] font-bold text-white flex items-center justify-center">
@@ -737,8 +763,8 @@ export default function BeatMarketplace() {
                           </p>
                         </div>
                         <button
-                          onClick={e => { e.stopPropagation(); setCart([...cart, beat]); }}
-                          className="shrink-0 font-ui text-xs font-bold px-3 py-1.5 rounded-full transition-all border"
+                          onClick={e => { e.stopPropagation(); addToCart(beat, 'basic', beat.price_basic); }}
+                          className="shrink-0 font-ui text-xs font-bold px-3 py-1.5 rounded-full transition-all border flex items-center gap-1"
                           style={{
                             background: `${color0}20`,
                             borderColor: `${color0}50`,
@@ -746,7 +772,7 @@ export default function BeatMarketplace() {
                             boxShadow: isCurrentlyPlaying ? `0 0 16px ${color0}40` : 'none'
                           }}
                         >
-                          {beat.price}€
+                          <ShoppingCart className="w-3 h-3" />{beat.price_basic || beat.price}€
                         </button>
                       </div>
 
@@ -796,8 +822,8 @@ export default function BeatMarketplace() {
                 <span className="font-ui text-xs text-white/30">{filteredBeats.length} tracks</span>
               </div>
               {/* Header row */}
-              <div className="hidden md:grid grid-cols-[24px_40px_1fr_80px_60px_60px_70px_36px] gap-4 px-3 pb-2 border-b border-white/5 font-ui text-[10px] text-white/25 uppercase tracking-widest">
-                <span>#</span><span/><span>Título</span><span>Género</span><span>BPM</span><span>Key</span><span className="text-right">Precio</span><span/>
+              <div className="hidden md:grid grid-cols-[24px_40px_1fr_80px_60px_60px_28px_70px_36px] gap-4 px-3 pb-2 border-b border-white/5 font-ui text-[10px] text-white/25 uppercase tracking-widest">
+                <span>#</span><span/><span>Título</span><span>Género</span><span>BPM</span><span>Key</span><span/><span className="text-right">Precio</span><span/>
               </div>
               {filteredBeats.map((beat, i) => {
                 const isActive = playingId === beat.id;
@@ -807,7 +833,7 @@ export default function BeatMarketplace() {
                     key={beat.id}
                     onClick={() => handlePlayToggle(beat.id)}
                     onDoubleClick={() => handleBeatDoubleClick(beat.id)}
-                    className="grid grid-cols-[24px_40px_1fr_auto] md:grid-cols-[24px_40px_1fr_80px_60px_60px_70px_36px] gap-4 px-3 py-3 items-center rounded-xl cursor-pointer transition-all duration-200 group"
+                    className="grid grid-cols-[24px_40px_1fr_auto] md:grid-cols-[24px_40px_1fr_80px_60px_60px_28px_70px_36px] gap-4 px-3 py-3 items-center rounded-xl cursor-pointer transition-all duration-200 group"
                     style={{ background: isActive ? `rgba(${r},${g},${b2},0.08)` : 'transparent' }}
                     onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; }}
                     onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = 'transparent'; }}
@@ -823,7 +849,9 @@ export default function BeatMarketplace() {
                     {/* Title + producer */}
                     <div className="min-w-0">
                       <p className="font-heading font-bold text-sm text-white truncate leading-tight" style={{ color: isActive ? `rgb(${r},${g},${b2})` : '#fff' }}>{beat.title}</p>
-                      <p className="font-ui text-[10px] text-white/40 truncate">{beat.producer} · {beat.plays}</p>
+                      <p className="font-ui text-[10px] text-white/40 truncate">
+                        <span className="hover:text-accent transition-colors cursor-pointer" onClick={e => { e.stopPropagation(); if (beat.producer_id) navigate(`/producer/${beat.producer_id}`) }}>{beat.producer}</span> · {beat.plays}
+                      </p>
                     </div>
                     {/* Genre */}
                     <span className="hidden md:inline font-ui text-[10px] px-2 py-1 rounded-full border border-white/10 text-white/40 bg-white/3 truncate">{beat.tags[0]}</span>
@@ -831,11 +859,18 @@ export default function BeatMarketplace() {
                     <span className="hidden md:inline font-ui text-xs text-white/30">{beat.bpm}</span>
                     {/* Key */}
                     <span className="hidden md:inline font-ui text-xs text-white/30">{beat.key}</span>
+                    {/* Like */}
+                    <button
+                      onClick={e => { e.stopPropagation(); toggleWishlist(beat.id); }}
+                      className="hidden md:flex items-center justify-center transition-colors"
+                    >
+                      <Heart className="w-3.5 h-3.5" style={{ color: wishlist.includes(beat.id) ? `rgb(${r},${g},${b2})` : 'rgba(255,255,255,0.2)', fill: wishlist.includes(beat.id) ? `rgb(${r},${g},${b2})` : 'none' }}/>
+                    </button>
                     {/* Price */}
                     <span className="font-heading font-bold text-sm text-right" style={{ color: `rgb(${r},${g},${b2})` }}>{beat.price}€</span>
                     {/* Cart */}
                     <button
-                      onClick={e => { e.stopPropagation(); setCart(c => [...c, beat]); }}
+                      onClick={e => { e.stopPropagation(); addToCart(beat, 'basic', beat.price_basic); }}
                       className="hidden md:flex w-8 h-8 rounded-full items-center justify-center border border-white/10 bg-white/5 hover:bg-white/10 transition-colors text-white/40 hover:text-white"
                     >
                       <ShoppingCart className="w-3.5 h-3.5"/>
@@ -1037,7 +1072,7 @@ export default function BeatMarketplace() {
                       <div className="min-w-0 flex-1">
                         <h2 className="font-heading font-black text-3xl md:text-5xl text-white mb-1 md:mb-2 truncate drop-shadow-lg">{currentTrack?.title}</h2>
                         <div className="flex items-center gap-3">
-                          <p className="font-ui text-xs md:text-sm text-white/50 uppercase tracking-[0.2em] truncate">{currentTrack?.producer}</p>
+                          <p className="font-ui text-xs md:text-sm text-white/50 uppercase tracking-[0.2em] truncate hover:text-accent transition-colors cursor-pointer" onClick={() => { if (currentTrack?.producer_id) navigate(`/producer/${currentTrack.producer_id}`) }}>{currentTrack?.producer}</p>
                           {currentTrack && (
                             <button
                               onClick={() => toggleWishlist(currentTrack.id)}
@@ -1223,13 +1258,12 @@ export default function BeatMarketplace() {
                                <button
                                  onClick={e => {
                                    e.stopPropagation();
-                                   handleBeatPurchase(currentTrack, lic.id, price);
+                                   addToCart(currentTrack, lic.id, price);
                                  }}
-                                 disabled={isPaying}
-                                 className="w-full py-2.5 rounded-xl font-ui font-bold text-xs uppercase tracking-widest text-white transition-all disabled:opacity-50"
+                                 className="w-full py-2.5 rounded-xl font-ui font-bold text-xs uppercase tracking-widest text-white transition-all flex items-center justify-center gap-2"
                                  style={{ backgroundColor: `rgb(${currentTrack?.colors[0].join(',')})` }}
                                >
-                                 {isPaying ? 'Procesando...' : `Comprar por ${price}€`}
+                                 <ShoppingCart className="w-3.5 h-3.5" /> Añadir al carrito · {price}€
                                </button>
                              </div>
                            </div>
@@ -1266,9 +1300,9 @@ export default function BeatMarketplace() {
                               </div>
                            </div>
 
-                           <div className="flex flex-col ml-12 md:ml-16 min-w-0 z-30 pointer-events-none drop-shadow-md flex-1 pr-2 opacity-80 group-hover:opacity-100 transition-opacity">
+                           <div className="flex flex-col ml-12 md:ml-16 min-w-0 z-30 drop-shadow-md flex-1 pr-2 opacity-80 group-hover:opacity-100 transition-opacity">
                              <h4 className="font-heading font-bold text-sm md:text-base text-white truncate drop-shadow-sm">{b.title}</h4>
-                             <span className="font-ui text-[9px] text-white/50 uppercase tracking-[0.2em] truncate">{b.producer}</span>
+                             <span className="font-ui text-[9px] text-white/50 uppercase tracking-[0.2em] truncate hover:text-accent transition-colors cursor-pointer" onClick={e => { e.stopPropagation(); if (b.producer_id) navigate(`/producer/${b.producer_id}`) }}>{b.producer}</span>
                            </div>
                         </div>
                       ))}
@@ -1300,7 +1334,7 @@ export default function BeatMarketplace() {
                 <img src={currentTrack.image} className="w-10 h-10 rounded-lg object-cover border border-white/10"/>
                 <div className="min-w-0 flex-1">
                   <p className="font-heading font-bold text-sm text-accent truncate">{currentTrack.title}</p>
-                  <p className="font-ui text-[10px] text-white/40">{currentTrack.producer}</p>
+                  <p className="font-ui text-[10px] text-white/40 hover:text-accent transition-colors cursor-pointer" onClick={() => { if (currentTrack.producer_id) navigate(`/producer/${currentTrack.producer_id}`) }}>{currentTrack.producer}</p>
                 </div>
                 <div className="flex gap-[2px] items-end h-4">
                   {[3,5,4,6,3].map((h,k) => <span key={k} className="w-[2px] rounded-full bg-accent" style={{ height:`${h*3}px`, animation: isPlaying ? `waveform ${0.3+k*0.1}s ease-in-out infinite alternate` : 'none' }}/>)}
@@ -1317,7 +1351,7 @@ export default function BeatMarketplace() {
                   <img src={b.image} className="w-9 h-9 rounded-lg object-cover border border-white/10 shrink-0"/>
                   <div className="min-w-0 flex-1">
                     <p className="font-heading font-bold text-sm text-white truncate group-hover:text-accent transition-colors">{b.title}</p>
-                    <p className="font-ui text-[10px] text-white/40 truncate">{b.producer}</p>
+                    <p className="font-ui text-[10px] text-white/40 truncate hover:text-accent transition-colors cursor-pointer" onClick={e => { e.stopPropagation(); if (b.producer_id) navigate(`/producer/${b.producer_id}`) }}>{b.producer}</p>
                   </div>
                   <span className="font-heading font-bold text-xs text-white/40 shrink-0">{b.price}€</span>
                 </div>
@@ -1363,9 +1397,9 @@ export default function BeatMarketplace() {
                           <p className="font-ui text-[10px] text-white/40">{item.producer}</p>
                           <span className="font-ui text-[9px] px-2 py-0.5 rounded-full border mt-1 inline-block" style={{ borderColor:`rgba(${r},${g},${b2},0.4)`, color:`rgb(${r},${g},${b2})`, background:`rgba(${r},${g},${b2},0.08)` }}>{lic?.tag || 'MP3 Lease'}</span>
                         </div>
-                        <div className="flex flex-col items-end gap-1 shrink-0">
+                        <div className="flex items-center gap-3 shrink-0">
                           <span className="font-heading font-bold text-sm text-white">{item.licensePrice || item.price}€</span>
-                          <button onClick={() => setCart(c => c.filter((_,j) => j !== i))} className="font-ui text-[10px] text-white/20 hover:text-red-400 transition-colors">Quitar</button>
+                          <button onClick={() => setCart(c => c.filter((_,j) => j !== i))} className="text-red-500/40 hover:text-red-400 transition-colors pl-1 border-l border-white/10"><Trash2 className="w-4 h-4"/></button>
                         </div>
                       </div>
                     );
@@ -1374,18 +1408,39 @@ export default function BeatMarketplace() {
               )}
             </div>
             {/* Footer */}
-            {cart.length > 0 && (
-              <div className="px-6 py-5 border-t border-white/5 space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="font-ui text-sm text-white/50">Total</span>
-                  <span className="font-heading font-bold text-2xl text-white">{cart.reduce((s,b) => s + (b.licensePrice || b.price), 0)}€</span>
+            {cart.length > 0 && (() => {
+              const subtotal = cart.reduce((s, b) => s + (b.licensePrice || b.price), 0)
+              const fee = Math.round(subtotal * 0.05 * 100) / 100
+              const total = Math.round((subtotal + fee) * 100) / 100
+              return (
+                <div className="px-6 py-5 border-t border-white/5 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="font-ui text-xs text-white/40">Subtotal</span>
+                    <span className="font-ui text-sm text-white/70">{subtotal.toFixed(2)}€</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="font-ui text-xs text-white/40">Tarifa de servicio <span className="text-white/20">(5%)</span></span>
+                    <span className="font-ui text-sm text-white/70">+{fee.toFixed(2)}€</span>
+                  </div>
+                  <div className="flex items-center justify-between pt-2 border-t border-white/5">
+                    <span className="font-ui text-sm text-white font-bold">Total</span>
+                    <span className="font-heading font-bold text-2xl text-white">{total.toFixed(2)}€</span>
+                  </div>
+                  <button
+                    onClick={handleCartCheckout}
+                    disabled={isPaying}
+                    className="w-full py-4 rounded-2xl font-ui font-bold text-sm uppercase tracking-widest text-white bg-accent hover:bg-[#9d3df2] transition-all shadow-[0_0_30px_rgba(138,43,226,0.4)] hover:shadow-[0_0_50px_rgba(138,43,226,0.6)] disabled:opacity-60 flex items-center justify-center gap-2"
+                  >
+                    {isPaying ? (
+                      <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Procesando...</>
+                    ) : (
+                      <>Pagar {total.toFixed(2)}€</>
+                    )}
+                  </button>
+                  <p className="font-ui text-[10px] text-white/20 text-center">Descarga inmediata tras el pago · Licencia entregada por email</p>
                 </div>
-                <button className="w-full py-4 rounded-2xl font-ui font-bold text-sm uppercase tracking-widest text-white bg-accent hover:bg-[#9d3df2] transition-all shadow-[0_0_30px_rgba(138,43,226,0.4)] hover:shadow-[0_0_50px_rgba(138,43,226,0.6)]">
-                  Pagar con Stripe
-                </button>
-                <p className="font-ui text-[10px] text-white/20 text-center">Descarga inmediata tras el pago · Licencia entregada por email</p>
-              </div>
-            )}
+              )
+            })()}
           </div>
         </div>
       )}
