@@ -41,8 +41,8 @@ const LICENSE_COLORS = {
   exclusive: { text: 'text-amber-400',  border: 'border-amber-500/40',  bg: 'bg-amber-500/10'  },
 }
 
-function LicenseConditionEditor({ licenseId, value, onChange }) {
-  const [open, setOpen] = useState(false)
+function LicenseConditionEditor({ licenseId, value, onChange, price, onPriceChange }) {
+  const [open, setOpen] = useState(true)
   const [customInput, setCustomInput] = useState('')
   const inputRef = useRef()
 
@@ -78,8 +78,19 @@ function LicenseConditionEditor({ licenseId, value, onChange }) {
           <span className={`font-mono text-xs font-bold uppercase tracking-widest ${colors.text}`}>{label}</span>
           <span className="font-mono text-[10px] text-text/30">{value.tag}</span>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="font-mono text-[10px] text-text/20">{value.features.length} condiciones</span>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+            <input
+              type="number"
+              value={price}
+              onChange={e => onPriceChange(e.target.value)}
+              placeholder="0"
+              min={0}
+              step="0.01"
+              className={`w-20 bg-white/5 border rounded-lg py-1 px-2 text-xs font-mono text-white outline-none focus:border-accent transition-colors placeholder:text-text/20 text-right ${colors.border}`}
+            />
+            <span className="font-mono text-[10px] text-text/30">€</span>
+          </div>
           <ChevronDown size={13} className={`text-text/40 transition-transform ${open ? 'rotate-180' : ''}`} />
         </div>
       </button>
@@ -390,31 +401,22 @@ export default function BeatForm({ producerId, beat, onSaved, onCancel }) {
       </div>
 
       {/* Precios */}
-      <div className="grid grid-cols-3 gap-3">
-        <div>
-          <label className={labelClass}>Basic (€)</label>
-          <input type="number" value={priceBasic} onChange={e => setPriceBasic(e.target.value)} placeholder="29" min={0} step="0.01" className={inputClass} />
-        </div>
-        <div>
-          <label className={labelClass}>Premium (€)</label>
-          <input type="number" value={pricePremium} onChange={e => setPricePremium(e.target.value)} placeholder="79" min={0} step="0.01" className={inputClass} />
-        </div>
-        <div>
-          <label className={labelClass}>Exclusive (€)</label>
-          <input type="number" value={priceExclusive} onChange={e => setPriceExclusive(e.target.value)} placeholder="450" min={0} step="0.01" className={inputClass} />
-        </div>
-      </div>
-
-      {/* Condiciones de licencia */}
+      {/* Condiciones de licencia + precio por licencia */}
       <div>
-        <label className={labelClass}>Condiciones por licencia</label>
+        <label className={labelClass}>Licencias</label>
         <div className="space-y-2">
-          {['basic', 'premium', 'exclusive'].map(id => (
+          {[
+            { id: 'basic',     price: priceBasic,     setPrice: setPriceBasic },
+            { id: 'premium',   price: pricePremium,   setPrice: setPricePremium },
+            { id: 'exclusive', price: priceExclusive, setPrice: setPriceExclusive },
+          ].map(({ id, price, setPrice }) => (
             <LicenseConditionEditor
               key={id}
               licenseId={id}
               value={conditions[id]}
               onChange={val => setConditions(prev => ({ ...prev, [id]: val }))}
+              price={price}
+              onPriceChange={setPrice}
             />
           ))}
         </div>

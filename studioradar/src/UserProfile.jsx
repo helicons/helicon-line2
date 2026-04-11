@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { supabase } from './lib/supabase'
 import Navbar from './components/Navbar'
-import { Calendar, Clock, MapPin, Music2, CheckCircle2, XCircle, Hourglass, ArrowRight, LogOut, Play, Pause, Heart, ShoppingCart } from 'lucide-react'
+import { Calendar, Clock, MapPin, Music2, CheckCircle2, XCircle, Hourglass, ArrowRight, LogOut, Play, Pause, Heart, ShoppingCart, SkipBack, SkipForward, Volume2, Shuffle, Repeat } from 'lucide-react'
 
 const GENRE_COLORS = {
   'Trap':       [255,0,60],   'R&B':       [0,200,255],
@@ -35,7 +35,13 @@ export default function UserProfile() {
   const [likedBeats, setLikedBeats] = useState([])
   const [playingId, setPlayingId] = useState(null)
   const [isPlaying, setIsPlaying] = useState(false)
+  const [currentTime, setCurrentTime] = useState(0)
+  const [duration, setDuration] = useState(0)
+  const [isShuffle, setIsShuffle] = useState(false)
+  const [isLooping, setIsLooping] = useState(false)
+  const [volume, setVolume] = useState(1)
   const audioRef = useRef(null)
+  const seekingRef = useRef(false)
 
   const togglePlay = (beat) => {
     if (!audioRef.current) audioRef.current = new Audio()
@@ -46,10 +52,24 @@ export default function UserProfile() {
     } else {
       audio.pause()
       audio.src = beat.audio_url ?? ''
+      audio.load()
       audio.play().catch(() => {})
       setPlayingId(beat.id)
       setIsPlaying(true)
+      setCurrentTime(0)
+      setDuration(0)
     }
+  }
+
+  const skipTrack = (dir) => {
+    if (isShuffle) {
+      const next = likedBeats[Math.floor(Math.random() * likedBeats.length)]
+      if (next) togglePlay(next)
+      return
+    }
+    const idx = likedBeats.findIndex(b => b.id === playingId)
+    const next = likedBeats[idx + dir]
+    if (next) togglePlay(next)
   }
 
   const unlikeBeat = async (beatId) => {
@@ -58,6 +78,27 @@ export default function UserProfile() {
     setLikedBeats(prev => prev.filter(b => b.id !== beatId))
     if (playingId === beatId) { audioRef.current?.pause(); setPlayingId(null); setIsPlaying(false) }
   }
+
+  // Audio events
+  useEffect(() => {
+    if (!audioRef.current) audioRef.current = new Audio()
+    const audio = audioRef.current
+    const onTime = () => { if (!seekingRef.current) setCurrentTime(audio.currentTime) }
+    const onMeta = () => setDuration(audio.duration)
+    const onEnd  = () => {
+      if (isLooping && audioRef.current) { audioRef.current.currentTime = 0; audioRef.current.play().catch(() => {}); return }
+      skipTrack(1)
+    }
+    audio.addEventListener('timeupdate', onTime)
+    audio.addEventListener('loadedmetadata', onMeta)
+    audio.addEventListener('ended', onEnd)
+    return () => {
+      audio.removeEventListener('timeupdate', onTime)
+      audio.removeEventListener('loadedmetadata', onMeta)
+      audio.removeEventListener('ended', onEnd)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [playingId, likedBeats])
 
   useEffect(() => {
     return () => { audioRef.current?.pause() }
@@ -134,6 +175,7 @@ export default function UserProfile() {
   )
 
   return (
+    <>
     <div className="min-h-screen bg-[#050505] text-white">
       <Navbar />
 
@@ -380,5 +422,89 @@ export default function UserProfile() {
         )}
       </div>
     </div>
+
+    {/* ── Player Footer — idéntico a BeatMarketplace ── */}
+    {(() => {
+      const track = likedBeats.find(b => b.id === playingId)
+      const fmt = (s) => `${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`
+      return (
+        <div className={`fixed bottom-0 left-0 right-0 h-24 bg-[#0A0A0A]/95 backdrop-blur-3xl border-t border-white/5 z-[60] transform transition-transform duration-500 ease-out flex items-center justify-between px-4 md:px-8 shadow-[0_-20px_40px_rgba(0,0,0,0.8)] ${track ? 'translate-y-0' : 'translate-y-full'}`}>
+
+          {/* Left: Track Info */}
+          <div className="flex items-center gap-4 w-1/3 min-w-0">
+            {track && (
+              <>
+                <div className="relative w-14 h-14 rounded-lg overflow-hidden border border-white/10 shadow-lg flex-shrink-0">
+                  <img src={track.image_url ?? 'https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?auto=format&fit=crop&q=80&w=200'} className="w-full h-full object-cover" alt="Artwork" />
+                </div>
+                <div className="flex flex-col min-w-0 pr-2">
+                  <span className="font-heading font-bold text-base text-white truncate drop-shadow-sm">{track.title}</span>
+                  <span className="font-ui text-xs text-white/50 truncate uppercase tracking-wider hover:text-accent transition-colors cursor-pointer"
+                    onClick={() => track.producers?.id && navigate(`/producer/${track.producers.id}`)}
+                  >{track.producers?.name || 'Productor'}</span>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Center: Playback Controls */}
+          <div className="flex flex-col items-center gap-2 w-1/3 max-w-xl">
+            <div className="flex items-center gap-5">
+              <button onClick={() => setIsShuffle(s => !s)} className={`transition-colors hover:scale-110 ${isShuffle ? 'text-accent' : 'text-white/30 hover:text-white'}`}><Shuffle className="w-4 h-4" /></button>
+              <button onClick={() => skipTrack(-1)} className="text-white/40 hover:text-white transition-colors hover:scale-110"><SkipBack className="w-5 h-5 fill-current" /></button>
+              <button
+                onClick={() => { if (isPlaying) { audioRef.current?.pause(); setIsPlaying(false) } else { audioRef.current?.play().catch(() => {}); setIsPlaying(true) } }}
+                className="w-12 h-12 rounded-full bg-white text-black flex items-center justify-center hover:scale-105 transition-all shadow-lg shadow-white/10"
+              >
+                {isPlaying ? <Pause className="w-6 h-6 fill-current" /> : <Play className="w-6 h-6 fill-current ml-1" />}
+              </button>
+              <button onClick={() => skipTrack(1)} className="text-white/40 hover:text-white transition-colors hover:scale-110"><SkipForward className="w-5 h-5 fill-current" /></button>
+              <button onClick={() => setIsLooping(l => !l)} className={`transition-colors hover:scale-110 ${isLooping ? 'text-accent' : 'text-white/30 hover:text-white'}`}><Repeat className="w-4 h-4" /></button>
+            </div>
+            <div className="w-full hidden md:flex items-center gap-3 font-ui text-[10px] text-white/30 font-medium">
+              <span className="w-8 text-right">{fmt(currentTime)}</span>
+              <div className="flex-1 h-4 relative flex items-center group cursor-pointer">
+                <div className="absolute left-0 right-0 h-1.5 top-1/2 -translate-y-1/2 bg-white/5 rounded-full overflow-hidden pointer-events-none">
+                  <div className="absolute left-0 top-0 bottom-0 rounded-full"
+                    style={{ width: duration ? `${(currentTime/duration)*100}%` : '0%', background: 'linear-gradient(90deg, #8A2BE2, #C471ED, #8A2BE2)', backgroundSize: '200% 100%', transition: seekingRef.current ? 'none' : 'width 0.1s linear' }}
+                  />
+                </div>
+                <input type="range" min="0" max={duration || 100} step="0.1" value={currentTime}
+                  onMouseDown={() => { seekingRef.current = true }}
+                  onChange={e => { const v = Number(e.target.value); setCurrentTime(v); if (audioRef.current) audioRef.current.currentTime = v }}
+                  onMouseUp={e => { seekingRef.current = false; if (audioRef.current) audioRef.current.currentTime = Number(e.target.value) }}
+                  onTouchEnd={() => { seekingRef.current = false }}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                />
+                <div className="w-3 h-3 rounded-full bg-white shadow-[0_0_10px_white] absolute pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity"
+                  style={{ left: `calc(${(currentTime/(duration||1))*100}% - 6px)` }}
+                />
+              </div>
+              <span className="w-8">{duration ? fmt(duration) : '0:00'}</span>
+            </div>
+          </div>
+
+          {/* Right: Heart + Volume */}
+          <div className="hidden md:flex items-center justify-end gap-6 w-1/3">
+            {track && (
+              <button onClick={() => unlikeBeat(track.id)} className="text-accent hover:text-white transition-colors" title="Quitar de favoritos">
+                <Heart className="w-5 h-5 fill-current" />
+              </button>
+            )}
+            <Volume2 className="w-5 h-5 text-white/40 shrink-0" />
+            <div className="relative w-24 h-5 flex items-center group cursor-pointer">
+              <div className="absolute left-0 right-0 h-1.5 top-1/2 -translate-y-1/2 bg-white/5 rounded-full overflow-hidden pointer-events-none">
+                <div className="h-full rounded-full transition-colors" style={{ width: `${volume*100}%`, background: 'rgba(255,255,255,0.4)' }} />
+              </div>
+              <input type="range" min="0" max="1" step="0.01" value={volume}
+                onChange={e => { const v = Number(e.target.value); setVolume(v); if (audioRef.current) audioRef.current.volume = v }}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+              />
+            </div>
+          </div>
+        </div>
+      )
+    })()}
+    </>
   )
 }

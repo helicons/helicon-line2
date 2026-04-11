@@ -524,16 +524,16 @@ const filteredBookings = bookingsFilter === 'all'
                               {[beat.genre, beat.mood, beat.bpm && `${beat.bpm} BPM`, beat.key].filter(Boolean).join(' · ')}
                             </p>
                           </div>
-                          <div className="flex flex-col items-end gap-1 shrink-0">
-                             {beat.price_basic != null && (
-                               <span className="text-accent text-[11px] font-mono font-bold leading-none">{beat.price_basic}€ (B)</span>
-                             )}
-                             {(beat.price_premium || beat.price_exclusive) && (
-                               <span className="text-text/40 text-[9px] font-mono leading-none">
-                                 {beat.price_premium && `${beat.price_premium}€ (P)`}
-                                 {beat.price_exclusive && ` · ${beat.price_exclusive}€ (E)`}
-                               </span>
-                             )}
+                          <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
+                            {[
+                              { label: 'Basic',     price: beat.price_basic,     color: 'text-accent border-accent/30 bg-accent/10' },
+                              { label: 'Premium',   price: beat.price_premium,   color: 'text-purple-300 border-purple-400/30 bg-purple-400/10' },
+                              { label: 'Exclusive', price: beat.price_exclusive, color: 'text-yellow-400 border-yellow-400/30 bg-yellow-400/10' },
+                            ].map(({ label, price, color }) => (
+                              <span key={label} className={`text-[10px] font-mono font-bold px-2 py-1 rounded-lg border ${color}`}>
+                                {label} {price != null ? `${price}€` : '—'}
+                              </span>
+                            ))}
                           </div>
                           <div className="flex items-center gap-2">
                             <button
