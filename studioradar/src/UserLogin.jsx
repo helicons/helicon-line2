@@ -50,7 +50,8 @@ export default function UserLogin() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/`,
+        redirectTo: `${window.location.origin}/user-onboarding`,
+        queryParams: { prompt: 'select_account' },
       },
     })
     if (error) {
@@ -105,7 +106,7 @@ export default function UserLogin() {
           email: data.user.email,
         })
         if (data.session) {
-          navigate('/', { replace: true })
+          navigate('/user-onboarding', { replace: true })
         } else {
           setSuccess('Revisa tu email para confirmar tu cuenta.')
           setLoading(false)

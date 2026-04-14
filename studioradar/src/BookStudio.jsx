@@ -1,6 +1,6 @@
 import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MapPin, Calendar, Clock, ArrowLeft, ArrowRight, Activity, CreditCard, ShieldCheck, Search, Navigation, ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react';
+import { MapPin, Calendar, Clock, ArrowLeft, ArrowRight, Activity, CreditCard, ShieldCheck, Search, Navigation, ChevronLeft, ChevronRight, ExternalLink, Star } from 'lucide-react';
 import { supabase } from './lib/supabase';
 import SlotPicker from './components/SlotPicker';
 const StudioMap = lazy(() => import('./components/StudioMap'));
@@ -50,6 +50,12 @@ export default function BookStudio() {
   const [visibleStudios, setVisibleStudios] = useState([]);
   const [hoveredStudio, setHoveredStudio] = useState(null);
 
+  const [reviews, setReviews] = useState([]);
+  const [userReview, setUserReview] = useState(null);
+  const [canReview, setCanReview] = useState(false);
+  const [reviewForm, setReviewForm] = useState({ rating: 5, comment: '' });
+  const [reviewLoading, setReviewLoading] = useState(false);
+
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [step]);
@@ -83,6 +89,75 @@ export default function BookStudio() {
     };
     fetchStudios();
   }, []);
+
+  const loadReviews = async (studioId) => {
+    const { data: reviewData } = await supabase
+      .from('studio_reviews')
+      .select('id, rating, comment, created_at, user_id')
+      .eq('studio_id', studioId)
+      .order('created_at', { ascending: false });
+
+    let enriched = reviewData || [];
+    if (enriched.length > 0) {
+      const userIds = [...new Set(enriched.map(r => r.user_id))];
+      const { data: userData } = await supabase
+        .from('users')
+        .select('user_id, name, artist_name')
+        .in('user_id', userIds);
+      const userMap = Object.fromEntries((userData || []).map(u => [u.user_id, u]));
+      enriched = enriched.map(r => ({ ...r, user: userMap[r.user_id] }));
+    }
+    setReviews(enriched);
+
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { setCanReview(false); setUserReview(null); return; }
+
+    const existing = enriched.find(r => r.user_id === session.user.id);
+    setUserReview(existing || null);
+
+    const { data: spaceData } = await supabase
+      .from('spaces').select('id').eq('studio_id', studioId);
+    const spaceIds = (spaceData || []).map(s => s.id);
+    if (spaceIds.length === 0) { setCanReview(false); return; }
+
+    const { data: bookingData } = await supabase
+      .from('bookings')
+      .select('id')
+      .eq('client_email', session.user.email)
+      .eq('status', 'confirmed')
+      .lt('end_datetime', new Date().toISOString())
+      .in('space_id', spaceIds)
+      .limit(1);
+    setCanReview((bookingData?.length ?? 0) > 0);
+  };
+
+  useEffect(() => {
+    if (!selectedStudio) return;
+    loadReviews(selectedStudio.id);
+  }, [selectedStudio]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const submitReview = async () => {
+    setReviewLoading(true);
+    const { data: { session } } = await supabase.auth.getSession();
+    const { error } = await supabase.from('studio_reviews').insert({
+      studio_id: selectedStudio.id,
+      user_id: session.user.id,
+      rating: reviewForm.rating,
+      comment: reviewForm.comment.trim() || null,
+    });
+    if (!error) {
+      setReviewForm({ rating: 5, comment: '' });
+      await loadReviews(selectedStudio.id);
+    }
+    setReviewLoading(false);
+  };
+
+  const deleteReview = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    await supabase.from('studio_reviews').delete()
+      .eq('id', userReview.id).eq('user_id', session.user.id);
+    await loadReviews(selectedStudio.id);
+  };
 
   useEffect(() => {
     const fetchSpaces = async () => {
@@ -262,8 +337,19 @@ export default function BookStudio() {
                 </button>
                 <div className="absolute bottom-4 left-4">
                   <h3 className="font-heading text-2xl font-bold text-white">{selectedStudio.name}</h3>
-                  <div className="font-mono text-[10px] text-accent flex items-center gap-1 uppercase tracking-widest mt-1">
-                    <MapPin className="w-3 h-3" /> {selectedStudio.location || 'Madrid'}
+                  <div className="flex items-center gap-3 mt-1">
+                    <div className="font-mono text-[10px] text-accent flex items-center gap-1 uppercase tracking-widest">
+                      <MapPin className="w-3 h-3" /> {selectedStudio.location || 'Madrid'}
+                    </div>
+                    {reviews.length > 0 && (
+                      <div className="flex items-center gap-1">
+                        <Star size={10} className="text-yellow-400 fill-yellow-400" />
+                        <span className="font-mono text-[10px] text-yellow-400 font-bold">
+                          {(reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1)}
+                        </span>
+                        <span className="font-mono text-[10px] text-white/30">({reviews.length})</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -299,6 +385,105 @@ export default function BookStudio() {
                       ))}
                     </div>
                   )}
+                  {/* Reseñas */}
+                  <div className="mb-6">
+                    <div className="font-mono text-[10px] text-text/50 uppercase tracking-widest mb-3 border-b border-white/5 pb-2">
+                      Reseñas
+                    </div>
+
+                    {/* Lista de reseñas */}
+                    {reviews.length === 0 ? (
+                      <p className="font-mono text-xs text-text/30 text-center py-4">Sin reseñas todavía.</p>
+                    ) : (
+                      <div className="space-y-3 mb-4">
+                        {reviews.map(r => (
+                          <div key={r.id} className="bg-white/3 border border-white/5 rounded-xl p-3">
+                            <div className="flex items-center justify-between mb-1">
+                              <div className="flex items-center gap-2">
+                                <div className="w-6 h-6 rounded-full bg-accent/20 flex items-center justify-center text-[10px] font-bold text-accent font-mono">
+                                  {(r.user?.artist_name || r.user?.name || '?')[0].toUpperCase()}
+                                </div>
+                                <span className="font-mono text-xs text-white/70">
+                                  {r.user?.artist_name || r.user?.name || 'Artista'}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-0.5">
+                                {[1,2,3,4,5].map(n => (
+                                  <Star key={n} size={10} className={n <= r.rating ? 'text-yellow-400 fill-yellow-400' : 'text-white/15'} />
+                                ))}
+                              </div>
+                            </div>
+                            {r.comment && (
+                              <p className="font-mono text-[11px] text-text/50 mt-1 leading-relaxed">{r.comment}</p>
+                            )}
+                            <p className="font-mono text-[9px] text-text/20 mt-1">
+                              {new Date(r.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Formulario / estado del usuario */}
+                    {canReview && !userReview && (
+                      <div className="bg-white/3 border border-accent/20 rounded-xl p-4">
+                        <p className="font-mono text-[10px] text-accent uppercase tracking-widest mb-3">Tu reseña</p>
+                        <div className="flex gap-1 mb-3">
+                          {[1,2,3,4,5].map(n => (
+                            <button key={n} type="button" onClick={() => setReviewForm(f => ({ ...f, rating: n }))}>
+                              <Star size={18} className={n <= reviewForm.rating ? 'text-yellow-400 fill-yellow-400' : 'text-white/20'} />
+                            </button>
+                          ))}
+                        </div>
+                        <textarea
+                          value={reviewForm.comment}
+                          onChange={e => setReviewForm(f => ({ ...f, comment: e.target.value }))}
+                          placeholder="Cuéntanos tu experiencia (opcional)..."
+                          rows={3}
+                          className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white font-mono placeholder:text-white/20 focus:outline-none focus:border-accent/50 resize-none transition-colors mb-3"
+                        />
+                        <button
+                          onClick={submitReview}
+                          disabled={reviewLoading}
+                          className="w-full py-2 rounded-lg bg-accent text-white font-mono text-xs font-bold uppercase tracking-widest hover:bg-[#9d3df2] transition-all disabled:opacity-50"
+                        >
+                          {reviewLoading ? 'Publicando…' : 'Publicar reseña'}
+                        </button>
+                      </div>
+                    )}
+
+                    {canReview && userReview && (
+                      <div className="bg-white/3 border border-white/8 rounded-xl p-3 flex items-center justify-between">
+                        <div>
+                          <div className="flex gap-0.5 mb-0.5">
+                            {[1,2,3,4,5].map(n => (
+                              <Star key={n} size={11} className={n <= userReview.rating ? 'text-yellow-400 fill-yellow-400' : 'text-white/15'} />
+                            ))}
+                          </div>
+                          <p className="font-mono text-[10px] text-text/40">Tu reseña publicada</p>
+                        </div>
+                        <button
+                          onClick={deleteReview}
+                          className="font-mono text-[10px] text-red-400/60 hover:text-red-400 transition-colors"
+                        >
+                          Eliminar
+                        </button>
+                      </div>
+                    )}
+
+                    {!canReview && !sessionUser && (
+                      <p className="font-mono text-[10px] text-text/30 text-center">
+                        <span className="text-accent/60 cursor-pointer hover:text-accent" onClick={() => navigate('/login')}>Inicia sesión</span> para ver si puedes dejar reseña.
+                      </p>
+                    )}
+
+                    {!canReview && sessionUser && (
+                      <p className="font-mono text-[10px] text-text/30 text-center">
+                        Solo huéspedes verificados pueden opinar.
+                      </p>
+                    )}
+                  </div>
+
                   <div className="mt-auto">
                     <button
                       onClick={() => setStep(3)}

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { CalendarDays, Layers, Clock, BookOpen, LogOut, ChevronDown, Building2, Pencil, PlusCircle, ArrowLeft, Music2, Trash2, Eye, EyeOff, UserCircle, ExternalLink, Upload, Loader } from 'lucide-react'
+import { CalendarDays, Layers, Clock, BookOpen, LogOut, ChevronDown, Building2, Pencil, PlusCircle, ArrowLeft, Music2, Trash2, Eye, EyeOff, UserCircle, ExternalLink, Upload, Loader, ShoppingBag } from 'lucide-react'
 import { supabase } from './lib/supabase'
 import SpaceManager from './components/SpaceManager'
 import AvailabilityManager from './components/AvailabilityManager'
@@ -146,6 +146,7 @@ const TABS = [
   { id: 'availability', label: 'Disponibilidad',  Icon: Clock       },
   { id: 'bookings',     label: 'Reservas',        Icon: BookOpen    },
   { id: 'beats',        label: 'Beats',           Icon: Music2      },
+  { id: 'ventas',       label: 'Ventas',          Icon: ShoppingBag },
 ]
 
 const STATUS_BADGE = {
@@ -171,6 +172,8 @@ export default function ProducerDashboard() {
   const [beatsLoading, setBeatsLoading] = useState(false)
   const [addingBeat, setAddingBeat] = useState(false)
   const [editingBeat, setEditingBeat] = useState(null)
+  const [sales, setSales]           = useState([])
+  const [salesLoading, setSalesLoading] = useState(false)
 
   const activeStudio = studios.find(s => s.id === activeStudioId) ?? studios[0] ?? null
 
@@ -227,6 +230,35 @@ export default function ProducerDashboard() {
         })
       })
   }, [activeStudioId, tab])
+
+  // Cargar ventas del productor
+  useEffect(() => {
+    if (tab !== 'ventas' || !producer) return
+    setSalesLoading(true)
+    const load = async () => {
+      const { data: beatData } = await supabase
+        .from('beats').select('id').eq('producer_id', producer.id)
+      const beatIds = (beatData || []).map(b => b.id)
+      if (beatIds.length === 0) { setSales([]); setSalesLoading(false); return }
+
+      const { data: salesData } = await supabase
+        .from('sales')
+        .select('id, beat_id, buyer_email, license_type, amount_paid, created_at, beats(title, image_url)')
+        .in('beat_id', beatIds)
+        .order('created_at', { ascending: false })
+
+      const emails = [...new Set((salesData || []).map(s => s.buyer_email))]
+      let userMap = {}
+      if (emails.length > 0) {
+        const { data: userData } = await supabase
+          .from('users').select('email, name, artist_name, instagram').in('email', emails)
+        userMap = Object.fromEntries((userData || []).map(u => [u.email, u]))
+      }
+      setSales((salesData || []).map(s => ({ ...s, buyer: userMap[s.buyer_email] })))
+      setSalesLoading(false)
+    }
+    load()
+  }, [tab, producer])
 
   // Cargar beats del productor
   useEffect(() => {
@@ -658,6 +690,82 @@ const filteredBookings = bookingsFilter === 'all'
                       })}
                     </tbody>
                   </table>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── VENTAS ── */}
+          {tab === 'ventas' && (
+            <div className="space-y-4">
+              <h3 className="text-white font-bold text-sm font-mono uppercase tracking-widest">Ventas de Beats</h3>
+
+              {salesLoading && <p className="text-text/30 text-xs font-mono text-center py-12">Cargando…</p>}
+
+              {!salesLoading && sales.length === 0 && (
+                <div className="flex flex-col items-center justify-center py-16 text-center">
+                  <div className="w-16 h-16 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center mb-6">
+                    <ShoppingBag size={28} className="text-accent" />
+                  </div>
+                  <h3 className="text-white font-bold text-lg mb-2">Aún no hay ventas</h3>
+                  <p className="text-text/40 text-sm font-mono max-w-xs">Cuando un artista compre uno de tus beats aparecerá aquí.</p>
+                </div>
+              )}
+
+              {!salesLoading && sales.length > 0 && (
+                <div className="space-y-2">
+                  {sales.map(sale => {
+                    const licenseColors = {
+                      basic:     'text-accent border-accent/30 bg-accent/10',
+                      premium:   'text-purple-300 border-purple-400/30 bg-purple-400/10',
+                      exclusive: 'text-yellow-400 border-yellow-400/30 bg-yellow-400/10',
+                    }
+                    const licenseLabel = { basic: 'Basic', premium: 'Premium', exclusive: 'Exclusive' }
+                    const color = licenseColors[sale.license_type] ?? licenseColors.basic
+                    const buyerName = sale.buyer?.artist_name || sale.buyer?.name || sale.buyer_email
+                    const ig = sale.buyer?.instagram
+
+                    return (
+                      <div key={sale.id} className="flex items-center gap-4 bg-white/3 border border-white/5 rounded-xl p-3 hover:border-white/10 transition-all">
+                        {sale.beats?.image_url ? (
+                          <img src={sale.beats.image_url} alt={sale.beats?.title} className="w-12 h-12 rounded-lg object-cover border border-white/10 shrink-0" />
+                        ) : (
+                          <div className="w-12 h-12 rounded-lg bg-accent/10 border border-accent/20 flex items-center justify-center shrink-0">
+                            <Music2 size={18} className="text-accent/50" />
+                          </div>
+                        )}
+
+                        <div className="flex-1 min-w-0">
+                          <p className="text-white font-bold text-sm truncate">{sale.beats?.title ?? '—'}</p>
+                          <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                            <span className="text-text/50 text-xs font-mono truncate">{buyerName}</span>
+                            {ig && (
+                              <a
+                                href={ig.startsWith('http') ? ig : `https://instagram.com/${ig.replace('@','')}`}
+                                target="_blank" rel="noopener noreferrer"
+                                className="text-[10px] font-mono px-1.5 py-0.5 rounded border border-pink-500/30 bg-pink-500/10 text-pink-400 hover:bg-pink-500/20 transition-colors"
+                              >
+                                IG {ig.startsWith('@') ? ig : `@${ig}`}
+                              </a>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className={`text-[10px] font-mono font-bold px-2 py-1 rounded-lg border ${color}`}>
+                            {licenseLabel[sale.license_type] ?? sale.license_type}
+                          </span>
+                          <span className="text-white font-bold text-sm font-mono w-16 text-right">
+                            {sale.amount_paid != null ? `${sale.amount_paid}€` : '—'}
+                          </span>
+                        </div>
+
+                        <p className="text-text/30 text-[10px] font-mono shrink-0 hidden sm:block">
+                          {new Date(sale.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        </p>
+                      </div>
+                    )
+                  })}
                 </div>
               )}
             </div>

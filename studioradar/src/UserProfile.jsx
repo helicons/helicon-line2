@@ -112,7 +112,7 @@ export default function UserProfile() {
       // Datos del usuario
       const { data: userRow } = await supabase
         .from('users')
-        .select('name, email')
+        .select('name, email, artist_name, instagram, spotify, youtube')
         .eq('user_id', session.user.id)
         .maybeSingle()
 
@@ -194,7 +194,41 @@ export default function UserProfile() {
           </div>
           <div className="flex-1 min-w-0">
             <h1 className="text-2xl font-bold font-heading text-white truncate">{user?.name}</h1>
+            {user?.artist_name && (
+              <p className="text-sm font-mono text-accent/80 truncate">{user.artist_name}</p>
+            )}
             <p className="text-sm font-mono text-text/40 truncate">{user?.email}</p>
+            {(user?.instagram || user?.spotify || user?.youtube) && (
+              <div className="flex flex-wrap gap-2 mt-2">
+                {user.instagram && (
+                  <a
+                    href={user.instagram.startsWith('http') ? user.instagram : `https://instagram.com/${user.instagram.replace('@','')}`}
+                    target="_blank" rel="noopener noreferrer"
+                    className="text-[10px] font-mono px-2 py-1 rounded-lg border border-pink-500/30 bg-pink-500/10 text-pink-400 hover:bg-pink-500/20 transition-colors"
+                  >
+                    IG {user.instagram.startsWith('@') ? user.instagram : `@${user.instagram}`}
+                  </a>
+                )}
+                {user.spotify && (
+                  <a
+                    href={user.spotify.startsWith('http') ? user.spotify : `https://open.spotify.com/search/${encodeURIComponent(user.spotify)}`}
+                    target="_blank" rel="noopener noreferrer"
+                    className="text-[10px] font-mono px-2 py-1 rounded-lg border border-green-500/30 bg-green-500/10 text-green-400 hover:bg-green-500/20 transition-colors"
+                  >
+                    Spotify
+                  </a>
+                )}
+                {user.youtube && (
+                  <a
+                    href={user.youtube.startsWith('http') ? user.youtube : `https://youtube.com/@${user.youtube.replace('@','')}`}
+                    target="_blank" rel="noopener noreferrer"
+                    className="text-[10px] font-mono px-2 py-1 rounded-lg border border-red-500/30 bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors"
+                  >
+                    YouTube
+                  </a>
+                )}
+              </div>
+            )}
           </div>
           <button
             onClick={handleLogout}
