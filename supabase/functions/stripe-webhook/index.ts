@@ -39,12 +39,13 @@ serve(async (req) => {
     if (type === 'beat') {
       const { beat_id, license_type, beat_title } = session.metadata;
       const buyer_email = session.customer_details?.email;
+      const amount_paid = (session.amount_total ?? 0) / 100;
 
       await supabase.from("sales").insert({
         beat_id,
         buyer_email,
         license_type,
-        amount_paid: (session.amount_total ?? 0) / 100,
+        amount_paid,
         stripe_session_id: session.id,
       });
 

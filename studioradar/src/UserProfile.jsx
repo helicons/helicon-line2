@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { supabase } from './lib/supabase'
 import Navbar from './components/Navbar'
-import { Calendar, Clock, MapPin, Music2, CheckCircle2, XCircle, Hourglass, ArrowRight, LogOut, Play, Pause, Heart, ShoppingCart, SkipBack, SkipForward, Volume2, Shuffle, Repeat } from 'lucide-react'
+import { Calendar, Clock, MapPin, Music2, CheckCircle2, XCircle, Hourglass, ArrowRight, LogOut, Play, Pause, Heart, ShoppingCart, SkipBack, SkipForward, Volume2, Shuffle, Repeat, Pencil, Check, X } from 'lucide-react'
 
 const GENRE_COLORS = {
   'Trap':       [255,0,60],   'R&B':       [0,200,255],
@@ -32,6 +32,9 @@ export default function UserProfile() {
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all')
   const [activeTab, setActiveTab] = useState('bookings')
+  const [editingSocials, setEditingSocials] = useState(false)
+  const [socialForm, setSocialForm] = useState({ artist_name: '', instagram: '', spotify: '', youtube: '' })
+  const [socialSaving, setSocialSaving] = useState(false)
   const [likedBeats, setLikedBeats] = useState([])
   const [playingId, setPlayingId] = useState(null)
   const [isPlaying, setIsPlaying] = useState(false)
@@ -157,6 +160,34 @@ export default function UserProfile() {
     load()
   }, [navigate])
 
+  const startEditingSocials = () => {
+    setSocialForm({
+      artist_name: user?.artist_name ?? '',
+      instagram:   user?.instagram   ?? '',
+      spotify:     user?.spotify     ?? '',
+      youtube:     user?.youtube     ?? '',
+    })
+    setEditingSocials(true)
+  }
+
+  const saveSocials = async () => {
+    setSocialSaving(true)
+    const { error } = await supabase
+      .from('users')
+      .update({
+        artist_name: socialForm.artist_name.trim() || null,
+        instagram:   socialForm.instagram.trim()   || null,
+        spotify:     socialForm.spotify.trim()     || null,
+        youtube:     socialForm.youtube.trim()     || null,
+      })
+      .eq('user_id', user.id)
+    if (!error) {
+      setUser(u => ({ ...u, ...socialForm }))
+      setEditingSocials(false)
+    }
+    setSocialSaving(false)
+  }
+
   const handleLogout = async () => {
     await supabase.auth.signOut()
     navigate('/')
@@ -194,39 +225,65 @@ export default function UserProfile() {
           </div>
           <div className="flex-1 min-w-0">
             <h1 className="text-2xl font-bold font-heading text-white truncate">{user?.name}</h1>
-            {user?.artist_name && (
-              <p className="text-sm font-mono text-accent/80 truncate">{user.artist_name}</p>
-            )}
-            <p className="text-sm font-mono text-text/40 truncate">{user?.email}</p>
-            {(user?.instagram || user?.spotify || user?.youtube) && (
-              <div className="flex flex-wrap gap-2 mt-2">
-                {user.instagram && (
-                  <a
-                    href={user.instagram.startsWith('http') ? user.instagram : `https://instagram.com/${user.instagram.replace('@','')}`}
-                    target="_blank" rel="noopener noreferrer"
-                    className="text-[10px] font-mono px-2 py-1 rounded-lg border border-pink-500/30 bg-pink-500/10 text-pink-400 hover:bg-pink-500/20 transition-colors"
-                  >
-                    IG {user.instagram.startsWith('@') ? user.instagram : `@${user.instagram}`}
-                  </a>
+            {!editingSocials ? (
+              <>
+                {user?.artist_name && (
+                  <p className="text-sm font-mono text-accent/80 truncate">{user.artist_name}</p>
                 )}
-                {user.spotify && (
-                  <a
-                    href={user.spotify.startsWith('http') ? user.spotify : `https://open.spotify.com/search/${encodeURIComponent(user.spotify)}`}
-                    target="_blank" rel="noopener noreferrer"
-                    className="text-[10px] font-mono px-2 py-1 rounded-lg border border-green-500/30 bg-green-500/10 text-green-400 hover:bg-green-500/20 transition-colors"
-                  >
-                    Spotify
-                  </a>
-                )}
-                {user.youtube && (
-                  <a
-                    href={user.youtube.startsWith('http') ? user.youtube : `https://youtube.com/@${user.youtube.replace('@','')}`}
-                    target="_blank" rel="noopener noreferrer"
-                    className="text-[10px] font-mono px-2 py-1 rounded-lg border border-red-500/30 bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors"
-                  >
-                    YouTube
-                  </a>
-                )}
+                <p className="text-sm font-mono text-text/40 truncate">{user?.email}</p>
+                <div className="flex flex-wrap items-center gap-2 mt-2">
+                  {user?.instagram && (
+                    <a href={user.instagram.startsWith('http') ? user.instagram : `https://instagram.com/${user.instagram.replace('@','')}`} target="_blank" rel="noopener noreferrer"
+                      className="text-[10px] font-mono px-2 py-1 rounded-lg border border-pink-500/30 bg-pink-500/10 text-pink-400 hover:bg-pink-500/20 transition-colors">
+                      IG {user.instagram.startsWith('@') ? user.instagram : `@${user.instagram}`}
+                    </a>
+                  )}
+                  {user?.spotify && (
+                    <a href={user.spotify.startsWith('http') ? user.spotify : `https://open.spotify.com/search/${encodeURIComponent(user.spotify)}`} target="_blank" rel="noopener noreferrer"
+                      className="text-[10px] font-mono px-2 py-1 rounded-lg border border-green-500/30 bg-green-500/10 text-green-400 hover:bg-green-500/20 transition-colors">
+                      Spotify
+                    </a>
+                  )}
+                  {user?.youtube && (
+                    <a href={user.youtube.startsWith('http') ? user.youtube : `https://youtube.com/@${user.youtube.replace('@','')}`} target="_blank" rel="noopener noreferrer"
+                      className="text-[10px] font-mono px-2 py-1 rounded-lg border border-red-500/30 bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors">
+                      YouTube
+                    </a>
+                  )}
+                  <button onClick={startEditingSocials} className="flex items-center gap-1 text-[10px] font-mono text-text/30 hover:text-accent transition-colors">
+                    <Pencil size={10} /> Editar
+                  </button>
+                </div>
+              </>
+            ) : (
+              <div className="mt-2 space-y-2">
+                {[
+                  { key: 'artist_name', placeholder: 'Nombre artístico',                         label: 'Artista' },
+                  { key: 'instagram',   placeholder: 'https://instagram.com/tuusuario',           label: 'IG' },
+                  { key: 'spotify',     placeholder: 'https://open.spotify.com/artist/...',       label: 'Spotify' },
+                  { key: 'youtube',     placeholder: 'https://youtube.com/@tucanal',              label: 'YouTube' },
+                ].map(({ key, placeholder, label }) => (
+                  <div key={key} className="flex items-center gap-2">
+                    <span className="text-[10px] font-mono text-text/30 w-12 shrink-0">{label}</span>
+                    <input
+                      type="text"
+                      value={socialForm[key]}
+                      onChange={e => setSocialForm(f => ({ ...f, [key]: e.target.value }))}
+                      placeholder={placeholder}
+                      className="flex-1 bg-white/5 border border-white/10 rounded-lg px-2 py-1 text-xs text-white font-mono placeholder:text-text/20 focus:outline-none focus:border-accent/50 transition-colors"
+                    />
+                  </div>
+                ))}
+                <div className="flex gap-2 pt-1">
+                  <button onClick={saveSocials} disabled={socialSaving}
+                    className="flex items-center gap-1 text-[10px] font-mono px-3 py-1.5 rounded-lg bg-accent text-white hover:bg-[#9d3df2] transition-colors disabled:opacity-50">
+                    <Check size={11} /> {socialSaving ? 'Guardando…' : 'Guardar'}
+                  </button>
+                  <button onClick={() => setEditingSocials(false)}
+                    className="flex items-center gap-1 text-[10px] font-mono px-3 py-1.5 rounded-lg border border-white/10 text-text/40 hover:text-white transition-colors">
+                    <X size={11} /> Cancelar
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -435,10 +492,10 @@ export default function UserProfile() {
                         className="hidden md:flex items-center justify-center transition-colors"
                         title="Quitar de favoritos"
                       >
-                        <Heart className="w-3.5 h-3.5" style={{ color: `rgb(${r},${g},${b})`, fill: `rgb(${r},${g},${b})` }}/>
+                        <Heart className="w-3.5 h-3.5" style={{ color: '#8A2BE2', fill: '#8A2BE2' }}/>
                       </button>
                       {/* Price */}
-                      <span className="font-heading font-bold text-sm text-right" style={{ color: `rgb(${r},${g},${b})` }}>{price}€</span>
+                      <span className="font-heading font-bold text-sm text-right text-white/80">{price}€</span>
                       {/* Cart */}
                       <button
                         onClick={e => { e.stopPropagation(); navigate(`/beats?beat=${beat.id}`) }}

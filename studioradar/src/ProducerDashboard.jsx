@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { CalendarDays, Layers, Clock, BookOpen, LogOut, ChevronDown, Building2, Pencil, PlusCircle, ArrowLeft, Music2, Trash2, Eye, EyeOff, UserCircle, ExternalLink, Upload, Loader, ShoppingBag } from 'lucide-react'
+import { CalendarDays, Layers, Clock, BookOpen, LogOut, ChevronDown, Building2, Pencil, PlusCircle, ArrowLeft, Music2, Trash2, Eye, EyeOff, UserCircle, ExternalLink, Upload, Loader, ShoppingBag, Wallet } from 'lucide-react'
 import { supabase } from './lib/supabase'
 import SpaceManager from './components/SpaceManager'
 import AvailabilityManager from './components/AvailabilityManager'
@@ -158,6 +158,7 @@ const TABS = [
   { id: 'bookings',     label: 'Reservas',        Icon: BookOpen    },
   { id: 'beats',        label: 'Beats',           Icon: Music2      },
   { id: 'ventas',       label: 'Ventas',          Icon: ShoppingBag },
+  { id: 'cobros',       label: 'Cobros',          Icon: Wallet      },
 ]
 
 const STATUS_BADGE = {
@@ -185,6 +186,9 @@ export default function ProducerDashboard() {
   const [editingBeat, setEditingBeat] = useState(null)
   const [sales, setSales]           = useState([])
   const [salesLoading, setSalesLoading] = useState(false)
+  const [cobrosData, setCobrosData]     = useState(null)
+  const [cobrosLoading, setCobrosLoading] = useState(false)
+  const [connectLoading, setConnectLoading] = useState(false)
 
   const activeStudio = studios.find(s => s.id === activeStudioId) ?? studios[0] ?? null
 
@@ -215,6 +219,29 @@ export default function ProducerDashboard() {
       }
       setProducer(prod)
 
+      // Detectar retorno desde Stripe Connect
+      const params = new URLSearchParams(window.location.search)
+      if (params.get('connect') === 'success' || params.get('connect') === 'refresh') {
+        setTab('cobros')
+        window.history.replaceState({}, '', window.location.pathname)
+        // Verificar estado real en Stripe inmediatamente
+        if (prod?.id) {
+          const { data: { session: authSession } } = await supabase.auth.getSession()
+          if (authSession) {
+            const res = await fetch(
+              `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-stripe-connect-link`,
+              {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authSession.access_token}` },
+                body: JSON.stringify({ producer_id: prod.id, action: 'check_status' }),
+              }
+            )
+            const { status } = await res.json()
+            if (status) setProducer(p => ({ ...p, stripe_connect_status: status }))
+          }
+        }
+      }
+
       // Cargar TODOS los estudios del productor
       const { data: studioData } = await supabase
         .from('studios')
@@ -241,6 +268,58 @@ export default function ProducerDashboard() {
         })
       })
   }, [activeStudioId, tab])
+
+  // Cargar datos de cobros
+  useEffect(() => {
+    if (tab !== 'cobros' || !producer) return
+    setCobrosLoading(true)
+    const load = async () => {
+      // Beat sales del productor
+      const { data: beatRows } = await supabase
+        .from('beats').select('id').eq('producer_id', producer.id)
+      const beatIds = (beatRows || []).map(b => b.id)
+
+      let beatSales = []
+      if (beatIds.length > 0) {
+        const { data } = await supabase
+          .from('sales')
+          .select('id, beat_id, buyer_email, license_type, amount_paid, created_at, payout_transferred_at, beats(title, image_url)')
+          .in('beat_id', beatIds)
+          .order('created_at', { ascending: false })
+        beatSales = data || []
+      }
+
+      // Reservas confirmadas de los estudios del productor
+      const studioIds = studios.map(s => s.id)
+      let studioBookings = []
+      if (studioIds.length > 0) {
+        const { data: spaceRows } = await supabase
+          .from('spaces').select('id, studio_id').in('studio_id', studioIds)
+        const spaceIds = (spaceRows || []).map(s => s.id)
+        if (spaceIds.length > 0) {
+          const { data } = await supabase
+            .from('bookings')
+            .select('id, client_name, start_datetime, end_datetime, amount_paid, status, payout_transferred_at, spaces(name, studio_id)')
+            .in('space_id', spaceIds)
+            .eq('status', 'confirmed')
+            .order('start_datetime', { ascending: false })
+          studioBookings = data || []
+        }
+      }
+
+      const now = new Date()
+      const beatsPending = beatSales
+        .filter(s => !s.payout_transferred_at)
+        .reduce((sum, s) => sum + (s.amount_paid || 0) * 0.90, 0)
+      const studiosPending = studioBookings
+        .filter(b => !b.payout_transferred_at && new Date(b.end_datetime) < now)
+        .reduce((sum, b) => sum + (b.amount_paid || 0) * 0.90, 0)
+
+      setCobrosData({ beatSales, studioBookings, beatsPending, studiosPending })
+      setCobrosLoading(false)
+    }
+    load()
+  }, [tab, producer, studios])
 
   // Cargar ventas del productor
   useEffect(() => {
@@ -324,6 +403,30 @@ const filteredBookings = bookingsFilter === 'all'
         </div>
       </div>
     )
+  }
+
+  const handleActivarCobros = async () => {
+    setConnectLoading(true)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-stripe-connect-link`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({ producer_id: producer.id }),
+        }
+      )
+      const { url, error } = await res.json()
+      if (error) throw new Error(error)
+      window.location.href = url
+    } catch (err) {
+      console.error('Stripe Connect error:', err)
+      setConnectLoading(false)
+    }
   }
 
   return (
@@ -797,6 +900,195 @@ const filteredBookings = bookingsFilter === 'all'
                     )
                   })}
                 </div>
+              )}
+            </div>
+          )}
+
+          {/* ── COBROS ── */}
+          {tab === 'cobros' && producer && (
+            <div className="space-y-6">
+              {/* Cabecera + estado de conexión */}
+              <div className="flex items-center justify-between flex-wrap gap-3">
+                <h3 className="text-white font-bold text-sm font-mono uppercase tracking-widest">Cobros</h3>
+                {producer.stripe_connect_status === 'active' && (
+                  <span className="text-[10px] font-mono px-2.5 py-1 rounded-full border bg-green-500/10 text-green-400 border-green-500/30">Cuenta activa ✓</span>
+                )}
+                {producer.stripe_connect_status === 'pending' && (
+                  <span className="text-[10px] font-mono px-2.5 py-1 rounded-full border bg-yellow-500/10 text-yellow-400 border-yellow-500/30">Verificación en curso…</span>
+                )}
+                {producer.stripe_connect_status === 'not_connected' && (
+                  <span className="text-[10px] font-mono px-2.5 py-1 rounded-full border bg-white/5 text-text/40 border-white/10">Sin conectar</span>
+                )}
+              </div>
+
+              {/* Bloque de acción si no está activo */}
+              {producer.stripe_connect_status !== 'active' && (
+                <div className="bg-white/3 border border-white/8 rounded-xl p-5 flex items-start gap-4">
+                  <div className="w-10 h-10 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center shrink-0 mt-0.5">
+                    <Wallet size={18} className="text-accent" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-white font-bold text-sm mb-1">
+                      {producer.stripe_connect_status === 'pending' ? 'Completa la verificación para recibir pagos' : 'Conecta tu cuenta bancaria para recibir pagos'}
+                    </p>
+                    <p className="text-text/40 text-xs font-mono mb-4">
+                      {producer.stripe_connect_status === 'pending'
+                        ? 'Stripe necesita más información para activar tu cuenta. Haz clic en el botón para continuar.'
+                        : 'Conecta tu IBAN vía Stripe. El proceso tarda 3-5 minutos y solo se hace una vez. Tu saldo acumulado se transferirá automáticamente.'}
+                    </p>
+                    <button
+                      onClick={handleActivarCobros}
+                      disabled={connectLoading}
+                      className="flex items-center gap-2 bg-accent text-white font-mono font-bold text-xs px-5 py-2.5 rounded-xl hover:bg-[#9d3df2] transition-all shadow-lg shadow-accent/20 disabled:opacity-60"
+                    >
+                      {connectLoading
+                        ? <><Loader size={13} className="animate-spin" /> Cargando…</>
+                        : producer.stripe_connect_status === 'pending' ? 'Continuar verificación →' : 'Activar cobros →'}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Botones si está activo */}
+              {producer.stripe_connect_status === 'active' && (
+                <div className="flex items-center gap-3 flex-wrap">
+                  {/* Retirar fondos */}
+                  {cobrosData && (cobrosData.beatsPending > 0 || cobrosData.studiosPending > 0) && (
+                    <button
+                      onClick={async () => {
+                        setConnectLoading(true)
+                        try {
+                          const { data: { session: s } } = await supabase.auth.getSession()
+                          await fetch(
+                            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/process-payouts`,
+                            {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${s.access_token}` },
+                              body: JSON.stringify({ producer_id: producer.id }),
+                            }
+                          )
+                          // Recargar cobros
+                          setCobrosData(null)
+                          setTab('cobros')
+                        } finally {
+                          setConnectLoading(false)
+                        }
+                      }}
+                      disabled={connectLoading}
+                      className="flex items-center gap-2 bg-accent text-white font-mono font-bold text-xs px-5 py-2.5 rounded-xl hover:bg-[#9d3df2] transition-all shadow-lg shadow-accent/20 disabled:opacity-60"
+                    >
+                      {connectLoading ? <><Loader size={13} className="animate-spin" /> Procesando…</> : <><Wallet size={13} /> Retirar fondos</>}
+                    </button>
+                  )}
+                  {/* Gestionar cuenta Stripe */}
+                  <button
+                    onClick={handleActivarCobros}
+                    disabled={connectLoading}
+                    className="flex items-center gap-2 text-text/50 font-mono text-xs px-4 py-2 rounded-xl border border-white/10 hover:border-white/20 hover:text-white transition-all disabled:opacity-60"
+                  >
+                    {connectLoading ? <><Loader size={12} className="animate-spin" /> Cargando…</> : <><ExternalLink size={12} /> Gestionar cuenta Stripe</>}
+                  </button>
+                </div>
+              )}
+
+              {cobrosLoading && <p className="text-text/30 text-xs font-mono text-center py-8">Cargando…</p>}
+
+              {!cobrosLoading && cobrosData && (
+                <>
+                  {/* ── Beats ── */}
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <Music2 size={14} className="text-accent" />
+                        <span className="text-white font-bold text-xs font-mono uppercase tracking-widest">Beats</span>
+                      </div>
+                      {cobrosData.beatsPending > 0 && (
+                        <span className="text-accent font-bold text-sm font-mono">{cobrosData.beatsPending.toFixed(2)}€ pendiente</span>
+                      )}
+                    </div>
+
+                    {cobrosData.beatSales.length === 0 && (
+                      <p className="text-text/20 text-xs font-mono py-4 text-center">No hay ventas de beats aún</p>
+                    )}
+
+                    {cobrosData.beatSales.length > 0 && (
+                      <div className="space-y-1.5">
+                        {cobrosData.beatSales.map(sale => {
+                          const licenseColors = {
+                            basic: 'text-accent border-accent/30 bg-accent/10',
+                            premium: 'text-purple-300 border-purple-400/30 bg-purple-400/10',
+                            exclusive: 'text-yellow-400 border-yellow-400/30 bg-yellow-400/10',
+                            stems: 'text-green-400 border-green-500/30 bg-green-500/10',
+                          }
+                          const paid = !!sale.payout_transferred_at
+                          return (
+                            <div key={sale.id} className="flex items-center gap-3 bg-white/2 border border-white/5 rounded-xl px-4 py-2.5">
+                              <div className="flex-1 min-w-0">
+                                <p className="text-white text-xs font-mono truncate">{sale.beats?.title ?? '—'}</p>
+                                <p className="text-text/30 text-[10px] font-mono mt-0.5">
+                                  {new Date(sale.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                </p>
+                              </div>
+                              <span className={`text-[10px] font-mono px-2 py-0.5 rounded-lg border ${licenseColors[sale.license_type] ?? licenseColors.basic}`}>
+                                {sale.license_type}
+                              </span>
+                              <span className="text-white text-xs font-mono font-bold w-16 text-right">
+                                {sale.amount_paid != null ? `${(sale.amount_paid * 0.90).toFixed(2)}€` : '—'}
+                              </span>
+                              <span className={`text-[10px] font-mono w-20 text-right ${paid ? 'text-green-400' : 'text-yellow-400'}`}>
+                                {paid ? 'transferido ✓' : 'pendiente'}
+                              </span>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* ── Estudios ── */}
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <Building2 size={14} className="text-accent" />
+                        <span className="text-white font-bold text-xs font-mono uppercase tracking-widest">Estudios</span>
+                      </div>
+                      {cobrosData.studiosPending > 0 && (
+                        <span className="text-accent font-bold text-sm font-mono">{cobrosData.studiosPending.toFixed(2)}€ pendiente</span>
+                      )}
+                    </div>
+
+                    {cobrosData.studioBookings.length === 0 && (
+                      <p className="text-text/20 text-xs font-mono py-4 text-center">No hay reservas confirmadas aún</p>
+                    )}
+
+                    {cobrosData.studioBookings.length > 0 && (
+                      <div className="space-y-1.5">
+                        {cobrosData.studioBookings.map(booking => {
+                          const now = new Date()
+                          const ended = new Date(booking.end_datetime) < now
+                          const paid = !!booking.payout_transferred_at
+                          const statusLabel = paid ? 'transferido ✓' : ended ? 'pendiente' : 'por ocurrir'
+                          const statusColor = paid ? 'text-green-400' : ended ? 'text-yellow-400' : 'text-text/40'
+                          const dateStr = new Date(booking.start_datetime).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })
+                          return (
+                            <div key={booking.id} className="flex items-center gap-3 bg-white/2 border border-white/5 rounded-xl px-4 py-2.5">
+                              <div className="flex-1 min-w-0">
+                                <p className="text-white text-xs font-mono truncate">{booking.client_name}</p>
+                                <p className="text-text/30 text-[10px] font-mono mt-0.5">{dateStr} · {booking.spaces?.name ?? '—'}</p>
+                              </div>
+                              <span className="text-white text-xs font-mono font-bold w-16 text-right">
+                                {booking.amount_paid != null ? `${(booking.amount_paid * 0.90).toFixed(2)}€` : '—'}
+                              </span>
+                              <span className={`text-[10px] font-mono w-20 text-right ${statusColor}`}>
+                                {statusLabel}
+                              </span>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </>
               )}
             </div>
           )}
