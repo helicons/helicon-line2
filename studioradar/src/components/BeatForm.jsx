@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react'
 import { supabase } from '../lib/supabase'
-import { Upload, Music2, Image, X, Loader, ChevronDown, Plus } from 'lucide-react'
+import { Upload, Music2, Image, X, Loader, ChevronDown, Plus, Link } from 'lucide-react'
 
 const GENRES = ['Trap', 'R&B', 'Drill', 'Synthwave', 'Techno', 'Industrial', 'Hard', 'Bouncy', 'Chill']
 const MOODS = ['Dark', 'Aggressive', 'Chill', 'Sad', 'Energetic', 'Melancholic']
@@ -10,9 +10,9 @@ const DEFAULT_CONDITIONS = {
   basic:     { tag: 'MP3 Lease',        features: ['MP3 320kbps', '2.500 copias físicas', '500K streams', 'No radio comercial', 'Crédito: "Prod. por [productor]"'] },
   premium:   { tag: 'WAV + Stems',      features: ['WAV sin comprimir + stems', 'Copias ilimitadas', 'Streams ilimitados', 'Radio comercial incluida', 'Crédito: "Prod. por [productor]"'] },
   exclusive: { tag: 'Derechos Totales', features: ['WAV + stems + proyecto DAW', 'Derechos exclusivos totales', 'Beat retirado del mercado', 'TV / Sync / Publicidad', 'Sin crédito obligatorio'] },
+  stems:     { tag: 'Stems Pack',       features: ['Stems individuales por instrumento', 'WAV sin comprimir', 'Uso comercial incluido', 'Streams ilimitados', 'Crédito: "Prod. por [productor]"'] },
 }
 
-// Condiciones predefinidas disponibles para seleccionar
 const PRESET_CONDITIONS = {
   basic: [
     'MP3 320kbps', 'WAV sin comprimir', '2.500 copias físicas', '5.000 copias físicas',
@@ -32,16 +32,23 @@ const PRESET_CONDITIONS = {
     'Crédito: "Prod. por [productor]"', 'Copias ilimitadas', 'Streams ilimitados',
     'Radio comercial incluida', 'Distribución digital', 'Uso comercial completo',
   ],
+  stems: [
+    'Stems individuales por instrumento', 'WAV sin comprimir', 'Uso comercial incluido',
+    'Streams ilimitados', 'Radio comercial incluida', 'Crédito: "Prod. por [productor]"',
+    'Sin crédito obligatorio', 'Distribución digital', 'Stems de batería', 'Stems de melodía',
+    'Stems de bajos', 'Proyecto DAW incluido',
+  ],
 }
 
-const LICENSE_LABELS = { basic: 'Basic', premium: 'Premium', exclusive: 'Exclusive' }
+const LICENSE_LABELS = { basic: 'Basic', premium: 'Premium', exclusive: 'Exclusive', stems: 'Stems' }
 const LICENSE_COLORS = {
   basic:     { text: 'text-blue-400',   border: 'border-blue-500/40',   bg: 'bg-blue-500/10'   },
   premium:   { text: 'text-purple-400', border: 'border-purple-500/40', bg: 'bg-purple-500/10' },
   exclusive: { text: 'text-amber-400',  border: 'border-amber-500/40',  bg: 'bg-amber-500/10'  },
+  stems:     { text: 'text-green-400',  border: 'border-green-500/40',  bg: 'bg-green-500/10'  },
 }
 
-function LicenseConditionEditor({ licenseId, value, onChange, price, onPriceChange }) {
+function LicenseConditionEditor({ licenseId, value, onChange, price, onPriceChange, url, onUrlChange }) {
   const [open, setOpen] = useState(true)
   const [customInput, setCustomInput] = useState('')
   const inputRef = useRef()
@@ -98,6 +105,23 @@ function LicenseConditionEditor({ licenseId, value, onChange, price, onPriceChan
       {open && (
         <div className="px-4 pb-4 pt-3 space-y-4 bg-white/2">
 
+          {/* URL de descarga */}
+          <div>
+            <label className="font-mono text-[10px] text-text/40 uppercase tracking-widest block mb-1.5">
+              URL de descarga <span className="normal-case tracking-normal text-text/30">— se enviará al comprar</span>
+            </label>
+            <div className="relative">
+              <Link size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-text/30" />
+              <input
+                type="url"
+                value={url}
+                onChange={e => onUrlChange(e.target.value)}
+                placeholder="https://drive.google.com/…"
+                className={`w-full bg-white/5 border rounded-lg py-2 pl-8 pr-3 text-xs text-white font-mono outline-none focus:border-accent transition-colors placeholder:text-text/20 ${colors.border}`}
+              />
+            </div>
+          </div>
+
           {/* Subtítulo */}
           <div>
             <label className="font-mono text-[10px] text-text/40 uppercase tracking-widest block mb-1.5">Subtítulo</label>
@@ -136,7 +160,7 @@ function LicenseConditionEditor({ licenseId, value, onChange, price, onPriceChan
             )}
           </div>
 
-          {/* Presets disponibles (los no seleccionados) */}
+          {/* Presets disponibles */}
           <div>
             <label className="font-mono text-[10px] text-text/40 uppercase tracking-widest block mb-2">Añadir condición</label>
             <div className="flex flex-wrap gap-1.5 mb-3">
@@ -189,8 +213,17 @@ export default function BeatForm({ producerId, beat, onSaved, onCancel }) {
   const [priceBasic, setPriceBasic] = useState(beat?.price_basic ?? beat?.price ?? '')
   const [pricePremium, setPricePremium] = useState(beat?.price_premium ?? '')
   const [priceExclusive, setPriceExclusive] = useState(beat?.price_exclusive ?? '')
+  const [priceStems, setPriceStems] = useState(beat?.price_stems ?? '')
+  const [urlBasic, setUrlBasic] = useState(beat?.url_basic ?? '')
+  const [urlPremium, setUrlPremium] = useState(beat?.url_premium ?? '')
+  const [urlExclusive, setUrlExclusive] = useState(beat?.url_exclusive ?? '')
+  const [urlStems, setUrlStems] = useState(beat?.url_stems ?? '')
   const [tags, setTags] = useState(beat?.tags?.join(', ') ?? '')
-  const [conditions, setConditions] = useState(beat?.license_conditions ?? DEFAULT_CONDITIONS)
+  const [conditions, setConditions] = useState(
+    beat?.license_conditions
+      ? { ...DEFAULT_CONDITIONS, ...beat.license_conditions }
+      : DEFAULT_CONDITIONS
+  )
 
   const [audioFile, setAudioFile] = useState(null)
   const [imageFile, setImageFile] = useState(null)
@@ -250,7 +283,6 @@ export default function BeatForm({ producerId, beat, onSaved, onCancel }) {
       setProgress('Guardando beat…')
       const tagsArray = tags.split(',').map(t => t.trim()).filter(Boolean)
 
-      // Limpiar features vacíos antes de guardar
       const cleanConditions = Object.fromEntries(
         Object.entries(conditions).map(([k, v]) => [
           k, { ...v, features: v.features.filter(f => f.trim() !== '') }
@@ -264,10 +296,15 @@ export default function BeatForm({ producerId, beat, onSaved, onCancel }) {
         key: key || null,
         genre: genre || null,
         mood: mood || null,
-        price_basic: priceBasic ? parseFloat(priceBasic) : 0,
-        price_premium: pricePremium ? parseFloat(pricePremium) : 0,
+        price_basic:     priceBasic     ? parseFloat(priceBasic)     : 0,
+        price_premium:   pricePremium   ? parseFloat(pricePremium)   : 0,
         price_exclusive: priceExclusive ? parseFloat(priceExclusive) : 0,
-        price: priceBasic ? parseFloat(priceBasic) : 0,
+        price_stems:     priceStems     ? parseFloat(priceStems)     : null,
+        price:           priceBasic     ? parseFloat(priceBasic)     : 0,
+        url_basic:    urlBasic.trim()    || null,
+        url_premium:  urlPremium.trim()  || null,
+        url_exclusive: urlExclusive.trim() || null,
+        url_stems:    urlStems.trim()    || null,
         tags: tagsArray,
         audio_url,
         image_url,
@@ -327,9 +364,9 @@ export default function BeatForm({ producerId, beat, onSaved, onCancel }) {
         </div>
       </div>
 
-      {/* Audio */}
+      {/* Audio preview */}
       <div>
-        <label className={labelClass}>Archivo de audio {beat ? '(Opcional para actualizar)' : '*'}</label>
+        <label className={labelClass}>Archivo de audio para preview {beat ? '(Opcional para actualizar)' : '*'}</label>
         <div
           onClick={() => audioRef.current?.click()}
           className={`flex items-center gap-3 h-14 rounded-xl border border-dashed cursor-pointer transition-colors px-4 ${audioFile ? 'border-accent/40 bg-accent/5' : 'border-white/15 hover:border-accent/40 bg-white/3'}`}
@@ -339,7 +376,7 @@ export default function BeatForm({ producerId, beat, onSaved, onCancel }) {
             <span className={`text-sm font-mono truncate block ${audioFile ? 'text-white' : 'text-text/30'}`}>
               {audioFile ? audioFile.name : (beat ? 'Mantener actual / Click para cambiar MP3' : 'Click para subir MP3')}
             </span>
-            {!audioFile && <span className="text-[10px] font-mono text-text/20">Solo MP3 · Máx. 45MB</span>}
+            {!audioFile && <span className="text-[10px] font-mono text-text/20">Solo MP3 · Máx. 45MB · Solo para reproducción en el marketplace</span>}
           </div>
           {audioFile && (
             <button type="button" onClick={e => { e.stopPropagation(); setAudioFile(null) }} className="ml-auto text-text/40 hover:text-red-400 transition-colors">
@@ -400,16 +437,16 @@ export default function BeatForm({ producerId, beat, onSaved, onCancel }) {
         </div>
       </div>
 
-      {/* Precios */}
-      {/* Condiciones de licencia + precio por licencia */}
+      {/* Licencias */}
       <div>
         <label className={labelClass}>Licencias</label>
         <div className="space-y-2">
           {[
-            { id: 'basic',     price: priceBasic,     setPrice: setPriceBasic },
-            { id: 'premium',   price: pricePremium,   setPrice: setPricePremium },
-            { id: 'exclusive', price: priceExclusive, setPrice: setPriceExclusive },
-          ].map(({ id, price, setPrice }) => (
+            { id: 'basic',     price: priceBasic,     setPrice: setPriceBasic,     url: urlBasic,     setUrl: setUrlBasic },
+            { id: 'premium',   price: pricePremium,   setPrice: setPricePremium,   url: urlPremium,   setUrl: setUrlPremium },
+            { id: 'exclusive', price: priceExclusive, setPrice: setPriceExclusive, url: urlExclusive, setUrl: setUrlExclusive },
+            { id: 'stems',     price: priceStems,     setPrice: setPriceStems,     url: urlStems,     setUrl: setUrlStems },
+          ].map(({ id, price, setPrice, url, setUrl }) => (
             <LicenseConditionEditor
               key={id}
               licenseId={id}
@@ -417,6 +454,8 @@ export default function BeatForm({ producerId, beat, onSaved, onCancel }) {
               onChange={val => setConditions(prev => ({ ...prev, [id]: val }))}
               price={price}
               onPriceChange={setPrice}
+              url={url}
+              onUrlChange={setUrl}
             />
           ))}
         </div>

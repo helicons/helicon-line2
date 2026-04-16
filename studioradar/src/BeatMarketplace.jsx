@@ -42,6 +42,7 @@ const mapBeat = (b) => ({
   price_basic: parseFloat(b.price_basic) || parseFloat(b.price) || 0,
   price_premium: parseFloat(b.price_premium) || 0,
   price_exclusive: parseFloat(b.price_exclusive) || 0,
+  price_stems: parseFloat(b.price_stems) || 0,
   plays: formatPlays(b.plays),
   image: b.image_url ?? 'https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?auto=format&fit=crop&q=80&w=200',
   audio_url: b.audio_url ?? null,
@@ -73,6 +74,14 @@ const LICENSES = [
     multiplier: 5,
     field: 'price_exclusive',
     features: ['WAV + stems + proyecto DAW', 'Derechos exclusivos totales', 'Beat retirado del mercado', 'TV / Sync / Publicidad', 'Sin crédito obligatorio'],
+  },
+  {
+    id: 'stems',
+    name: 'Stems',
+    tag: 'Stems Pack',
+    multiplier: 3,
+    field: 'price_stems',
+    features: ['Stems individuales por instrumento', 'WAV sin comprimir', 'Uso comercial incluido', 'Streams ilimitados', 'Crédito: "Prod. por [productor]"'],
   },
 ];
 

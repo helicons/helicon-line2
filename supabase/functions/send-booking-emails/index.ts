@@ -33,6 +33,7 @@ interface LicenseVars {
   freeDownloads: string;
   radioStations: string;
   videoSyncCount: string;
+  taggingClause: string;
 }
 
 const LICENSE_LIMITS: Record<string, Partial<LicenseVars>> = {
@@ -63,9 +64,18 @@ const LICENSE_LIMITS: Record<string, Partial<LicenseVars>> = {
     radioStations: "Unlimited",
     videoSyncCount: "Unlimited",
   },
+  stems: {
+    downloads: "Unlimited",
+    monetizedAudioStreams: "Unlimited",
+    monetizedVideoStreams: "Unlimited",
+    nonMonetizedVideoStreams: "Unlimited",
+    freeDownloads: "Unlimited",
+    radioStations: "Unlimited",
+    videoSyncCount: "Unlimited",
+  },
 };
 
-function buildLicenseVars(base: Omit<LicenseVars, "downloads" | "monetizedAudioStreams" | "monetizedVideoStreams" | "nonMonetizedVideoStreams" | "freeDownloads" | "radioStations" | "videoSyncCount">): LicenseVars {
+function buildLicenseVars(base: Omit<LicenseVars, "downloads" | "monetizedAudioStreams" | "monetizedVideoStreams" | "nonMonetizedVideoStreams" | "freeDownloads" | "radioStations" | "videoSyncCount"> & { taggingClause: string }): LicenseVars {
   const key = base.licenseType.replace(" License", "").toLowerCase();
   const limits = LICENSE_LIMITS[key] ?? LICENSE_LIMITS["basic"];
   return { ...base, ...limits } as LicenseVars;
@@ -106,11 +116,13 @@ Producer shall own, control, and administer Fifty Percent (50%) of the Publisher
 
 7. Credit: Licensee shall give Producer appropriate production and songwriting credit on all records, music videos, digital labels, and cover liner notes containing the New Song. Such credit shall be in the substantial form: "Produced by {{PRODUCER_ALIAS}}".
 
-8. Breach by Licensee: The Licensee shall have five (5) business days from receipt of written notice to cure any alleged breach of this Agreement. Failure to cure within five (5) business days shall result in Licensee's default and, at Producer's sole discretion, termination of Licensee's rights hereunder. If Licensee engages in commercial exploitation of the Beat or New Song outside the manner expressly provided for in this Agreement, Licensee shall be liable to Producer for monetary damages equal to all monies received in connection with such unauthorized use.
+8. Tagging and Mentions on Streaming Platforms: {{TAGGING_CLAUSE}}
 
-9. Warranties and Indemnification: Producer warrants that he has the full right and ability to enter into this agreement. Producer warrants that the Beat does not infringe upon any copyright or right of any person, firm, or corporation. Licensee warrants that the manufacture, sale, distribution, or other exploitation of the New Song will not infringe upon or violate any common law or statutory right of any person, firm, or corporation.
+9. Breach by Licensee: The Licensee shall have five (5) business days from receipt of written notice to cure any alleged breach of this Agreement. Failure to cure within five (5) business days shall result in Licensee's default and, at Producer's sole discretion, termination of Licensee's rights hereunder. If Licensee engages in commercial exploitation of the Beat or New Song outside the manner expressly provided for in this Agreement, Licensee shall be liable to Producer for monetary damages equal to all monies received in connection with such unauthorized use.
 
-10. Miscellaneous: This Agreement constitutes the entire understanding of the parties and cannot be altered or amended except by written instrument signed by both parties. This agreement shall be governed by and interpreted in accordance with the laws of Spain. All disputes arising hereunder shall be resolved in the courts of Spain.
+10. Warranties and Indemnification: Producer warrants that he has the full right and ability to enter into this agreement. Producer warrants that the Beat does not infringe upon any copyright or right of any person, firm, or corporation. Licensee warrants that the manufacture, sale, distribution, or other exploitation of the New Song will not infringe upon or violate any common law or statutory right of any person, firm, or corporation.
+
+11. Miscellaneous: This Agreement constitutes the entire understanding of the parties and cannot be altered or amended except by written instrument signed by both parties. This agreement shall be governed by and interpreted in accordance with the laws of Spain. All disputes arising hereunder shall be resolved in the courts of Spain.
 
 BY COMPLETING PAYMENT OF THE LICENSE FEE, LICENSEE ACKNOWLEDGES HAVING READ THIS AGREEMENT AND AGREES TO BE BOUND BY ITS TERMS AND CONDITIONS.
 
@@ -137,7 +149,8 @@ function fillTemplate(vars: LicenseVars): string {
     .replace(/\{\{NON_MONETIZED_VIDEO_STREAMS\}\}/g, vars.nonMonetizedVideoStreams)
     .replace(/\{\{FREE_DOWNLOADS\}\}/g, vars.freeDownloads)
     .replace(/\{\{RADIO_STATIONS\}\}/g, vars.radioStations)
-    .replace(/\{\{VIDEO_SYNC_COUNT\}\}/g, vars.videoSyncCount);
+    .replace(/\{\{VIDEO_SYNC_COUNT\}\}/g, vars.videoSyncCount)
+    .replace(/\{\{TAGGING_CLAUSE\}\}/g, vars.taggingClause);
 }
 
 // ---------------------------------------------------------------------------
@@ -152,8 +165,13 @@ async function generateLicensePdf(opts: {
   buyerName: string;
   licenseFee: string;
   date: string;
+  allowsTagging: boolean;
 }): Promise<string> {
-  const { licenseType, beatTitle, producerName, producerAlias, buyerName, licenseFee, date } = opts;
+  const { licenseType, beatTitle, producerName, producerAlias, buyerName, licenseFee, date, allowsTagging } = opts;
+
+  const taggingClause = allowsTagging
+    ? `The Producer expressly consents to being credited, mentioned, or tagged as a collaborator by the Licensee on streaming platforms including but not limited to Spotify, Apple Music, YouTube Music, and similar services. Licensee is encouraged to tag the Producer ("${producerAlias}") as a collaborator or featured artist on all releases containing the Beat.`
+    : `The Producer has not consented to being tagged or mentioned as a collaborator on streaming platforms. All production credits shall be limited to text-based credits in the format "Produced by ${producerAlias}" as specified in Section 7. Licensee shall not list the Producer as a featured artist or collaborator on any streaming platform without prior written consent.`;
 
   const vars = buildLicenseVars({
     effectiveDate: date,
@@ -163,6 +181,7 @@ async function generateLicensePdf(opts: {
     beatTitle,
     licenseFee,
     licenseType: `${licenseType.charAt(0).toUpperCase() + licenseType.slice(1).toLowerCase()} License`,
+    taggingClause,
   });
   const contractText = fillTemplate(vars);
 
@@ -327,7 +346,7 @@ serve(async (req) => {
 
       const { data: beat, error: beatErr } = await supabase
         .from('beats')
-        .select('audio_url, producer_id, producers(name, email)')
+        .select('audio_url, url_basic, url_premium, url_exclusive, url_stems, producer_id, producers(name, email, allows_tagging)')
         .eq('id', beat_id)
         .single();
 
@@ -338,6 +357,15 @@ serve(async (req) => {
 
       const producer = beat.producers as any;
 
+      // URL específica de la licencia comprada (fallback al audio_url de preview)
+      const licenseUrlMap: Record<string, string | null> = {
+        basic:     beat.url_basic     ?? null,
+        premium:   beat.url_premium   ?? null,
+        exclusive: beat.url_exclusive ?? null,
+        stems:     beat.url_stems     ?? null,
+      };
+      const downloadUrl = licenseUrlMap[license_type?.toLowerCase()] ?? beat.audio_url ?? null;
+
       const date = new Date().toLocaleDateString("es-ES", { timeZone: TIMEZONE });
       const licenseBase64 = await generateLicensePdf({
         licenseType: license_type,
@@ -347,6 +375,7 @@ serve(async (req) => {
         buyerName: buyer_email,
         licenseFee: body.license_fee ? `$${Number(body.license_fee).toFixed(2)}` : "—",
         date,
+        allowsTagging: producer?.allows_tagging ?? false,
       });
 
       const attachments = [{
@@ -365,7 +394,10 @@ serve(async (req) => {
             <p style="font-size:12px;color:#8A2BE2;">He adjuntado el contrato de licencia en este email para tus registros.</p>
           </div>
           <div style="margin:30px 0;">
-            <a href="${beat.audio_url}" style="background:#8A2BE2;color:#fff;padding:15px 30px;border-radius:8px;text-decoration:none;font-weight:bold;display:inline-block;">DESCARGAR ARCHIVOS</a>
+            ${downloadUrl
+              ? `<a href="${downloadUrl}" style="background:#8A2BE2;color:#fff;padding:15px 30px;border-radius:8px;text-decoration:none;font-weight:bold;display:inline-block;">DESCARGAR ARCHIVOS</a>`
+              : `<p style="color:#888;font-size:13px;">El productor te enviará los archivos en breve.</p>`
+            }
           </div>
           <p style="font-size:12px;color:#666;">Este es un email de entrega automática. Si tienes problemas con la descarga, contacta con soporte.</p>
         </div>

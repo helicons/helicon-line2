@@ -138,6 +138,17 @@ function ProfileEditor({ producer, onSaved, navigate }) {
   )
 }
 
+const getIgHandle = (ig) => {
+  if (!ig) return null
+  try {
+    const url = new URL(ig)
+    const handle = url.pathname.replace(/\//g, '')
+    return handle || ig
+  } catch {
+    return ig.replace('@', '')
+  }
+}
+
 const TABS = [
   { id: 'profile',      label: 'Mi Perfil',       Icon: UserCircle  },
   { id: 'studio',       label: 'Mis Estudios',    Icon: Building2   },
@@ -512,6 +523,24 @@ const filteredBookings = bookingsFilter === 'all'
             <div className="space-y-4">
               {!addingBeat && !editingBeat ? (
                 <>
+                  {/* Toggle etiquetado */}
+                  <div className="flex items-center justify-between bg-white/3 border border-white/8 rounded-xl px-4 py-3">
+                    <div className="flex-1 min-w-0 pr-4">
+                      <p className="text-white text-xs font-mono font-bold">Consentimiento de mención en plataformas</p>
+                      <p className="text-text/40 text-[10px] font-mono mt-0.5">Autorizo a los compradores a etiquetarme como colaborador en Spotify, YouTube Music y otras plataformas de streaming.</p>
+                    </div>
+                    <button
+                      onClick={async () => {
+                        const newVal = !producer.allows_tagging
+                        await supabase.from('producers').update({ allows_tagging: newVal }).eq('id', producer.id)
+                        setProducer(p => ({ ...p, allows_tagging: newVal }))
+                      }}
+                      className={`relative shrink-0 w-11 h-6 rounded-full transition-colors duration-200 focus:outline-none ${producer.allows_tagging ? 'bg-accent' : 'bg-white/10'}`}
+                    >
+                      <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform duration-200 ${producer.allows_tagging ? 'translate-x-5' : 'translate-x-0'}`} />
+                    </button>
+                  </div>
+
                   <div className="flex items-center justify-between">
                     <h3 className="text-white font-bold text-sm font-mono uppercase tracking-widest">Mis Beats</h3>
                     <button
@@ -561,6 +590,7 @@ const filteredBookings = bookingsFilter === 'all'
                               { label: 'Basic',     price: beat.price_basic,     color: 'text-accent border-accent/30 bg-accent/10' },
                               { label: 'Premium',   price: beat.price_premium,   color: 'text-purple-300 border-purple-400/30 bg-purple-400/10' },
                               { label: 'Exclusive', price: beat.price_exclusive, color: 'text-yellow-400 border-yellow-400/30 bg-yellow-400/10' },
+                              { label: 'Stems',     price: beat.price_stems,     color: 'text-green-400 border-green-500/30 bg-green-500/10' },
                             ].map(({ label, price, color }) => (
                               <span key={label} className={`text-[10px] font-mono font-bold px-2 py-1 rounded-lg border ${color}`}>
                                 {label} {price != null ? `${price}€` : '—'}
@@ -745,7 +775,7 @@ const filteredBookings = bookingsFilter === 'all'
                                 target="_blank" rel="noopener noreferrer"
                                 className="text-[10px] font-mono px-1.5 py-0.5 rounded border border-pink-500/30 bg-pink-500/10 text-pink-400 hover:bg-pink-500/20 transition-colors"
                               >
-                                IG {ig.startsWith('@') ? ig : `@${ig}`}
+                                IG @{getIgHandle(ig)}
                               </a>
                             )}
                           </div>

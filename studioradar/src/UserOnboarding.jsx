@@ -137,7 +137,7 @@ export default function UserOnboarding() {
                   type="text"
                   value={form.instagram}
                   onChange={e => field('instagram', e.target.value)}
-                  placeholder="@tuusuario"
+                  placeholder="https://www.instagram.com/tuusuario"
                   required
                   className={inputClass + ' pl-10'}
                 />
