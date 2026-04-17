@@ -570,10 +570,28 @@ export default function BeatMarketplace() {
                     </p>
                   </div>
                   <div className={`transition-all duration-300 overflow-hidden ${isExpanded ? 'opacity-100 px-2 mt-1 mb-4' : 'opacity-0 h-0 m-0'}`} style={{ maxHeight: isExpanded ? '500px' : '0px' }}>
-                    <div className="flex gap-2">
-                      <input type="number" value={bpmMin} onChange={e => setBpmMin(Number(e.target.value))} className="w-14 bg-black/40 border border-white/10 rounded-lg px-2 py-1 text-xs font-ui text-white focus:outline-none focus:border-accent" min={60} max={bpmMax} />
-                      <span className="text-white/30 font-ui text-xs self-center">–</span>
-                      <input type="number" value={bpmMax} onChange={e => setBpmMax(Number(e.target.value))} className="w-14 bg-black/40 border border-white/10 rounded-lg px-2 py-1 text-xs font-ui text-white focus:outline-none focus:border-accent" min={bpmMin} max={220} />
+                    <div className="flex flex-col gap-2">
+                      <div className="relative h-4 flex items-center">
+                        <div className="absolute w-full h-1 bg-white/10 rounded-full" />
+                        <div
+                          className="absolute h-1 bg-accent rounded-full"
+                          style={{ left: `${((bpmMin - 60) / 160) * 100}%`, right: `${100 - ((bpmMax - 60) / 160) * 100}%` }}
+                        />
+                        <input
+                          type="range" min={60} max={220} step={1} value={bpmMin}
+                          onChange={e => setBpmMin(Math.min(Number(e.target.value), bpmMax - 1))}
+                          className="absolute w-full h-1 appearance-none bg-transparent pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:border [&::-webkit-slider-thumb]:border-accent [&::-webkit-slider-thumb]:cursor-pointer"
+                        />
+                        <input
+                          type="range" min={60} max={220} step={1} value={bpmMax}
+                          onChange={e => setBpmMax(Math.max(Number(e.target.value), bpmMin + 1))}
+                          className="absolute w-full h-1 appearance-none bg-transparent pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:border [&::-webkit-slider-thumb]:border-accent [&::-webkit-slider-thumb]:cursor-pointer"
+                        />
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="font-ui text-[10px] text-white/50">{bpmMin}</span>
+                        <span className="font-ui text-[10px] text-white/50">{bpmMax}</span>
+                      </div>
                     </div>
                   </div>
                 </div>

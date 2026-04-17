@@ -223,10 +223,6 @@ const Hero = () => {
   return (
     <section ref={heroRef} className="relative h-[100dvh] flex flex-col items-center justify-center overflow-hidden">
       <div className="relative z-10 text-center max-w-5xl px-6 flex flex-col items-center">
-        <div className="inline-flex items-center gap-2 px-3 py-1 mb-8 rounded-full bg-white/5 border border-white/10 text-accent font-ui text-xs tracking-widest backdrop-blur-md hero-text">
-          <span className="w-2 h-2 rounded-full bg-accent animate-pulse"></span>
-          Sistema Activo
-        </div>
 
         <h1 className="font-heading font-bold text-6xl md:text-8xl lg:text-9xl leading-[0.9] tracking-tight mb-6 relative z-10 text-center w-full">
           <div className="overflow-hidden"><div className="hero-text text-white drop-shadow-[0_10px_20px_rgba(0,0,0,0.8)]">Del Studio</div></div>
@@ -258,7 +254,7 @@ const Hero = () => {
               { label: '50+ beats exclusivos', dot: 'bg-green-400' },
             ].map(({ label, dot }) => (
               <div key={label} className="flex items-center gap-2 font-ui text-xs text-white/40">
-                <span className={`w-1.5 h-1.5 ${dot} rounded-full animate-pulse`}/>
+                <span className={`w-1.5 h-1.5 ${dot} rounded-full animate-pulse`} />
                 {label}
               </div>
             ))}
@@ -398,9 +394,9 @@ const Workflow = () => {
   }, []);
 
   const steps = [
-    { icon: Map,       title: "1. Encuentra un Estudio",        desc: "Localiza un estudio de grabación premium cerca de ti con disponibilidad en tiempo real." },
-    { icon: Mic,       title: "2. Reserva tu Sesión",           desc: "Reserva una cabina de grabación o sesión de mezcla al instante, sin llamadas ni esperas." },
-    { icon: Headphones,title: "3. Elige un Beat (Opcional)",    desc: "¿Necesitas instrumentales? Explora y compra beats directamente antes de entrar al estudio." },
+    { icon: Map, title: "1. Encuentra un Estudio", desc: "Localiza un estudio de grabación premium cerca de ti con disponibilidad en tiempo real." },
+    { icon: Mic, title: "2. Reserva tu Sesión", desc: "Reserva una cabina de grabación o sesión de mezcla al instante, sin llamadas ni esperas." },
+    { icon: Headphones, title: "3. Elige un Beat (Opcional)", desc: "¿Necesitas instrumentales? Explora y compra beats directamente antes de entrar al estudio." },
   ];
 
   return (
@@ -448,37 +444,37 @@ const Workflow = () => {
 // -------------------------------------------------------------
 const PRODUCERS_CREDITS = [
   {
-    name:    'Helicon Origin',
-    ig:      'heliconorigin',
-    igUrl:   'https://www.instagram.com/heliconorigin',
-    image:   '/images/prod1.jpeg',
-    color:   '#8A2BE2',
+    name: 'Helicon Origin',
+    ig: 'heliconorigin',
+    igUrl: 'https://www.instagram.com/heliconorigin',
+    image: '/images/prod1.jpeg',
+    color: '#8A2BE2',
     credits: [
-      { artist: 'Yan Block',    track: 'En La Noche', views: '6.2M', url: 'https://www.youtube.com/results?search_query=yan+block+en+la+noche' },
-      { artist: 'Dei V',        track: 'Sin Ti',       views: '3.1M', url: 'https://www.youtube.com/results?search_query=dei+v+sin+ti' },
-      { artist: 'ROA',          track: 'Zona Cero',    views: '3.9M', url: 'https://www.youtube.com/results?search_query=roa+zona+cero' },
+      { artist: 'Yan Block', track: 'En La Noche', views: '6.2M', url: 'https://www.youtube.com/results?search_query=yan+block+en+la+noche' },
+      { artist: 'Dei V', track: 'Sin Ti', views: '3.1M', url: 'https://www.youtube.com/results?search_query=dei+v+sin+ti' },
+      { artist: 'ROA', track: 'Zona Cero', views: '3.9M', url: 'https://www.youtube.com/results?search_query=roa+zona+cero' },
     ],
   },
   {
-    name:    'Metro Shadows',
-    ig:      'metroshadows',
-    igUrl:   'https://www.instagram.com/metroshadows',
-    image:   '/images/prod2.jpeg',
-    color:   '#a64dff',
+    name: 'Metro Shadows',
+    ig: 'metroshadows',
+    igUrl: 'https://www.instagram.com/metroshadows',
+    image: '/images/prod2.jpeg',
+    color: '#a64dff',
     credits: [
-      { artist: 'Hades66',      track: 'Madrugá',      views: '4.8M', url: 'https://www.youtube.com/results?search_query=hades66+madruga' },
-      { artist: 'Young Chimi',  track: 'Modo Avión',   views: '2.7M', url: 'https://www.youtube.com/results?search_query=young+chimi+modo+avion' },
+      { artist: 'Hades66', track: 'Madrugá', views: '4.8M', url: 'https://www.youtube.com/results?search_query=hades66+madruga' },
+      { artist: 'Young Chimi', track: 'Modo Avión', views: '2.7M', url: 'https://www.youtube.com/results?search_query=young+chimi+modo+avion' },
     ],
   },
   {
-    name:    'Cloud Nine',
-    ig:      'cloudninebeats',
-    igUrl:   'https://www.instagram.com/cloudninebeats',
-    image:   '/images/prod3.jpeg',
-    color:   '#00c2ff',
+    name: 'Cloud Nine',
+    ig: 'cloudninebeats',
+    igUrl: 'https://www.instagram.com/cloudninebeats',
+    image: '/images/prod3.jpeg',
+    color: '#00c2ff',
     credits: [
-      { artist: 'Yan Block',    track: 'Cielo Roto',   views: '2.4M', url: 'https://www.youtube.com/results?search_query=yan+block+cielo+roto' },
-      { artist: 'Dei V',        track: 'Lejos',        views: '1.9M', url: 'https://www.youtube.com/results?search_query=dei+v+lejos' },
+      { artist: 'Yan Block', track: 'Cielo Roto', views: '2.4M', url: 'https://www.youtube.com/results?search_query=yan+block+cielo+roto' },
+      { artist: 'Dei V', track: 'Lejos', views: '1.9M', url: 'https://www.youtube.com/results?search_query=dei+v+lejos' },
     ],
   },
 ];
@@ -574,7 +570,7 @@ const ProducerVinylCard = ({ producer }) => {
         style={{ color: hovered ? producer.color : '#666' }}
       >
         <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M12 2c2.717 0 3.056.01 4.122.06 1.065.05 1.79.217 2.428.492a4.9 4.9 0 0 1 1.772 1.153 4.9 4.9 0 0 1 1.153 1.772c.275.638.442 1.363.492 2.428.05 1.066.06 1.405.06 4.122 0 2.717-.01 3.056-.06 4.122-.05 1.065-.217 1.79-.492 2.428a4.9 4.9 0 0 1-1.153 1.772 4.9 4.9 0 0 1-1.772 1.153c-.638.275-1.363.442-2.428.492-1.066.05-1.405.06-4.122.06-2.717 0-3.056-.01-4.122-.06-1.065-.05-1.79-.217-2.428-.492a4.9 4.9 0 0 1-1.772-1.153A4.9 4.9 0 0 1 2.552 19.35c-.275-.638-.442-1.363-.492-2.428C2.01 15.856 2 15.517 2 12c0-2.717.01-3.056.06-4.122.05-1.065.217-1.79.492-2.428A4.9 4.9 0 0 1 3.705 3.678 4.9 4.9 0 0 1 5.477 2.525c.638-.275 1.363-.442 2.428-.492C8.944 2.01 9.283 2 12 2zm0 1.802c-2.67 0-2.986.01-4.04.058-.976.045-1.505.207-1.858.344-.466.182-.8.398-1.15.748-.35.35-.566.683-.748 1.15-.137.353-.3.882-.344 1.857-.047 1.055-.058 1.37-.058 4.041 0 2.67.011 2.986.058 4.04.045.977.207 1.505.344 1.858.182.466.399.8.748 1.15.35.35.683.566 1.15.748.353.137.882.3 1.857.344 1.054.048 1.37.058 4.041.058 2.67 0 2.987-.01 4.04-.058.977-.045 1.505-.207 1.858-.344.466-.182.8-.398 1.15-.748.35-.35.566-.683.748-1.15.137-.353.3-.882.344-1.857.048-1.055.058-1.37.058-4.041 0-2.67-.01-2.986-.058-4.04-.045-.977-.207-1.505-.344-1.858a3.1 3.1 0 0 0-.748-1.15 3.1 3.1 0 0 0-1.15-.748c-.353-.137-.881-.3-1.857-.344-1.054-.048-1.37-.058-4.04-.058zm0 3.063a5.135 5.135 0 1 1 0 10.27 5.135 5.135 0 0 1 0-10.27zm0 1.802a3.333 3.333 0 1 0 0 6.666 3.333 3.333 0 0 0 0-6.666zm5.338-3.205a1.2 1.2 0 1 1 0 2.4 1.2 1.2 0 0 1 0-2.4z"/>
+          <path d="M12 2c2.717 0 3.056.01 4.122.06 1.065.05 1.79.217 2.428.492a4.9 4.9 0 0 1 1.772 1.153 4.9 4.9 0 0 1 1.153 1.772c.275.638.442 1.363.492 2.428.05 1.066.06 1.405.06 4.122 0 2.717-.01 3.056-.06 4.122-.05 1.065-.217 1.79-.492 2.428a4.9 4.9 0 0 1-1.153 1.772 4.9 4.9 0 0 1-1.772 1.153c-.638.275-1.363.442-2.428.492-1.066.05-1.405.06-4.122.06-2.717 0-3.056-.01-4.122-.06-1.065-.05-1.79-.217-2.428-.492a4.9 4.9 0 0 1-1.772-1.153A4.9 4.9 0 0 1 2.552 19.35c-.275-.638-.442-1.363-.492-2.428C2.01 15.856 2 15.517 2 12c0-2.717.01-3.056.06-4.122.05-1.065.217-1.79.492-2.428A4.9 4.9 0 0 1 3.705 3.678 4.9 4.9 0 0 1 5.477 2.525c.638-.275 1.363-.442 2.428-.492C8.944 2.01 9.283 2 12 2zm0 1.802c-2.67 0-2.986.01-4.04.058-.976.045-1.505.207-1.858.344-.466.182-.8.398-1.15.748-.35.35-.566.683-.748 1.15-.137.353-.3.882-.344 1.857-.047 1.055-.058 1.37-.058 4.041 0 2.67.011 2.986.058 4.04.045.977.207 1.505.344 1.858.182.466.399.8.748 1.15.35.35.683.566 1.15.748.353.137.882.3 1.857.344 1.054.048 1.37.058 4.041.058 2.67 0 2.987-.01 4.04-.058.977-.045 1.505-.207 1.858-.344.466-.182.8-.398 1.15-.748.35-.35.566-.683.748-1.15.137-.353.3-.882.344-1.857.048-1.055.058-1.37.058-4.041 0-2.67-.01-2.986-.058-4.04-.045-.977-.207-1.505-.344-1.858a3.1 3.1 0 0 0-.748-1.15 3.1 3.1 0 0 0-1.15-.748c-.353-.137-.881-.3-1.857-.344-1.054-.048-1.37-.058-4.04-.058zm0 3.063a5.135 5.135 0 1 1 0 10.27 5.135 5.135 0 0 1 0-10.27zm0 1.802a3.333 3.333 0 1 0 0 6.666 3.333 3.333 0 0 0 0-6.666zm5.338-3.205a1.2 1.2 0 1 1 0 2.4 1.2 1.2 0 0 1 0-2.4z" />
         </svg>
         @{producer.ig}
       </a>
@@ -603,7 +599,7 @@ const ProducerVinylCard = ({ producer }) => {
           >
             <div className="flex items-center gap-2 min-w-0">
               <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24" style={{ color: producer.color }}>
-                <path d="M8 5v14l11-7z"/>
+                <path d="M8 5v14l11-7z" />
               </svg>
               <div className="min-w-0">
                 <p className="font-heading text-white text-[11px] font-semibold leading-none truncate">{c.artist}</p>
@@ -807,9 +803,9 @@ const Community = () => {
 
       {/* Marquee Wrapper - Doubled the items and added pr-6 so total width is perfectly symmetrical for a -50% translation */}
       <div className="flex gap-6 animate-[scroll_20s_linear_infinite] w-max select-none hover:[animation-play-state:paused] pr-6">
-        {[1,2,3,4,5,6,1,2,3,4,5,6].map((i, index) => (
-          <div 
-            key={`${i}-${index}`} 
+        {[1, 2, 3, 4, 5, 6, 1, 2, 3, 4, 5, 6].map((i, index) => (
+          <div
+            key={`${i}-${index}`}
             onClick={() => setSelectedStudio(i)}
             className="glass-panel w-72 rounded-xl p-4 flex gap-4 items-center shrink-0 cursor-pointer hover:border-accent hover:shadow-[0_0_20px_rgba(138,43,226,0.3)] transition-all"
           >
@@ -848,7 +844,7 @@ const Community = () => {
       {/* Expansion Window */}
       {selectedStudio && createPortal(
         <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-300" onClick={() => setSelectedStudio(null)}>
-          <div 
+          <div
             className="w-full max-w-md bg-gradient-to-b from-[#151515] to-[#050505] rounded-[2rem] border border-white/10 shadow-[0_40px_80px_rgba(0,0,0,0.9),inset_0_2px_10px_rgba(255,255,255,0.05)] overflow-hidden relative flex flex-col items-center p-10 animate-in zoom-in-95 duration-300"
             onClick={e => e.stopPropagation()}
           >
@@ -858,18 +854,18 @@ const Community = () => {
             {/* Close */}
             <button onClick={() => setSelectedStudio(null)} className="absolute top-6 right-6 w-8 h-8 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-white/50 hover:text-white transition-colors z-20">✕</button>
 
-            <h3 className="font-heading font-bold text-3xl text-white mb-1 relative z-10">Studio {String.fromCharCode(64+selectedStudio)}</h3>
-            <p className="font-ui text-[10px] text-red-500 flex items-center gap-2 mb-10 tracking-[0.2em] font-bold relative z-10"><span className="w-2 h-2 bg-red-500 rounded-full animate-pulse shadow-[0_0_10px_#ef4444]"/> EN DIRECTO</p>
+            <h3 className="font-heading font-bold text-3xl text-white mb-1 relative z-10">Studio {String.fromCharCode(64 + selectedStudio)}</h3>
+            <p className="font-ui text-[10px] text-red-500 flex items-center gap-2 mb-10 tracking-[0.2em] font-bold relative z-10"><span className="w-2 h-2 bg-red-500 rounded-full animate-pulse shadow-[0_0_10px_#ef4444]" /> EN DIRECTO</p>
 
             {/* Waves Animation (Grabo) */}
             <div className="relative w-48 h-48 flex items-center justify-center mb-12">
-              <div className="absolute inset-10 rounded-full border-[1.5px] border-red-500" style={{animation: 'custom-wave 3s infinite linear 0s'}}></div>
-              <div className="absolute inset-10 rounded-full border-[1.5px] border-accent" style={{animation: 'custom-wave 3s infinite linear 1s'}}></div>
-              <div className="absolute inset-10 rounded-full border-[1.5px] border-blue-500" style={{animation: 'custom-wave 3s infinite linear 2s'}}></div>
-              
+              <div className="absolute inset-10 rounded-full border-[1.5px] border-red-500" style={{ animation: 'custom-wave 3s infinite linear 0s' }}></div>
+              <div className="absolute inset-10 rounded-full border-[1.5px] border-accent" style={{ animation: 'custom-wave 3s infinite linear 1s' }}></div>
+              <div className="absolute inset-10 rounded-full border-[1.5px] border-blue-500" style={{ animation: 'custom-wave 3s infinite linear 2s' }}></div>
+
               <div className="w-28 h-28 rounded-full p-[3px] bg-gradient-to-br from-red-500 via-accent to-blue-500 shadow-[0_0_40px_rgba(138,43,226,0.6)] z-10 relative">
-                 <img src={`https://images.unsplash.com/photo-1599696848652-f0ff23bc911f?auto=format&fit=crop&q=80&w=150&h=150&sig=${selectedStudio}`} 
-                      className="w-full h-full rounded-full object-cover border-[3px] border-[#111]" />
+                <img src={`https://images.unsplash.com/photo-1599696848652-f0ff23bc911f?auto=format&fit=crop&q=80&w=150&h=150&sig=${selectedStudio}`}
+                  className="w-full h-full rounded-full object-cover border-[3px] border-[#111]" />
               </div>
             </div>
 
@@ -877,20 +873,20 @@ const Community = () => {
             <div className="flex gap-8 mb-12 relative z-10">
               {/* Instagram */}
               <a href="#" className="liquid-icon w-14 h-14 flex items-center justify-center text-white hover:scale-110 transition-transform shadow-lg" style={{ background: 'linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)' }}>
-                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2c2.717 0 3.056.01 4.122.06 1.065.05 1.79.217 2.428.492a4.914 4.914 0 0 1 1.672 1.091 4.908 4.908 0 0 1 1.091 1.672c.275.638.442 1.363.492 2.428.05 1.066.06 1.405.06 4.122 0 2.717-.01 3.056-.06 4.122-.05 1.065-.217 1.79-.492 2.428a4.914 4.914 0 0 1-1.091 1.672 4.908 4.908 0 0 1-1.672 1.091c-.638.275-1.363.442-2.428.492-1.066.05-1.405.06-4.122.06-2.717 0-3.056-.01-4.122-.06-1.065-.05-1.79-.217-2.428-.492a4.914 4.914 0 0 1-1.672-1.091 4.908 4.908 0 0 1-1.091-1.672c-.275-.638-.442-1.363-.492-2.428C2.01 15.056 2 14.717 2 12c0-2.717.01-3.056.06-4.122.05-1.065.217-1.79.492-2.428a4.914 4.914 0 0 1 1.091-1.672A4.908 4.908 0 0 1 5.315 2.552c.638-.275 1.363-.442 2.428-.492C8.944 2.01 9.283 2 12 2zm0 1.802c-2.67 0-2.987.01-4.042.059-.975.045-1.504.207-1.857.344-.467.182-.8.398-1.15.748-.35.35-.566.683-.748 1.15-.137.353-.3.882-.344 1.857-.048 1.055-.058 1.372-.058 4.042 0 2.67.01 2.987.058 4.042.045.975.207 1.504.344 1.857.182.466.399.8.748 1.15.35.35.683.566 1.15.748.353.137.882.3 1.857.344 1.054.048 1.372.058 4.042.058 2.67 0 2.987-.01 4.042-.058.975-.045 1.504-.207 1.857-.344.467-.182.8-.398 1.15-.748.35-.35.566-.683.748-1.15.137-.353.3-.882.344-1.857.048-1.055.058-1.372.058-4.042 0-2.67-.01-2.987-.058-4.042-.045-.975-.207-1.504-.344-1.857a3.097 3.097 0 0 0-.748-1.15 3.098 3.098 0 0 0-1.15-.748c-.353-.137-.882-.3-1.857-.344-1.055-.048-1.372-.059-4.042-.059zM12 6.865a5.135 5.135 0 1 1 0 10.27 5.135 5.135 0 0 1 0-10.27zm0 1.802a3.333 3.333 0 1 0 0 6.666 3.333 3.333 0 0 0 0-6.666zm5.338-3.205a1.2 1.2 0 1 1 0 2.4 1.2 1.2 0 0 1 0-2.4z"/></svg>
+                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2c2.717 0 3.056.01 4.122.06 1.065.05 1.79.217 2.428.492a4.914 4.914 0 0 1 1.672 1.091 4.908 4.908 0 0 1 1.091 1.672c.275.638.442 1.363.492 2.428.05 1.066.06 1.405.06 4.122 0 2.717-.01 3.056-.06 4.122-.05 1.065-.217 1.79-.492 2.428a4.914 4.914 0 0 1-1.091 1.672 4.908 4.908 0 0 1-1.672 1.091c-.638.275-1.363.442-2.428.492-1.066.05-1.405.06-4.122.06-2.717 0-3.056-.01-4.122-.06-1.065-.05-1.79-.217-2.428-.492a4.914 4.914 0 0 1-1.672-1.091 4.908 4.908 0 0 1-1.091-1.672c-.275-.638-.442-1.363-.492-2.428C2.01 15.056 2 14.717 2 12c0-2.717.01-3.056.06-4.122.05-1.065.217-1.79.492-2.428a4.914 4.914 0 0 1 1.091-1.672A4.908 4.908 0 0 1 5.315 2.552c.638-.275 1.363-.442 2.428-.492C8.944 2.01 9.283 2 12 2zm0 1.802c-2.67 0-2.987.01-4.042.059-.975.045-1.504.207-1.857.344-.467.182-.8.398-1.15.748-.35.35-.566.683-.748 1.15-.137.353-.3.882-.344 1.857-.048 1.055-.058 1.372-.058 4.042 0 2.67.01 2.987.058 4.042.045.975.207 1.504.344 1.857.182.466.399.8.748 1.15.35.35.683.566 1.15.748.353.137.882.3 1.857.344 1.054.048 1.372.058 4.042.058 2.67 0 2.987-.01 4.042-.058.975-.045 1.504-.207 1.857-.344.467-.182.8-.398 1.15-.748.35-.35.566-.683.748-1.15.137-.353.3-.882.344-1.857.048-1.055.058-1.372.058-4.042 0-2.67-.01-2.987-.058-4.042-.045-.975-.207-1.504-.344-1.857a3.097 3.097 0 0 0-.748-1.15 3.098 3.098 0 0 0-1.15-.748c-.353-.137-.882-.3-1.857-.344-1.055-.048-1.372-.059-4.042-.059zM12 6.865a5.135 5.135 0 1 1 0 10.27 5.135 5.135 0 0 1 0-10.27zm0 1.802a3.333 3.333 0 1 0 0 6.666 3.333 3.333 0 0 0 0-6.666zm5.338-3.205a1.2 1.2 0 1 1 0 2.4 1.2 1.2 0 0 1 0-2.4z" /></svg>
               </a>
               {/* YouTube */}
               <a href="#" className="liquid-icon w-14 h-14 flex items-center justify-center text-white hover:scale-110 transition-transform shadow-lg" style={{ background: 'linear-gradient(135deg, #ff0000 0%, #aa0000 100%)' }}>
-                <svg className="w-7 h-7" fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+                <svg className="w-7 h-7" fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" /></svg>
               </a>
               {/* TikTok */}
               <a href="#" className="liquid-icon w-14 h-14 flex items-center justify-center text-white hover:scale-110 transition-transform shadow-lg" style={{ background: 'linear-gradient(135deg, #010101 0%, #1a1a1a 100%)', boxShadow: 'inset 0 0 10px rgba(0,255,255,0.6), inset 0 10px 20px rgba(255,0,80,0.6), 0 10px 20px rgba(0,0,0,0.8)' }}>
-                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/></svg>
+                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z" /></svg>
               </a>
             </div>
 
             {/* Situate on Map Button */}
-            <button 
+            <button
               onClick={() => {
                 setSelectedStudio(null);
                 window.scrollTo({ top: 0, behavior: 'smooth' });
