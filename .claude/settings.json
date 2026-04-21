@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(ls -lh /c/Users/moise/OneDrive/Documentos/antigravity/helicon-line2/supabase/migrations/*.sql)",
-      "Bash(ls -la /c/Users/moise/OneDrive/Documentos/antigravity/helicon-line2/supabase/migrations/*.sql)"
+      "Bash(ls -la /c/Users/moise/OneDrive/Documentos/antigravity/helicon-line2/supabase/migrations/*.sql)",
+      "Bash(xargs grep *)",
+      "Bash(find \"c:/Users/moise/OneDrive/Documentos/antigravity/helicon-line2/supabase/migrations\" -name \"*.sql\" -exec grep -l \"create table.*sales\" {} \\\\;)"
     ]
   }
 }

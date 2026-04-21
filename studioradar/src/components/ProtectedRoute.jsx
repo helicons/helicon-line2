@@ -2,39 +2,21 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 
-// Comprueba si el usuario tiene acceso al portal de productores.
-// Caso 1: ya tiene user_id vinculado (productor existente) → acceso directo.
-// Caso 2: está pre-registrado por email sin user_id (onboarding) → vincula y da acceso.
-// Caso 3: no existe en ningún caso → bloqueado.
-async function checkAndLinkProducer(user) {
-  // Caso 1: productor ya vinculado (la mayoría de logins normales)
-  const { data: byUserId } = await supabase
+async function ensureProducerRow(user) {
+  const { data: existing } = await supabase
     .from('producers')
     .select('id')
     .eq('user_id', user.id)
     .maybeSingle()
 
-  if (byUserId) return true
+  if (existing) return
 
-  // Caso 2: pre-registrado por email, primer login
-  const { data: byEmail } = await supabase
-    .from('producers')
-    .select('id, user_id')
-    .eq('email', user.email)
-    .maybeSingle()
-
-  if (!byEmail) return false
-
-  await supabase
-    .from('producers')
-    .update({
-      user_id: user.id,
-      name: user.user_metadata?.full_name ?? user.email.split('@')[0],
-      avatar_url: user.user_metadata?.avatar_url ?? null,
-    })
-    .eq('id', byEmail.id)
-
-  return true
+  await supabase.from('producers').insert({
+    user_id: user.id,
+    name: user.user_metadata?.full_name ?? user.email.split('@')[0],
+    email: user.email,
+    avatar_url: user.user_metadata?.avatar_url ?? null,
+  })
 }
 
 export default function ProtectedRoute({ children }) {
@@ -48,13 +30,7 @@ export default function ProtectedRoute({ children }) {
         return
       }
 
-      const allowed = await checkAndLinkProducer(session.user)
-      if (!allowed) {
-        await supabase.auth.signOut()
-        navigate('/producer/login?error=no_access', { replace: true })
-        return
-      }
-
+      await ensureProducerRow(session.user)
       setReady(true)
     })
   }, [navigate])

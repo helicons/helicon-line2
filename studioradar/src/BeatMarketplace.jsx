@@ -68,20 +68,19 @@ const LICENSES = [
     features: ['WAV sin comprimir + stems', 'Copias ilimitadas', 'Streams ilimitados', 'Radio comercial incluida', 'Crédito: "Prod. por [productor]"'],
   },
   {
-    id: 'exclusive',
-    name: 'Exclusive',
-    tag: 'Derechos Totales',
-    multiplier: 5,
-    field: 'price_exclusive',
-    features: ['WAV + stems + proyecto DAW', 'Derechos exclusivos totales', 'Beat retirado del mercado', 'TV / Sync / Publicidad', 'Sin crédito obligatorio'],
-  },
-  {
     id: 'stems',
     name: 'Stems',
     tag: 'Stems Pack',
     multiplier: 3,
     field: 'price_stems',
     features: ['Stems individuales por instrumento', 'WAV sin comprimir', 'Uso comercial incluido', 'Streams ilimitados', 'Crédito: "Prod. por [productor]"'],
+  },
+  {
+    id: 'exclusive',
+    name: 'Exclusive',
+    tag: 'Derechos Totales',
+    offerOnly: true,
+    features: ['WAV + stems + proyecto DAW', 'Derechos exclusivos totales', 'Beat retirado del mercado', 'TV / Sync / Publicidad', 'Sin crédito obligatorio'],
   },
 ];
 
@@ -104,6 +103,12 @@ export default function BeatMarketplace() {
 
   const [lyrics, setLyrics] = useState({});
   const [playerTab, setPlayerTab] = useState('licenses'); // 'licenses' | 'lyrics'
+
+  const [offerModal, setOfferModal] = useState(null); // beat object
+  const [offerAmount, setOfferAmount] = useState('');
+  const [offerMessage, setOfferMessage] = useState('');
+  const [offerLoading, setOfferLoading] = useState(false);
+  const [offerSent, setOfferSent] = useState(false);
 
   // Auth session
   useEffect(() => {
@@ -342,6 +347,27 @@ export default function BeatMarketplace() {
       alert('Error al conectar con la pasarela: ' + (err.message || 'Error desconocido'));
     } finally {
       setIsPaying(false);
+    }
+  };
+
+  const submitOffer = async () => {
+    if (!offerModal || !offerAmount || Number(offerAmount) < 1) return;
+    if (!user) { navigate('/login'); return; }
+    setOfferLoading(true);
+    try {
+      const { error } = await supabase.from('beat_offers').insert({
+        beat_id: offerModal.id,
+        buyer_user_id: user.id,
+        buyer_email: user.email,
+        offer_amount: Number(offerAmount),
+        message: offerMessage.trim() || null,
+      });
+      if (error) throw error;
+      setOfferSent(true);
+    } catch (err) {
+      alert('Error al enviar oferta: ' + err.message);
+    } finally {
+      setOfferLoading(false);
     }
   };
 
@@ -1220,14 +1246,13 @@ export default function BeatMarketplace() {
                   <div className="flex flex-col gap-2">
                     {LICENSES.map(lic => {
                       let price = 0;
-                      if (currentTrack) {
+                      if (currentTrack && !lic.offerOnly) {
                         if (currentTrack[lic.field] > 0) {
                           price = Math.round(currentTrack[lic.field]);
                         } else {
                           price = Math.round(currentTrack.price * lic.multiplier);
                         }
                       }
-                      // Usar condiciones personalizadas del beat si existen, si no las por defecto
                       const customCond = currentTrack?.license_conditions?.[lic.id];
                       const tag = customCond?.tag ?? lic.tag;
                       const features = customCond?.features?.filter(f => f.trim()) ?? lic.features;
@@ -1254,7 +1279,7 @@ export default function BeatMarketplace() {
                             </div>
                             <div className="flex items-center gap-3 shrink-0">
                               <span className="font-heading font-bold text-sm" style={{ color: isOpen ? `rgb(${currentTrack?.colors[0].join(',')})` : 'rgba(255,255,255,0.6)' }}>
-                                {price}€
+                                {lic.offerOnly ? 'Oferta' : `${price}€`}
                               </span>
                               <ChevronDown
                                 className="w-4 h-4 text-white/30 transition-transform duration-300"
@@ -1276,16 +1301,32 @@ export default function BeatMarketplace() {
                                   </li>
                                 ))}
                               </ul>
-                              <button
-                                onClick={e => {
-                                  e.stopPropagation();
-                                  addToCart(currentTrack, lic.id, price);
-                                }}
-                                className="w-full py-2.5 rounded-xl font-ui font-bold text-xs uppercase tracking-widest text-white transition-all flex items-center justify-center gap-2"
-                                style={{ backgroundColor: `rgb(${currentTrack?.colors[0].join(',')})` }}
-                              >
-                                <ShoppingCart className="w-3.5 h-3.5" /> Añadir al carrito · {price}€
-                              </button>
+                              {lic.offerOnly ? (
+                                <button
+                                  onClick={e => {
+                                    e.stopPropagation();
+                                    setOfferModal(currentTrack);
+                                    setOfferAmount('');
+                                    setOfferMessage('');
+                                    setOfferSent(false);
+                                  }}
+                                  className="w-full py-2.5 rounded-xl font-ui font-bold text-xs uppercase tracking-widest text-white transition-all flex items-center justify-center gap-2"
+                                  style={{ backgroundColor: `rgb(${currentTrack?.colors[0].join(',')})` }}
+                                >
+                                  Hacer oferta
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={e => {
+                                    e.stopPropagation();
+                                    addToCart(currentTrack, lic.id, price);
+                                  }}
+                                  className="w-full py-2.5 rounded-xl font-ui font-bold text-xs uppercase tracking-widest text-white transition-all flex items-center justify-center gap-2"
+                                  style={{ backgroundColor: `rgb(${currentTrack?.colors[0].join(',')})` }}
+                                >
+                                  <ShoppingCart className="w-3.5 h-3.5" /> Añadir al carrito · {price}€
+                                </button>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -1483,6 +1524,63 @@ export default function BeatMarketplace() {
           >
             <X className="w-6 h-6" />
           </button>
+        </div>
+      )}
+
+      {/* Modal de oferta Exclusive */}
+      {offerModal && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" onClick={() => setOfferModal(null)}>
+          <div className="bg-[#0f0f0f] border border-white/10 rounded-2xl p-6 w-full max-w-sm flex flex-col gap-4" onClick={e => e.stopPropagation()}>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h3 className="font-heading font-bold text-white text-base">Oferta Exclusive</h3>
+                <p className="font-ui text-xs text-white/40 mt-0.5 truncate">{offerModal.title}</p>
+              </div>
+              <button onClick={() => setOfferModal(null)} className="text-white/30 hover:text-white transition-colors mt-0.5">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {offerSent ? (
+              <div className="flex flex-col items-center gap-3 py-4 text-center">
+                <CheckCircle2 className="w-10 h-10 text-green-400" />
+                <p className="font-ui text-sm text-white">Oferta enviada correctamente</p>
+                <p className="font-ui text-xs text-white/40">El productor revisará tu propuesta y te contactará por email.</p>
+                <button onClick={() => setOfferModal(null)} className="mt-2 font-ui text-xs text-white/50 hover:text-white transition-colors">Cerrar</button>
+              </div>
+            ) : (
+              <>
+                <div className="flex flex-col gap-1">
+                  <label className="font-ui text-[10px] text-white/40 uppercase tracking-widest">Tu oferta (€)</label>
+                  <input
+                    type="number"
+                    min="1"
+                    placeholder="ej. 500"
+                    value={offerAmount}
+                    onChange={e => setOfferAmount(e.target.value)}
+                    className="bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white font-ui text-sm focus:outline-none focus:border-accent"
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="font-ui text-[10px] text-white/40 uppercase tracking-widest">Mensaje (opcional)</label>
+                  <textarea
+                    rows={3}
+                    placeholder="Cuéntale al productor para qué quieres usar el beat…"
+                    value={offerMessage}
+                    onChange={e => setOfferMessage(e.target.value)}
+                    className="bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white font-ui text-xs focus:outline-none focus:border-accent resize-none"
+                  />
+                </div>
+                <button
+                  onClick={submitOffer}
+                  disabled={offerLoading || !offerAmount || Number(offerAmount) < 1}
+                  className="w-full py-2.5 rounded-xl font-ui font-bold text-xs uppercase tracking-widest text-white bg-accent hover:bg-accent/80 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {offerLoading ? 'Enviando…' : 'Enviar oferta'}
+                </button>
+              </>
+            )}
+          </div>
         </div>
       )}
     </div>

@@ -281,12 +281,6 @@ export default function UserLogin() {
           </form>
         </div>
 
-        <p className="text-center text-text/20 text-[10px] font-mono mt-8">
-          ¿Eres productor?{' '}
-          <Link to="/producer/login" className="text-accent/50 hover:text-accent transition-colors">
-            Accede al portal de estudios
-          </Link>
-        </p>
       </div>
     </div>
   )

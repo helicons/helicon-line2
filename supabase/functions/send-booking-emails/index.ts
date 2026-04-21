@@ -341,6 +341,25 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
+    if (type === 'offer_accepted') {
+      const { buyer_email, checkout_url, beat_title } = body;
+      const html = `
+        <div style="background:#050505;color:#fff;padding:40px;font-family:sans-serif;max-width:600px;margin:0 auto;border-radius:12px;border:1px solid #333;text-align:center;">
+          <h1 style="color:#8A2BE2;letter-spacing:2px;">HELICON</h1>
+          <h2>Tu oferta ha sido aceptada</h2>
+          <div style="background:#111;padding:20px;border-radius:8px;margin:20px 0;text-align:left;">
+            <p><strong>Beat:</strong> ${beat_title}</p>
+            <p><strong>Licencia:</strong> Exclusive</p>
+          </div>
+          <p style="color:#aaa;margin-bottom:24px;">El productor ha aceptado tu oferta. Completa el pago para obtener los derechos exclusivos.</p>
+          <a href="${checkout_url}" style="background:#8A2BE2;color:#fff;padding:15px 30px;border-radius:8px;text-decoration:none;font-weight:bold;display:inline-block;">COMPLETAR PAGO</a>
+          <p style="font-size:11px;color:#555;margin-top:24px;">El enlace de pago caduca en 30 minutos.</p>
+        </div>
+      `;
+      await sendEmail(buyer_email, `Tu oferta por "${beat_title}" ha sido aceptada`, html);
+      return Response.json({ sent: true }, { headers: CORS });
+    }
+
     if (type === 'beat_delivery') {
       const { beat_id, buyer_email, license_type, beat_title } = body;
 

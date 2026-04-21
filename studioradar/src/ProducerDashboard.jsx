@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { CalendarDays, Layers, Clock, BookOpen, LogOut, ChevronDown, Building2, Pencil, PlusCircle, ArrowLeft, Music2, Trash2, Eye, EyeOff, UserCircle, ExternalLink, Upload, Loader, ShoppingBag, Wallet } from 'lucide-react'
+import { CalendarDays, Layers, Clock, BookOpen, LogOut, ChevronDown, Building2, Pencil, PlusCircle, ArrowLeft, Music2, Trash2, Eye, EyeOff, UserCircle, ExternalLink, Upload, Loader, ShoppingBag, Wallet, Tag } from 'lucide-react'
 import { supabase } from './lib/supabase'
 import SpaceManager from './components/SpaceManager'
 import AvailabilityManager from './components/AvailabilityManager'
@@ -158,6 +158,7 @@ const TABS = [
   { id: 'bookings',     label: 'Reservas',        Icon: BookOpen    },
   { id: 'beats',        label: 'Beats',           Icon: Music2      },
   { id: 'ventas',       label: 'Ventas',          Icon: ShoppingBag },
+  { id: 'ofertas',      label: 'Ofertas',         Icon: Tag         },
   { id: 'cobros',       label: 'Cobros',          Icon: Wallet      },
 ]
 
@@ -189,6 +190,8 @@ export default function ProducerDashboard() {
   const [cobrosData, setCobrosData]     = useState(null)
   const [cobrosLoading, setCobrosLoading] = useState(false)
   const [connectLoading, setConnectLoading] = useState(false)
+  const [ofertas, setOfertas]           = useState([])
+  const [ofertasLoading, setOfertasLoading] = useState(false)
 
   const activeStudio = studios.find(s => s.id === activeStudioId) ?? studios[0] ?? null
 
@@ -321,6 +324,27 @@ export default function ProducerDashboard() {
     load()
   }, [tab, producer, studios])
 
+  // Cargar ofertas exclusive pendientes
+  useEffect(() => {
+    if (tab !== 'ofertas' || !producer) return
+    setOfertasLoading(true)
+    const load = async () => {
+      const { data: beatRows } = await supabase
+        .from('beats').select('id, title, image_url').eq('producer_id', producer.id)
+      const beatIds = (beatRows || []).map(b => b.id)
+      if (beatIds.length === 0) { setOfertas([]); setOfertasLoading(false); return }
+      const { data } = await supabase
+        .from('beat_offers')
+        .select('id, beat_id, buyer_email, offer_amount, message, status, created_at')
+        .in('beat_id', beatIds)
+        .order('created_at', { ascending: false })
+      const beatMap = Object.fromEntries((beatRows || []).map(b => [b.id, { title: b.title, image_url: b.image_url }]))
+      setOfertas((data || []).map(o => ({ ...o, beat_title: beatMap[o.beat_id]?.title ?? '—', beat_image: beatMap[o.beat_id]?.image_url ?? null })))
+      setOfertasLoading(false)
+    }
+    load()
+  }, [tab, producer])
+
   // Cargar ventas del productor
   useEffect(() => {
     if (tab !== 'ventas' || !producer) return
@@ -403,6 +427,43 @@ const filteredBookings = bookingsFilter === 'all'
         </div>
       </div>
     )
+  }
+
+  const handleAceptarOferta = async (oferta) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const { data: beatData } = await supabase.from('beats').select('title, producer').eq('id', oferta.beat_id).single()
+      const { data, error } = await supabase.functions.invoke('create-stripe-checkout', {
+        body: {
+          type: 'beat',
+          beatId: oferta.beat_id,
+          beatTitle: beatData?.title ?? oferta.beat_title,
+          licenseType: 'exclusive',
+          price: oferta.offer_amount,
+          producerName: producer?.name ?? '',
+          customerEmail: oferta.buyer_email,
+        },
+        headers: { Authorization: `Bearer ${session?.access_token}` }
+      })
+      if (error) throw error
+      const checkoutUrl = data?.url
+      await supabase.from('beat_offers').update({ status: 'accepted', checkout_url: checkoutUrl, updated_at: new Date().toISOString() }).eq('id', oferta.id)
+      await supabase.functions.invoke('send-booking-emails', {
+        body: { type: 'offer_accepted', buyer_email: oferta.buyer_email, checkout_url: checkoutUrl, beat_title: oferta.beat_title }
+      })
+      setOfertas(prev => prev.map(o => o.id === oferta.id ? { ...o, status: 'accepted', checkout_url: checkoutUrl } : o))
+    } catch (err) {
+      alert('Error al aceptar oferta: ' + err.message)
+    }
+  }
+
+  const handleRechazarOferta = async (oferta) => {
+    try {
+      await supabase.from('beat_offers').update({ status: 'rejected', updated_at: new Date().toISOString() }).eq('id', oferta.id)
+      setOfertas(prev => prev.map(o => o.id === oferta.id ? { ...o, status: 'rejected' } : o))
+    } catch (err) {
+      alert('Error al rechazar oferta: ' + err.message)
+    }
   }
 
   const handleActivarCobros = async () => {
@@ -896,6 +957,82 @@ const filteredBookings = bookingsFilter === 'all'
                         <p className="text-text/30 text-[10px] font-mono shrink-0 hidden sm:block">
                           {new Date(sale.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
                         </p>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── OFERTAS ── */}
+          {tab === 'ofertas' && (
+            <div className="space-y-4">
+              <h3 className="text-white font-bold text-sm font-mono uppercase tracking-widest">Ofertas Exclusive</h3>
+
+              {ofertasLoading && <p className="text-text/30 text-xs font-mono text-center py-12">Cargando…</p>}
+
+              {!ofertasLoading && ofertas.length === 0 && (
+                <div className="flex flex-col items-center justify-center py-16 text-center">
+                  <div className="w-16 h-16 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center mb-6">
+                    <Tag size={28} className="text-accent" />
+                  </div>
+                  <h3 className="text-white font-bold text-lg mb-2">Sin ofertas aún</h3>
+                  <p className="text-text/40 text-sm font-mono max-w-xs">Cuando un artista haga una oferta por una licencia Exclusive aparecerá aquí.</p>
+                </div>
+              )}
+
+              {!ofertasLoading && ofertas.length > 0 && (
+                <div className="space-y-2">
+                  {ofertas.map(oferta => {
+                    const statusStyle = {
+                      pending:  'text-yellow-400 border-yellow-400/30 bg-yellow-400/10',
+                      accepted: 'text-green-400 border-green-400/30 bg-green-400/10',
+                      rejected: 'text-red-400 border-red-400/30 bg-red-400/10',
+                    }[oferta.status] ?? ''
+                    const statusLabel = { pending: 'Pendiente', accepted: 'Aceptada', rejected: 'Rechazada' }[oferta.status]
+                    return (
+                      <div key={oferta.id} className="bg-white/3 border border-white/5 rounded-xl p-4 hover:border-white/10 transition-all space-y-3">
+                        <div className="flex items-start justify-between gap-3 flex-wrap">
+                          <div className="flex items-center gap-3 min-w-0">
+                            {oferta.beat_image ? (
+                              <img src={oferta.beat_image} alt={oferta.beat_title} className="w-12 h-12 rounded-lg object-cover border border-white/10 shrink-0" />
+                            ) : (
+                              <div className="w-12 h-12 rounded-lg bg-accent/10 border border-accent/20 flex items-center justify-center shrink-0">
+                                <Music2 size={18} className="text-accent/50" />
+                              </div>
+                            )}
+                            <div className="min-w-0">
+                              <p className="text-white font-bold text-sm truncate">{oferta.beat_title}</p>
+                              <p className="text-text/50 text-xs font-mono mt-0.5">{oferta.buyer_email}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <span className="text-white font-bold text-sm font-mono">{oferta.offer_amount}€</span>
+                            <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full border ${statusStyle}`}>{statusLabel}</span>
+                          </div>
+                        </div>
+                        {oferta.message && (
+                          <p className="text-white/50 text-xs font-mono bg-white/3 rounded-lg px-3 py-2 border border-white/5">"{oferta.message}"</p>
+                        )}
+                        <div className="flex items-center justify-between gap-2 flex-wrap">
+                          <p className="text-text/30 text-[10px] font-mono">{new Date(oferta.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                          {oferta.status === 'pending' && (
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => handleRechazarOferta(oferta)}
+                                className="font-ui text-xs px-3 py-1.5 rounded-lg border border-red-500/30 text-red-400 hover:bg-red-500/10 transition-colors"
+                              >Rechazar</button>
+                              <button
+                                onClick={() => handleAceptarOferta(oferta)}
+                                className="font-ui text-xs px-3 py-1.5 rounded-lg bg-accent text-white hover:bg-accent/80 transition-colors"
+                              >Aceptar</button>
+                            </div>
+                          )}
+                          {oferta.status === 'accepted' && oferta.checkout_url && (
+                            <a href={oferta.checkout_url} target="_blank" rel="noopener noreferrer" className="font-ui text-[10px] text-accent hover:underline">Ver link de pago</a>
+                          )}
+                        </div>
                       </div>
                     )
                   })}
