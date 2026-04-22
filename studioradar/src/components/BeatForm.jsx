@@ -48,8 +48,8 @@ const LICENSE_COLORS = {
   stems:     { text: 'text-green-400',  border: 'border-green-500/40',  bg: 'bg-green-500/10'  },
 }
 
-function LicenseConditionEditor({ licenseId, value, onChange, price, onPriceChange, url, onUrlChange }) {
-  const [open, setOpen] = useState(true)
+function LicenseConditionEditor({ licenseId, value, onChange, price, onPriceChange, url, onUrlChange, defaultOpen = false }) {
+  const [open, setOpen] = useState(defaultOpen)
   const [customInput, setCustomInput] = useState('')
   const inputRef = useRef()
 
@@ -86,18 +86,22 @@ function LicenseConditionEditor({ licenseId, value, onChange, price, onPriceChan
           <span className="font-mono text-[10px] text-text/30">{value.tag}</span>
         </div>
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
-            <input
-              type="number"
-              value={price}
-              onChange={e => onPriceChange(e.target.value)}
-              placeholder="0"
-              min={0}
-              step="0.01"
-              className={`w-20 bg-white/5 border rounded-lg py-1 px-2 text-xs font-mono text-white outline-none focus:border-accent transition-colors placeholder:text-text/20 text-right ${colors.border}`}
-            />
-            <span className="font-mono text-[10px] text-text/30">€</span>
-          </div>
+          {licenseId === 'exclusive' ? (
+            <span className="font-mono text-[10px] text-amber-400/60 border border-amber-500/20 rounded-lg px-2 py-1">Por oferta</span>
+          ) : (
+            <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+              <input
+                type="number"
+                value={price}
+                onChange={e => onPriceChange(e.target.value)}
+                placeholder="0"
+                min={0}
+                step="0.01"
+                className={`w-20 bg-white/5 border rounded-lg py-1 px-2 text-xs font-mono text-white outline-none focus:border-accent transition-colors placeholder:text-text/20 text-right ${colors.border}`}
+              />
+              <span className="font-mono text-[10px] text-text/30">€</span>
+            </div>
+          )}
           <ChevronDown size={13} className={`text-text/40 transition-transform ${open ? 'rotate-180' : ''}`} />
         </div>
       </button>
@@ -369,17 +373,35 @@ export default function BeatForm({ producerId, beat, onSaved, onCancel }) {
         <label className={labelClass}>Archivo de audio para preview {beat ? '(Opcional para actualizar)' : '*'}</label>
         <div
           onClick={() => audioRef.current?.click()}
-          className={`flex items-center gap-3 h-14 rounded-xl border border-dashed cursor-pointer transition-colors px-4 ${audioFile ? 'border-accent/40 bg-accent/5' : 'border-white/15 hover:border-accent/40 bg-white/3'}`}
+          onDragOver={e => { e.preventDefault(); e.currentTarget.setAttribute('data-drag', 'true') }}
+          onDragLeave={e => e.currentTarget.removeAttribute('data-drag')}
+          onDrop={e => {
+            e.preventDefault()
+            e.currentTarget.removeAttribute('data-drag')
+            const file = e.dataTransfer.files?.[0]
+            if (!file) return
+            if (!file.name.toLowerCase().endsWith('.mp3') && file.type !== 'audio/mpeg') {
+              setError('Solo se aceptan archivos MP3'); return
+            }
+            if (file.size > 45 * 1024 * 1024) {
+              setError('El archivo supera 45MB. Exporta con bitrate menor o reduce la duración.'); return
+            }
+            setError(null)
+            setAudioFile(file)
+          }}
+          className={`flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed cursor-pointer transition-colors px-4 py-6 text-center
+            ${audioFile ? 'border-accent/40 bg-accent/5' : 'border-white/15 hover:border-accent/40 bg-white/3'}
+            [&[data-drag]]:border-accent [&[data-drag]]:bg-accent/10`}
         >
-          <Music2 size={18} className={audioFile ? 'text-accent' : 'text-text/30'} />
+          <Music2 size={24} className={audioFile ? 'text-accent' : 'text-text/30'} />
           <div className="flex-1 min-w-0">
             <span className={`text-sm font-mono truncate block ${audioFile ? 'text-white' : 'text-text/30'}`}>
-              {audioFile ? audioFile.name : (beat ? 'Mantener actual / Click para cambiar MP3' : 'Click para subir MP3')}
+              {audioFile ? audioFile.name : (beat ? 'Mantener actual · arrastra o haz click' : 'Arrastra tu MP3 aquí o haz click')}
             </span>
-            {!audioFile && <span className="text-[10px] font-mono text-text/20">Solo MP3 · Máx. 45MB · Solo para reproducción en el marketplace</span>}
+            {!audioFile && <span className="text-[10px] font-mono text-text/20">Solo MP3 · Máx. 45MB</span>}
           </div>
           {audioFile && (
-            <button type="button" onClick={e => { e.stopPropagation(); setAudioFile(null) }} className="ml-auto text-text/40 hover:text-red-400 transition-colors">
+            <button type="button" onClick={e => { e.stopPropagation(); setAudioFile(null) }} className="text-text/40 hover:text-red-400 transition-colors">
               <X size={14} />
             </button>
           )}
@@ -444,9 +466,9 @@ export default function BeatForm({ producerId, beat, onSaved, onCancel }) {
           {[
             { id: 'basic',     price: priceBasic,     setPrice: setPriceBasic,     url: urlBasic,     setUrl: setUrlBasic },
             { id: 'premium',   price: pricePremium,   setPrice: setPricePremium,   url: urlPremium,   setUrl: setUrlPremium },
-            { id: 'exclusive', price: priceExclusive, setPrice: setPriceExclusive, url: urlExclusive, setUrl: setUrlExclusive },
             { id: 'stems',     price: priceStems,     setPrice: setPriceStems,     url: urlStems,     setUrl: setUrlStems },
-          ].map(({ id, price, setPrice, url, setUrl }) => (
+            { id: 'exclusive', price: priceExclusive, setPrice: setPriceExclusive, url: urlExclusive, setUrl: setUrlExclusive },
+          ].map(({ id, price, setPrice, url, setUrl }, index) => (
             <LicenseConditionEditor
               key={id}
               licenseId={id}
@@ -456,6 +478,7 @@ export default function BeatForm({ producerId, beat, onSaved, onCancel }) {
               onPriceChange={setPrice}
               url={url}
               onUrlChange={setUrl}
+              defaultOpen={index === 0}
             />
           ))}
         </div>

@@ -135,7 +135,7 @@ export default function BeatMarketplace() {
   const [isLooping, setIsLooping] = useState(false);
   const [isShuffle, setIsShuffle] = useState(false);
   const [isFocusMode, setIsFocusMode] = useState(false);
-  const [showFullCover, setShowFullCover] = useState(false);
+
 
   const audioRef = useRef(null);
   const seekingRef = useRef(false);
@@ -713,7 +713,7 @@ export default function BeatMarketplace() {
             )}
 
             {!beatsLoading && (<>
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
                 {filteredBeats.map((beat, i) => {
                   const isCurrentlyPlaying = playingId === beat.id;
                   const color0 = `rgba(${beat.colors[0].join(',')},1)`;
@@ -728,27 +728,26 @@ export default function BeatMarketplace() {
                         boxShadow: isCurrentlyPlaying
                           ? `0 0 40px ${color0}40, 0 20px 60px rgba(0,0,0,0.6)`
                           : '0 8px 32px rgba(0,0,0,0.4)',
+                        border: isCurrentlyPlaying ? 'none' : '1px solid rgba(255,255,255,0.08)',
                       }}
                       onClick={() => handlePlayToggle(beat.id)}
                       onDoubleClick={() => handleBeatDoubleClick(beat.id)}
                     >
-                      {/* Spinning conic border layer */}
-                      <div
-                        className="absolute inset-0 rounded-[22px] overflow-hidden"
-                        aria-hidden="true"
-                      >
+                      {/* Spinning conic border layer — solo visible cuando está playing */}
+                      {isCurrentlyPlaying && (
                         <div
-                          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[200%] h-[200%]"
-                          style={{
-                            background: isCurrentlyPlaying
-                              ? `conic-gradient(from 0deg, transparent 0 300deg, ${color0} 360deg)`
-                              : 'conic-gradient(from 0deg, transparent 0 330deg, rgba(255,255,255,0.2) 360deg)',
-                            animation: isCurrentlyPlaying
-                              ? 'spin 2s linear infinite'
-                              : 'spin 6s linear infinite',
-                          }}
-                        />
-                      </div>
+                          className="absolute inset-0 rounded-[22px] overflow-hidden"
+                          aria-hidden="true"
+                        >
+                          <div
+                            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[200%] h-[200%]"
+                            style={{
+                              background: `conic-gradient(from 0deg, transparent 0deg 270deg, ${color0}cc 300deg, ${color0} 330deg, ${color0}cc 345deg, transparent 360deg)`,
+                              animation: 'spin 1.8s linear infinite',
+                            }}
+                          />
+                        </div>
+                      )}
 
                       {/* Card body (clips the border to 2px) */}
                       <div
@@ -759,6 +758,9 @@ export default function BeatMarketplace() {
                             : 'linear-gradient(135deg,#111 0%,#0a0a0a 100%)',
                         }}
                       >
+                        {/* Color accent left bar — toda la altura de la card */}
+                        <div className="absolute top-0 left-0 bottom-0 w-1 opacity-80 z-10 pointer-events-none" style={{ background: `linear-gradient(180deg, ${color0}, ${color1})` }} />
+
                         {/* Glow inner overlay on playing */}
                         {isCurrentlyPlaying && (
                           <div className="absolute inset-0 pointer-events-none" style={{ boxShadow: `inset 0 0 60px ${color0}20` }} />
@@ -768,9 +770,6 @@ export default function BeatMarketplace() {
                         <div className="relative h-40 overflow-hidden">
                           <img src={beat.image} alt={beat.title} className={`w-full h-full object-cover transition-transform duration-700 ${isCurrentlyPlaying ? 'scale-110' : 'group-hover:scale-105'}`} />
                           <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-black/40 to-transparent" />
-
-                          {/* Color accent top bar */}
-                          <div className="absolute top-0 left-0 right-0 h-1 opacity-80" style={{ background: `linear-gradient(90deg, ${color0}, ${color1})` }} />
                           {/* Wishlist heart */}
                           <button
                             onClick={e => { e.stopPropagation(); toggleWishlist(beat.id); }}
@@ -1103,8 +1102,7 @@ export default function BeatMarketplace() {
               {/* Left Model: Big 3D Album */}
               <div className="w-40 md:w-72 shrink-0 perspective-[1000px] group z-20">
                 <div
-                  onClick={() => setShowFullCover(true)}
-                  className="relative w-full aspect-square rounded-[1.5rem] md:rounded-[2rem] shadow-[0_30px_60px_rgba(0,0,0,0.8)] overflow-hidden transition-transform duration-700 ease-out preserve-3d group-hover:rotate-y-[8deg] group-hover:-rotate-x-[5deg] cursor-pointer ring-1 ring-white/10 group-hover:ring-accent/50 group-hover:shadow-[0_0_50px_rgba(138,43,226,0.3)]"
+                  className="relative w-full aspect-square rounded-[1.5rem] md:rounded-[2rem] shadow-[0_30px_60px_rgba(0,0,0,0.8)] overflow-hidden transition-transform duration-700 ease-out preserve-3d group-hover:rotate-y-[8deg] group-hover:-rotate-x-[5deg] ring-1 ring-white/10 group-hover:ring-accent/50 group-hover:shadow-[0_0_50px_rgba(138,43,226,0.3)]"
                 >
                   <img src={currentTrack?.image} className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-[3s] ease-out" />
                   <div className="absolute inset-0 ring-1 ring-inset ring-white/20 rounded-[1.5rem] md:rounded-[2rem] mix-blend-overlay"></div>
@@ -1504,26 +1502,6 @@ export default function BeatMarketplace() {
               )
             })()}
           </div>
-        </div>
-      )}
-      {/* FULL COVER MODAL */}
-      {showFullCover && currentTrack && (
-        <div
-          className="fixed inset-0 z-[10000] flex items-center justify-center p-4 md:p-10 bg-black/95 backdrop-blur-2xl animate-in fade-in duration-300"
-          onClick={() => setShowFullCover(false)}
-        >
-          <img
-            src={currentTrack.image}
-            className="w-full max-w-[80vmin] h-auto aspect-square object-contain rounded-2xl shadow-[0_0_100px_rgba(255,255,255,0.1)] cursor-zoom-out animate-in zoom-in-95 duration-500 ring-1 ring-white/10"
-            alt="Full Cover"
-            onClick={(e) => { e.stopPropagation(); setShowFullCover(false); }}
-          />
-          <button
-            className="absolute top-6 right-6 md:top-10 md:right-10 w-12 h-12 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white/50 hover:text-white transition-colors cursor-pointer"
-            onClick={() => setShowFullCover(false)}
-          >
-            <X className="w-6 h-6" />
-          </button>
         </div>
       )}
 
