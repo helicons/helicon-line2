@@ -2,7 +2,7 @@
 // Genera un enlace de onboarding de Stripe Connect Express para el productor.
 // Si ya tiene cuenta → regenera el enlace (para continuar verificación o abrir dashboard).
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import Stripe from "https://esm.sh/stripe?target=deno&no-check";
+import Stripe from "npm:stripe@17";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const CORS = {

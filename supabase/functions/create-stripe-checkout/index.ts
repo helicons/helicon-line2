@@ -1,6 +1,6 @@
 // Edge Function: create-stripe-checkout
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import Stripe from "https://esm.sh/stripe?target=deno&no-check";
+import Stripe from "npm:stripe@17";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -37,6 +37,11 @@ serve(async (req) => {
     if (type === 'beat') {
       const { beatId, beatTitle, licenseType, price, producerName } = body;
 
+      const unitAmount = Math.round(Number(price ?? 0) * 100);
+      if (!unitAmount || unitAmount < 100) {
+        return Response.json({ error: "El precio mínimo de un beat es 1€." }, { status: 400, headers: CORS });
+      }
+
       sessionConfig = {
         ...sessionConfig,
         line_items: [{
@@ -46,7 +51,7 @@ serve(async (req) => {
               name: `Beat: ${beatTitle || 'Sin título'}`,
               description: `Licencia ${licenseType} - Prod. by ${producerName || 'Producer'}`,
             },
-            unit_amount: Math.round(price * 100),
+            unit_amount: unitAmount,
           },
           quantity: 1,
         }],

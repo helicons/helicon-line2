@@ -302,11 +302,18 @@ export default function BeatMarketplace() {
   const handleCartCheckout = async () => {
     if (cart.length === 0 || isPaying) return
     const item = cart[0]
-    await handleBeatPurchase(item, item.licenseId || 'basic', item.licensePrice || item.price)
+    const basePrice = item.licensePrice || item.price
+    const total = Math.round(basePrice * 1.05 * 100) / 100
+    await handleBeatPurchase(item, item.licenseId || 'basic', total)
   }
 
   const handleBeatPurchase = async (beat, licenseId, price) => {
     if (isPaying) return;
+
+    if (!price || price < 1) {
+      alert('El precio mínimo de un beat es 1€. El productor debe actualizar el precio.');
+      return;
+    }
 
     // VERIFICACIÓN DE LOGIN
     if (!user) {

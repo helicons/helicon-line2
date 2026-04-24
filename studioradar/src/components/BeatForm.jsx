@@ -95,7 +95,7 @@ function LicenseConditionEditor({ licenseId, value, onChange, price, onPriceChan
                 value={price}
                 onChange={e => onPriceChange(e.target.value)}
                 placeholder="0"
-                min={0}
+                min={1}
                 step="0.01"
                 className={`w-20 bg-white/5 border rounded-lg py-1 px-2 text-xs font-mono text-white outline-none focus:border-accent transition-colors placeholder:text-text/20 text-right ${colors.border}`}
               />

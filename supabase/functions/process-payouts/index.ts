@@ -3,7 +3,7 @@
 // Diseñado para ejecutarse vía cron cada hora.
 // También actualiza stripe_connect_status si la cuenta ha completado la verificación.
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import Stripe from "https://esm.sh/stripe?target=deno&no-check";
+import Stripe from "npm:stripe@17";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const PRODUCER_SHARE = 0.90; // 90% para el productor, 10% comisión de plataforma
