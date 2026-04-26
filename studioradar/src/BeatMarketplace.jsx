@@ -109,6 +109,7 @@ export default function BeatMarketplace() {
   const [offerMessage, setOfferMessage] = useState('');
   const [offerLoading, setOfferLoading] = useState(false);
   const [offerSent, setOfferSent] = useState(false);
+  const [newReleasesShown, setNewReleasesShown] = useState(15);
 
   // Auth session
   useEffect(() => {
@@ -395,6 +396,9 @@ export default function BeatMarketplace() {
     'B Maj': 'G# Min', 'G# Min': 'B Maj'
   };
 
+  // Reset paginación de New Releases cuando cambian los filtros
+  useEffect(() => { setNewReleasesShown(15) }, [filterGenre, filterMood, filterKey, bpmMin, bpmMax])
+
   const filteredBeats = beats.filter(b => {
     if (filterGenre && b.genre !== filterGenre) return false;
     if (filterMood && b.mood !== filterMood) return false;
@@ -425,6 +429,10 @@ export default function BeatMarketplace() {
 
     return true;
   });
+
+  const trendingBeats = filteredBeats.slice(0, 8)
+  const visibleNewReleases = filteredBeats.slice(0, newReleasesShown)
+  const hasMoreNewReleases = filteredBeats.length > newReleasesShown
 
   return (
     <div className="min-h-screen bg-[#050505] text-text font-sans flex flex-col pt-16 pb-32 selection:bg-accent selection:text-white relative overflow-x-hidden">
@@ -710,7 +718,7 @@ export default function BeatMarketplace() {
           <div>
             <div className="flex items-center justify-between mb-6">
               <h2 className="font-heading font-bold text-2xl text-white">Trending Beats</h2>
-              <span className="font-ui text-xs text-white/30">{filteredBeats.length} tracks</span>
+              <span className="font-ui text-xs text-white/30">Top {trendingBeats.length} de {filteredBeats.length}</span>
             </div>
 
             {beatsLoading && (
@@ -721,7 +729,7 @@ export default function BeatMarketplace() {
 
             {!beatsLoading && (<>
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-                {filteredBeats.map((beat, i) => {
+                {trendingBeats.map((beat, i) => {
                   const isCurrentlyPlaying = playingId === beat.id;
                   const color0 = `rgba(${beat.colors[0].join(',')},1)`;
                   const color1 = `rgba(${beat.colors[1].join(',')},1)`;
@@ -872,13 +880,13 @@ export default function BeatMarketplace() {
             <div className="mt-10">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="font-heading font-bold text-xl text-white">New Releases</h2>
-                <span className="font-ui text-xs text-white/30">{filteredBeats.length} tracks</span>
+                <span className="font-ui text-xs text-white/30">{visibleNewReleases.length} / {filteredBeats.length} tracks</span>
               </div>
               {/* Header row */}
               <div className="hidden md:grid grid-cols-[24px_40px_1fr_80px_60px_60px_28px_70px_36px] gap-4 px-3 pb-2 border-b border-white/5 font-ui text-[10px] text-white/25 uppercase tracking-widest">
                 <span>#</span><span /><span>Título</span><span>Género</span><span>BPM</span><span>Key</span><span /><span className="text-right">Precio</span><span />
               </div>
-              {filteredBeats.map((beat, i) => {
+              {visibleNewReleases.map((beat, i) => {
                 const isActive = playingId === beat.id;
                 const [r, g, b2] = beat.colors[0];
                 return (
@@ -931,6 +939,21 @@ export default function BeatMarketplace() {
                   </div>
                 );
               })}
+
+              {/* Load More */}
+              {hasMoreNewReleases && (
+                <div className="flex flex-col items-center gap-2 mt-6">
+                  <button
+                    onClick={() => setNewReleasesShown(n => n + 15)}
+                    className="flex items-center gap-2 px-6 py-2.5 rounded-full border border-white/10 bg-white/5 hover:bg-white/10 hover:border-accent/40 font-ui text-sm text-white/70 hover:text-white transition-all"
+                  >
+                    Cargar 15 más
+                  </button>
+                  <span className="font-ui text-[10px] text-white/20">
+                    {filteredBeats.length - newReleasesShown} restantes
+                  </span>
+                </div>
+              )}
             </div>
 
           </div>
