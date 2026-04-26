@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<title>Helicon — Pitch Canvas</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  :root {
+    --bg:      #08050f;
+    --dark:    #0e0b16;
+    --card:    #120e1c;
+    --card2:   #0f0b18;
+    --purple:  #9b6dff;
+    --plite:   #c4a3ff;
+    --pdim:    rgba(155,109,255,0.15);
+    --border:  #1f1535;
+    --white:   #f0eeff;
+    --muted:   #6b6180;
+    --green:   #4eff91;
+    --orange:  #ffb347;
+    --blue:    #5599ff;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--white);
+    font-family: 'Segoe UI', Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    padding: 16px 20px;
+    margin: 0;
+  }
+
+  /* ── CANVAS WRAPPER ── */
+  .canvas {
+    width: 900px;
+    position: relative;
+  }
+
+  /* top glow */
+  .canvas::before {
+    content:'';
+    position:absolute;
+    top:-60px; left:50%;
+    transform:translateX(-50%);
+    width:600px; height:200px;
+    background: radial-gradient(ellipse, rgba(155,109,255,0.08) 0%, transparent 70%);
+    pointer-events:none;
+  }
+
+  /* ── HEADER ── */
+  .hdr {
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding: 16px 24px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-bottom: 3px solid var(--purple);
+    margin-bottom: 3px;
+    position:relative;
+    overflow:hidden;
+  }
+  .hdr::after {
+    content:'';
+    position:absolute;
+    top:-80px; right:-80px;
+    width:260px; height:260px;
+    background: radial-gradient(circle, rgba(155,109,255,0.1) 0%, transparent 65%);
+  }
+  .hdr-left {}
+  .logo {
+    font-family: 'Georgia', serif;
+    font-size: 30px;
+    letter-spacing: 8px;
+    text-transform: uppercase;
+    line-height:1;
+  }
+  .logo span { color: var(--purple); }
+  .logo-sub { font-size:10px; color:var(--muted); letter-spacing:3px; text-transform:uppercase; margin-top:5px; }
+  .hdr-tagline {
+    font-family: 'Georgia', serif;
+    font-size: 20px;
+    text-align:right;
+    line-height:1.3;
+    max-width: 380px;
+  }
+  .hdr-tagline em { color: var(--purple); font-style:normal; }
+
+  /* ── GRID UTILS ── */
+  .row { display:grid; gap:2px; margin-bottom:2px; }
+  .col2 { grid-template-columns: 1fr 1fr; }
+  .col3 { grid-template-columns: 1fr 1fr 1fr; }
+  .col-4060 { grid-template-columns: 2fr 3fr; }
+  .col-6040 { grid-template-columns: 3fr 2fr; }
+  .col-333  { grid-template-columns: 1fr 1fr 1fr; }
+
+  /* ── CELL ── */
+  .cell {
+    background: var(--card);
+    border: 1px solid var(--border);
+    padding: 14px 18px;
+    position:relative;
+  }
+  .cell.accent { background: var(--card2); }
+  .cell.purple-glow::before {
+    content:'';
+    position:absolute;
+    top:0;left:0;
+    width:3px; height:100%;
+    background: var(--purple);
+  }
+
+  /* ── SECTION LABEL ── */
+  .lbl {
+    font-size:9px;
+    letter-spacing:3px;
+    text-transform:uppercase;
+    color:var(--purple);
+    font-family:'Courier New', monospace;
+    margin-bottom:12px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .lbl::after { content:''; flex:1; height:1px; background:var(--border); }
+
+  /* ── PROBLEM ── */
+  .problem-title {
+    font-family:'Georgia',serif;
+    font-size:16px;
+    line-height:1.4;
+    color:var(--white);
+    margin-bottom:10px;
+  }
+  .problem-title em { color:var(--plite); font-style:normal; }
+  .problem-body { font-size:13px; color:var(--muted); line-height:1.7; }
+
+  /* ── SOLUTIONS ── */
+  .sol-item {
+    display:flex;
+    gap:10px;
+    align-items:flex-start;
+    padding:7px 0;
+    border-bottom:1px solid var(--border);
+  }
+  .sol-item:last-child { border-bottom:none; padding-bottom:0; }
+  .sol-icon {
+    width:36px; height:36px;
+    background: var(--pdim);
+    border:1px solid var(--purple);
+    display:flex; align-items:center; justify-content:center;
+    font-size:16px;
+    flex-shrink:0;
+    border-radius:4px;
+  }
+  .sol-name { font-size:13px; color:var(--plite); margin-bottom:3px; font-weight:600; }
+  .sol-desc { font-size:12px; color:var(--muted); line-height:1.55; }
+
+  /* ── MARKET SIZE ── */
+  .market-big {
+    font-family:'Georgia',serif;
+    font-size:32px;
+    color:var(--purple);
+    line-height:1;
+    margin-bottom:2px;
+  }
+  .market-sub { font-size:12px; color:var(--muted); margin-bottom:18px; }
+  .market-arrow {
+    display:flex;
+    align-items:center;
+    gap:10px;
+    font-size:13px;
+    color:var(--white);
+    margin-bottom:16px;
+  }
+  .market-arrow .arr { color:var(--purple); font-size:18px; }
+  .market-note { font-size:12px; color:var(--muted); line-height:1.6; border-left:2px solid var(--purple); padding-left:12px; }
+
+  /* ── STATS ROW ── */
+  .stat-mini { text-align:center; padding:10px 6px; }
+  .stat-mini .num { font-size:22px; color:var(--purple); line-height:1; margin-bottom:3px; font-family:'Georgia',serif; }
+  .stat-mini .desc { font-size:11px; color:var(--muted); line-height:1.5; }
+
+  /* ── ROADMAP ── */
+  .roadmap-track {
+    position:relative;
+    display:grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap:0;
+    margin-top:10px;
+  }
+  .roadmap-track::before {
+    content:'';
+    position:absolute;
+    top:20px; left:10%; right:10%;
+    height:2px;
+    background: linear-gradient(90deg, var(--purple), var(--plite), var(--border));
+    z-index:0;
+  }
+  .rm-stop { text-align:center; position:relative; z-index:1; }
+  .rm-dot {
+    width:14px; height:14px;
+    border-radius:50%;
+    background:var(--purple);
+    border:2px solid var(--plite);
+    margin:0 auto 10px;
+    box-shadow:0 0 10px rgba(155,109,255,0.5);
+  }
+  .rm-dot.dim { background:var(--border); border-color:var(--muted); box-shadow:none; }
+  .rm-year { font-size:12px; color:var(--plite); font-family:'Courier New',monospace; margin-bottom:6px; }
+  .rm-event { font-size:11px; color:var(--muted); line-height:1.5; padding:0 4px; }
+
+  /* ── FUNDRAISE ── */
+  .raise-big {
+    font-family:'Georgia',serif;
+    font-size:28px;
+    color:var(--purple);
+    line-height:1;
+    margin-bottom:2px;
+  }
+  .raise-sub { font-size:10px; color:var(--muted); margin-bottom:10px; }
+  .raise-row {
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:6px 0;
+    border-bottom:1px solid var(--border);
+  }
+  .raise-row:last-child { border-bottom:none; }
+  .raise-key { font-size:11px; color:var(--muted); }
+  .raise-val { font-size:13px; color:var(--white); font-weight:600; }
+  .raise-val.hi { color:var(--plite); }
+
+  /* ── DONUT ── */
+  .donut-wrap { display:flex; align-items:center; gap:14px; }
+  .donut {
+    width:90px; height:90px;
+    border-radius:50%;
+    background: conic-gradient(
+      var(--purple)      0%   40%,
+      #5533aa            40%  65%,
+      #3a2070            65%  85%,
+      #1a0f40            85% 100%
+    );
+    position:relative;
+    flex-shrink:0;
+  }
+  .donut::after {
+    content:'';
+    position:absolute;
+    top:50%; left:50%;
+    transform:translate(-50%,-50%);
+    width:46px; height:46px;
+    border-radius:50%;
+    background:var(--card);
+  }
+  .legend { display:flex; flex-direction:column; gap:8px; }
+  .leg-row { display:flex; align-items:center; gap:8px; font-size:11px; color:var(--muted); }
+  .leg-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+
+  /* ── TEAM ── */
+  .team-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .founder {
+    display:flex;
+    gap:8px;
+    align-items:flex-start;
+    padding-bottom:8px;
+    border-bottom:1px solid var(--border);
+  }
+  .founder:last-child { border-bottom:none; padding-bottom:0; }
+  .avatar {
+    width:38px; height:38px;
+    border-radius:50%;
+    background: linear-gradient(135deg, #2a1060, var(--purple));
+    border:2px solid var(--purple);
+    display:flex; align-items:center; justify-content:center;
+    font-size:12px; color:var(--white);
+    flex-shrink:0;
+    overflow:hidden;
+  }
+  .avatar img { width:100%; height:100%; object-fit:cover; }
+  .f-name { font-size:13px; color:var(--white); margin-bottom:2px; font-weight:600; }
+  .f-role { font-size:10px; color:var(--plite); letter-spacing:1px; text-transform:uppercase; margin-bottom:4px; }
+  .f-bio { font-size:11px; color:var(--muted); line-height:1.5; }
+
+  /* ── FOOTER ── */
+  .footer {
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:10px 18px;
+    background:var(--card);
+    border:1px solid var(--border);
+    border-top:2px solid var(--purple);
+    margin-top:3px;
+    font-size:12px;
+    color:var(--muted);
+  }
+  .footer a { color:var(--plite); text-decoration:none; }
+  .footer .badge {
+    background:#12082a;
+    border:1px solid var(--purple);
+    padding:4px 12px;
+    font-family:'Courier New',monospace;
+    font-size:9px;
+    letter-spacing:2px;
+    text-transform:uppercase;
+    color:var(--plite);
+  }
+
+  @media print {
+    @page { size: 960px 1020px; margin: 0; }
+    html, body { width:960px; height:1020px; overflow:hidden; }
+    body { background:var(--bg); padding:6px; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    .canvas { width:948px; }
+  }
+</style>
+</head>
+<body>
+<div class="canvas">
+
+  <!-- ══ HEADER ══ -->
+  <div class="hdr">
+    <div class="hdr-left">
+      <div class="logo">HELIC<span>O</span>N</div>
+      <div class="logo-sub">La red privada de la música de élite</div>
+    </div>
+    <div class="hdr-tagline">
+      Reimaginando el<br/><em>Modelo de la Industria Musical</em>
+    </div>
+  </div>
+
+  <!-- ══ ROW 1: PROBLEMA + SOLUCIONES + MERCADO ══ -->
+  <div class="row" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:2px;margin-bottom:2px;">
+
+    <div class="cell purple-glow">
+      <div class="lbl">Problema</div>
+      <div class="problem-title">
+        No existe herramienta para <em>encontrar y reservar</em> estudios de élite
+      </div>
+      <div class="problem-body">
+        La información está dispersa en Instagram y boca a oído. Los estudios son invisibles digitalmente y los artistas no saben cómo encontrarlos.
+      </div>
+      <div style="margin-top:10px;padding:9px 12px;background:rgba(155,109,255,0.07);border-left:2px solid var(--purple);">
+        <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--purple);font-family:'Courier New',monospace;margin-bottom:5px;">Nuestra ventaja</div>
+        <div style="font-size:11px;color:#bbb;line-height:1.5;">Nuestros productores acumulan <strong style="color:var(--white)">millones de views</strong> y trabajan con <strong style="color:var(--white)">artistas del momento</strong>. Su nombre es el gancho perfecto de venta.</div>
+      </div>
+    </div>
+
+    <div class="cell accent">
+      <div class="lbl">Soluciones</div>
+      <div class="sol-item">
+        <div class="sol-icon">🎵</div>
+        <div>
+          <div class="sol-name">Beat Marketplace</div>
+          <div class="sol-desc">Solo productores curados con millones de views y placements con artistas del momento.</div>
+        </div>
+      </div>
+      <div class="sol-item">
+        <div class="sol-icon">📍</div>
+        <div>
+          <div class="sol-name">Studio Radar</div>
+          <div class="sol-desc">Mapa interactivo de estudios de élite con reservas directas. Verificados por Helicon.</div>
+        </div>
+      </div>
+      <div class="sol-item">
+        <div class="sol-icon">🤝</div>
+        <div>
+          <div class="sol-name">Custom Beats Engine</div>
+          <div class="sol-desc">Conexión directa productor–artista. Helicon facilita la comunicación y control de ventas.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cell">
+      <div class="lbl">Mercado</div>
+      <div style="display:flex;gap:12px;margin-bottom:10px;">
+        <div style="flex:1;border-right:1px solid var(--border);padding-right:12px;">
+          <div style="font-size:26px;color:var(--purple);font-family:'Georgia',serif;line-height:1;">$2.4B</div>
+          <div style="font-size:10px;color:var(--muted);margin:3px 0;">Estudios / producción</div>
+          <div style="font-size:11px;color:var(--plite);">→ $4.1B 2030</div>
+        </div>
+        <div style="flex:1;">
+          <div style="font-size:26px;color:var(--purple);font-family:'Georgia',serif;line-height:1;">$1.4B</div>
+          <div style="font-size:10px;color:var(--muted);margin:3px 0;">Beats digitales</div>
+          <div style="font-size:11px;color:var(--plite);">→ $3.5B 2030</div>
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--muted);border-left:2px solid var(--purple);padding-left:10px;margin-bottom:12px;line-height:1.5;">
+        <strong style="color:var(--white)">+$5.5B combinado</strong> — ninguna plataforma lo une.
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;border-top:1px solid var(--border);padding-top:10px;">
+        <div class="stat-mini" style="border-right:1px solid var(--border);padding:6px 4px;">
+          <div class="num" style="font-size:20px;">7</div>
+          <div class="desc" style="font-size:10px;">Productores élite</div>
+        </div>
+        <div class="stat-mini" style="border-right:1px solid var(--border);padding:6px 4px;">
+          <div class="num" style="font-size:20px;">25</div>
+          <div class="desc" style="font-size:10px;">En validación</div>
+        </div>
+        <div class="stat-mini" style="padding:6px 4px;">
+          <div class="num" style="font-size:20px;">5</div>
+          <div class="desc" style="font-size:10px;">Studios activos</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ══ ROADMAP ══ -->
+  <div class="row">
+    <div class="cell">
+      <div class="lbl">Roadmap</div>
+      <div class="roadmap-track">
+
+        <div class="rm-stop">
+          <div class="rm-dot"></div>
+          <div class="rm-year">2025 Q1</div>
+          <div class="rm-event">MVP Studio Radar<br/>Beta privada</div>
+        </div>
+
+        <div class="rm-stop">
+          <div class="rm-dot"></div>
+          <div class="rm-year">2025 Q3</div>
+          <div class="rm-event">Beat Marketplace<br/>30 productores verificados</div>
+        </div>
+
+        <div class="rm-stop">
+          <div class="rm-dot"></div>
+          <div class="rm-year">2026 Q1</div>
+          <div class="rm-event">Custom Beats Engine<br/>Ronda Seed abierta</div>
+        </div>
+
+        <div class="rm-stop">
+          <div class="rm-dot dim"></div>
+          <div class="rm-year">2026 Q3</div>
+          <div class="rm-event">App móvil iOS/Android<br/>Expansión LATAM</div>
+        </div>
+
+        <div class="rm-stop">
+          <div class="rm-dot dim"></div>
+          <div class="rm-year">2027+</div>
+          <div class="rm-event">10+ mercados<br/>Series A</div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ ROW 3: FUNDRAISE + USO + EQUIPO ══ -->
+  <div class="row" style="grid-template-columns:1fr 1fr 1.4fr;gap:3px;display:grid;margin-bottom:3px;">
+
+    <div class="cell">
+      <div class="lbl">Fundraise</div>
+      <div class="raise-big">€150K</div>
+      <div class="raise-sub">Ronda Pre-Seed · 2026</div>
+
+      <div class="raise-row">
+        <span class="raise-key">Instrumento</span>
+        <span class="raise-val hi">Convertible Note</span>
+      </div>
+      <div class="raise-row">
+        <span class="raise-key">Valoración cap</span>
+        <span class="raise-val">€1.2M</span>
+      </div>
+      <div class="raise-row">
+        <span class="raise-key">Descuento</span>
+        <span class="raise-val hi">20%</span>
+      </div>
+      <div class="raise-row">
+        <span class="raise-key">Runway</span>
+        <span class="raise-val">18 meses</span>
+      </div>
+      <div class="raise-row">
+        <span class="raise-key">GMV Objetivo Año 1</span>
+        <span class="raise-val hi">€50K</span>
+      </div>
+    </div>
+
+    <div class="cell accent">
+      <div class="lbl">Uso de los Fondos</div>
+      <div class="donut-wrap">
+        <div class="donut"></div>
+        <div class="legend">
+          <div class="leg-row">
+            <div class="leg-dot" style="background:var(--purple)"></div>
+            <span><strong style="color:var(--white)">40%</strong> Marketing &amp; Comunidad</span>
+          </div>
+          <div class="leg-row">
+            <div class="leg-dot" style="background:#5533aa"></div>
+            <span><strong style="color:var(--white)">25%</strong> Desarrollo &amp; Mantenimiento</span>
+          </div>
+          <div class="leg-row">
+            <div class="leg-dot" style="background:#3a2070"></div>
+            <span><strong style="color:var(--white)">20%</strong> Operaciones</span>
+          </div>
+          <div class="leg-row">
+            <div class="leg-dot" style="background:#1a0f40"></div>
+            <span><strong style="color:var(--white)">15%</strong> Legal &amp; Marca</span>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:10px; display:flex; flex-direction:column; gap:5px;">
+        <div style="display:flex;justify-content:space-between;font-size:12px;border-bottom:1px solid var(--border);padding-bottom:7px;">
+          <span style="color:var(--muted)">Marketing &amp; Comunidad</span>
+          <span style="color:var(--white)">€60.000</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;border-bottom:1px solid var(--border);padding-bottom:7px;">
+          <span style="color:var(--muted)">Desarrollo &amp; Mantenimiento</span>
+          <span style="color:var(--white)">€37.500</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;border-bottom:1px solid var(--border);padding-bottom:7px;">
+          <span style="color:var(--muted)">Operaciones</span>
+          <span style="color:var(--white)">€30.000</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;">
+          <span style="color:var(--muted)">Legal &amp; Marca</span>
+          <span style="color:var(--white)">€22.500</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="cell">
+      <div class="lbl">Equipo Fundador</div>
+      <div style="display:flex; flex-direction:column; gap:0;">
+
+        <div class="founder">
+          <div class="avatar">HE</div>
+          <div>
+            <div class="f-name">Harold Estela</div>
+            <div class="f-role">Co-Founder &amp; CEO</div>
+            <div class="f-bio">Productor e ingeniero de sonido con 5 años de experiencia. Ha trabajado con artistas de Sony Music y Warner Music y gestionado dos discográficas desde dentro. Desarrollador frontend de Helicon y arquitecto del modelo de negocio. Fundador de la visión y estrategia de la plataforma.</div>
+          </div>
+        </div>
+
+        <div class="founder">
+          <div class="avatar">MA</div>
+          <div>
+            <div class="f-name">Moises Alarcon</div>
+            <div class="f-role">Co-Founder &amp; CTO</div>
+            <div class="f-bio">Ingeniero de software especializado en plataformas marketplace y audio digital. Arquitecto de la plataforma Helicon. Ganador del Hackathon Demium 2022, finalista Top 10 Startups Cleantech 2023 y ganador del Concurso de Emprendimiento Nacional 2022.</div>
+          </div>
+        </div>
+
+        <div class="founder">
+          <div class="avatar" style="background:linear-gradient(135deg,#1a3060,#5599ff);border-color:#5599ff;">AG</div>
+          <div>
+            <div class="f-name">Abraham Gallego</div>
+            <div class="f-role">Co-Founder &amp; CMO</div>
+            <div class="f-bio">+6 años en sector audiovisual. Especialista en branding, filmmaking, diseño gráfico y fotografía. Estrategias de viralidad y crecimiento orgánico en Instagram. Formado en IA generativa para escalar producción de contenido. Experiencia con marcas como UDIA (Anas Andaloussi).</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ══ FOOTER ══ -->
+  <div class="footer">
+    <div>heliconbusiness@gmail.com &nbsp;·&nbsp; <a href="https://heliconradar.com">heliconradar.com</a></div>
+    <div class="badge">Fase I · Pre-Seed · 2026</div>
+    <div>Confidencial · Solo para inversores</div>
+  </div>
+
+</div>
+</body>
+</html>

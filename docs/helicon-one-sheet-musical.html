@@ -2,395 +2,581 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <title>Helicon — One Sheet</title>
+  <title>Helicon — Business Canvas</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     :root {
       --dark: #0e0b14;
+      --deep: #07050f;
       --purple: #9b6dff;
       --purple-light: #c4a3ff;
-      --white: #f5f5f5;
-      --muted: #888;
-      --border: #2a1f3d;
+      --purple-dim: rgba(155,109,255,0.12);
+      --white: #f0eeff;
+      --muted: #666;
+      --border: #1e1530;
+      --card: #110d1c;
     }
     body {
       font-family: 'Georgia', serif;
-      background: #0a0814;
+      background: var(--deep);
       color: var(--white);
-      display: flex;
-      justify-content: center;
-      align-items: flex-start;
-      padding: 40px 20px;
-    }
-    .page {
-      width: 720px;
-      background: var(--dark);
-      border: 1px solid var(--border);
-      position: relative;
-      overflow: hidden;
+      min-height: 100vh;
+      padding: 40px 32px;
     }
 
-    /* Top accent */
-    .page::before {
-      content: '';
-      position: absolute;
-      top: 0; left: 0; right: 0;
-      height: 4px;
-      background: linear-gradient(90deg, var(--purple), #3d1a7a, transparent);
-    }
-
-    /* Background glow */
-    .page::after {
-      content: '';
-      position: absolute;
-      top: -100px;
-      right: -100px;
-      width: 400px;
-      height: 400px;
-      background: radial-gradient(circle, rgba(155,109,255,0.06) 0%, transparent 70%);
-      pointer-events: none;
-    }
-
-    /* ─── HEADER ─── */
+    /* ── HEADER ── */
     .header {
-      padding: 52px 56px 40px;
-      border-bottom: 1px solid var(--border);
       display: flex;
       justify-content: space-between;
       align-items: flex-end;
+      padding-bottom: 28px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 32px;
     }
-    .logo {
-      font-size: 52px;
-      letter-spacing: 14px;
-      text-transform: uppercase;
-      color: var(--white);
-      line-height: 1;
-    }
+    .logo { font-size: 44px; letter-spacing: 12px; text-transform: uppercase; line-height: 1; }
     .logo span { color: var(--purple); }
-    .logo-sub {
-      font-size: 12px;
-      color: var(--muted);
-      letter-spacing: 3px;
-      text-transform: uppercase;
-      margin-top: 8px;
-    }
-    .header-right {
-      text-align: right;
-    }
-    .phase-badge {
+    .logo-sub { font-size: 11px; color: var(--muted); letter-spacing: 3px; text-transform: uppercase; margin-top: 6px; }
+    .header-meta { text-align: right; }
+    .badge {
       display: inline-block;
-      background: #1a0f2e;
+      background: #12082a;
       border: 1px solid var(--purple);
-      padding: 6px 14px;
+      padding: 5px 14px;
       font-family: 'Courier New', monospace;
       font-size: 10px;
       letter-spacing: 3px;
       text-transform: uppercase;
       color: var(--purple-light);
-      margin-bottom: 8px;
+      margin-bottom: 6px;
     }
-    .header-url {
+    .domain-tag {
       font-size: 13px;
-      color: #555;
+      color: var(--purple-light);
+      text-decoration: none;
       letter-spacing: 1px;
     }
 
-    /* ─── HERO ─── */
-    .hero {
-      padding: 40px 56px;
-      border-bottom: 1px solid var(--border);
-    }
-    .hero-text {
-      font-size: 28px;
-      line-height: 1.45;
-      color: var(--white);
-      font-style: italic;
-      max-width: 580px;
-    }
-    .hero-text span { color: var(--purple-light); }
-
-    /* ─── PILLARS ─── */
-    .pillars {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      border-bottom: 1px solid var(--border);
-    }
-    .pillar {
-      padding: 28px 28px;
-      border-right: 1px solid var(--border);
-    }
-    .pillar:last-child { border-right: none; }
-    .pillar-icon {
-      font-size: 24px;
-      margin-bottom: 12px;
-    }
-    .pillar-title {
-      font-size: 14px;
-      color: var(--purple-light);
-      margin-bottom: 8px;
-      letter-spacing: 0.5px;
-    }
-    .pillar-desc {
-      font-size: 13px;
-      color: #777;
-      line-height: 1.65;
-    }
-
-    /* ─── WHY ─── */
-    .why {
-      padding: 36px 56px;
-      border-bottom: 1px solid var(--border);
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 40px;
-      align-items: start;
-    }
-    .why-label {
+    /* ── SECTION LABEL ── */
+    .label {
       font-family: 'Courier New', monospace;
-      font-size: 10px;
+      font-size: 9px;
       letter-spacing: 4px;
       text-transform: uppercase;
       color: var(--purple);
-      margin-bottom: 14px;
+      margin-bottom: 16px;
     }
-    .why-list {
-      list-style: none;
+
+    /* ── CANVAS GRID ── */
+    .canvas {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr 1fr;
+      gap: 2px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      margin-bottom: 2px;
     }
-    .why-list li {
-      font-size: 14px;
-      color: #b0b0b0;
-      padding: 8px 0;
-      border-bottom: 1px solid #1a1a2e;
+    .canvas-tall {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr;
+      gap: 2px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      margin-bottom: 2px;
+    }
+    .canvas-half {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      margin-bottom: 2px;
+    }
+    .canvas-thirds {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 2px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      margin-bottom: 2px;
+    }
+    .canvas-bottom {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+      gap: 2px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      margin-bottom: 32px;
+    }
+
+    /* ── CELL ── */
+    .cell {
+      background: var(--dark);
+      padding: 24px 28px;
+    }
+    .cell.accent { background: #0d0920; }
+    .cell.highlight { background: #0a0618; border-left: 2px solid var(--purple); }
+
+    /* ── VISION ── */
+    .vision-text {
+      font-size: 22px;
+      font-style: italic;
+      line-height: 1.55;
+      color: var(--white);
+    }
+    .vision-text em { color: var(--purple-light); font-style: normal; }
+
+    /* ── OBJECTIVES ── */
+    .obj-list { list-style: none; }
+    .obj-list li {
+      font-size: 13px;
+      color: #aaa;
+      padding: 9px 0;
+      border-bottom: 1px solid #170f27;
       display: flex;
       gap: 10px;
       line-height: 1.5;
     }
-    .why-list li::before {
-      content: '—';
-      color: var(--purple);
-      flex-shrink: 0;
-    }
-    .stat-stack {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-    .stat-row {
-      background: #150f20;
-      border: 1px solid var(--border);
-      padding: 16px 20px;
-      display: flex;
-      align-items: center;
-      gap: 16px;
-    }
-    .stat-num {
-      font-size: 32px;
-      color: var(--purple);
-      line-height: 1;
-      min-width: 60px;
-    }
-    .stat-desc {
-      font-size: 13px;
-      color: #777;
-      line-height: 1.5;
-    }
+    .obj-list li::before { content: '▸'; color: var(--purple); flex-shrink: 0; }
 
-    /* ─── FOR WHO ─── */
-    .forwho {
-      padding: 32px 56px;
-      border-bottom: 1px solid var(--border);
+    /* ── BUSINESS MODEL ── */
+    .bm-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      padding: 12px 0;
+      border-bottom: 1px solid #170f27;
     }
-    .forwho-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 16px;
-      margin-top: 16px;
+    .bm-item:last-child { border-bottom: none; }
+    .bm-icon { font-size: 20px; flex-shrink: 0; line-height: 1.2; }
+    .bm-name { font-size: 13px; color: var(--purple-light); margin-bottom: 3px; }
+    .bm-desc { font-size: 12px; color: #777; line-height: 1.5; }
+
+    /* ── PROJECTS ── */
+    .project-item {
+      padding: 14px 0;
+      border-bottom: 1px solid #170f27;
     }
-    .forwho-card {
-      background: #150f20;
-      border: 1px solid var(--border);
-      padding: 20px;
-    }
-    .forwho-who {
-      font-size: 14px;
-      color: var(--white);
+    .project-item:last-child { border-bottom: none; }
+    .project-name { font-size: 14px; color: var(--white); margin-bottom: 4px; }
+    .project-status {
+      display: inline-block;
+      font-size: 9px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 2px 8px;
+      border: 1px solid;
+      font-family: 'Courier New', monospace;
       margin-bottom: 6px;
     }
-    .forwho-pain {
-      font-size: 12px;
-      color: #666;
-      line-height: 1.5;
-      margin-bottom: 10px;
-    }
-    .forwho-solve {
-      font-size: 12px;
-      color: var(--purple-light);
-      line-height: 1.5;
-    }
+    .project-status.live { color: #4eff91; border-color: #4eff91; }
+    .project-status.dev  { color: #ffb84e; border-color: #ffb84e; }
+    .project-status.plan { color: #6699ff; border-color: #6699ff; }
+    .project-desc { font-size: 12px; color: #666; line-height: 1.5; }
 
-    /* ─── QUOTE ─── */
-    .quote-section {
-      padding: 36px 56px;
-      border-bottom: 1px solid var(--border);
-      background: #0d0a18;
+    /* ── FOUNDERS ── */
+    .founders-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
     }
-    .big-quote {
-      font-size: 20px;
-      font-style: italic;
+    .founder-card {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .founder-top { display: flex; gap: 16px; align-items: center; }
+    .founder-avatar {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #2a1060 0%, #9b6dff 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
       color: var(--white);
-      line-height: 1.6;
-      border-left: 3px solid var(--purple);
-      padding-left: 24px;
+      flex-shrink: 0;
+      border: 2px solid var(--purple);
+      overflow: hidden;
+    }
+    .founder-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .founder-name { font-size: 16px; color: var(--white); margin-bottom: 2px; }
+    .founder-role { font-size: 11px; color: var(--purple-light); letter-spacing: 1px; text-transform: uppercase; }
+    .founder-bio { font-size: 13px; color: #888; line-height: 1.65; }
+    .founder-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+    .founder-tag {
+      font-size: 10px;
+      background: #1a0f30;
+      border: 1px solid #2a1a50;
+      padding: 3px 10px;
+      color: var(--purple-light);
+      letter-spacing: 0.5px;
     }
 
-    /* ─── FOOTER ─── */
+    /* ── BRAND / DOMINIO ── */
+    .brand-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .brand-item {
+      background: #0d0920;
+      border: 1px solid var(--border);
+      padding: 16px;
+    }
+    .brand-item-label { font-size: 10px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 6px; font-family: 'Courier New', monospace; }
+    .brand-item-value { font-size: 14px; color: var(--white); }
+    .brand-item-value.url { color: var(--purple-light); }
+    .brand-item-value.ok::before { content: '✓ '; color: #4eff91; }
+    .brand-item-value.pending::before { content: '◎ '; color: #ffb84e; }
+
+    /* ── EXPENSES TABLE ── */
+    .expense-table { width: 100%; border-collapse: collapse; }
+    .expense-table th {
+      font-size: 10px;
+      font-family: 'Courier New', monospace;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--purple);
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+    }
+    .expense-table td {
+      font-size: 13px;
+      color: #999;
+      padding: 10px 12px;
+      border-bottom: 1px solid #130c22;
+      vertical-align: top;
+    }
+    .expense-table td.amount { color: var(--white); font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .expense-table td.cat {
+      font-size: 10px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--purple-light);
+      white-space: nowrap;
+    }
+    .expense-table tr:last-child td { border-bottom: none; }
+    .expense-total {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 16px;
+      padding-top: 14px;
+      margin-top: 4px;
+      border-top: 1px solid var(--border);
+    }
+    .expense-total .total-label { font-size: 11px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; font-family: 'Courier New', monospace; }
+    .expense-total .total-num { font-size: 22px; color: var(--purple-light); }
+
+    /* ── STATS ROW ── */
+    .stat-cell { text-align: center; padding: 22px 16px; }
+    .stat-num { font-size: 36px; color: var(--purple); line-height: 1; margin-bottom: 6px; }
+    .stat-desc { font-size: 12px; color: #666; line-height: 1.5; }
+
+    /* ── FOOTER ── */
     .footer {
-      padding: 28px 56px;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+      margin-top: 8px;
     }
-    .footer-team {
-      font-size: 13px;
-      color: #555;
-      line-height: 1.8;
-    }
-    .footer-team strong { color: #888; }
-    .footer-contact {
-      text-align: right;
-      font-size: 13px;
-      color: #555;
-      line-height: 1.8;
-    }
-    .footer-contact a {
-      color: var(--purple-light);
-      text-decoration: none;
-    }
+    .footer-left { font-size: 12px; color: #444; line-height: 1.8; }
+    .footer-left strong { color: #666; }
+    .footer-right { font-size: 12px; color: #444; text-align: right; line-height: 1.8; }
+    .footer-right a { color: var(--purple-light); text-decoration: none; }
 
     @media print {
-      body { background: #0a0814; padding: 0; }
-      .page {
-        width: 100%;
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
-      }
+      body { background: var(--deep); padding: 20px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     }
   </style>
 </head>
 <body>
-<div class="page">
 
-  <!-- HEADER -->
+  <!-- ── HEADER ── -->
   <div class="header">
     <div>
       <div class="logo">HELIC<span>O</span>N</div>
       <div class="logo-sub">La red privada de la música de élite</div>
     </div>
-    <div class="header-right">
-      <div class="phase-badge">Fase I · 2026</div>
-      <div class="header-url">heliconradar.com</div>
+    <div class="header-meta">
+      <div class="badge">Business Canvas · Fase I · 2026</div><br/>
+      <a class="domain-tag" href="https://heliconradar.com">heliconradar.com</a>
     </div>
   </div>
 
-  <!-- HERO -->
-  <div class="hero">
-    <div class="hero-text">
-      Una red <span>cerrada y curada</span> donde los mejores productores del mundo venden sus beats, encuentran estudios de grabación de élite y conectan directamente con artistas.
-    </div>
-  </div>
+  <!-- ── ROW 1: VISIÓN + OBJETIVO + MODELO DE NEGOCIO ── -->
+  <div class="canvas-tall">
 
-  <!-- 3 PILLARS -->
-  <div class="pillars">
-    <div class="pillar">
-      <div class="pillar-icon">🎵</div>
-      <div class="pillar-title">Beat Marketplace</div>
-      <div class="pillar-desc">Venta de beats con licencias. Solo productores verificados por Helicon. Cada beat tiene el sello de calidad de la red.</div>
+    <div class="cell highlight">
+      <div class="label">Visión</div>
+      <div class="vision-text">
+        Construir la <em>red privada de referencia</em> para la música de élite — donde los mejores productores, artistas y estudios del mundo trabajan juntos, con calidad garantizada y sin intermediarios.
+      </div>
+      <br/>
+      <div class="label" style="margin-top:20px">Propósito</div>
+      <p style="font-size:13px;color:#777;line-height:1.7">
+        Devolver el control a los creadores. Eliminar el ruido de los marketplaces masivos. Crear un ecosistema donde la calidad es la única moneda de entrada.
+      </p>
     </div>
-    <div class="pillar">
-      <div class="pillar-icon">📍</div>
-      <div class="pillar-title">Studio Radar</div>
-      <div class="pillar-desc">Mapa interactivo de estudios de grabación de élite. Reservas directas desde la plataforma, donde estés en el mundo.</div>
-    </div>
-    <div class="pillar">
-      <div class="pillar-icon">🤝</div>
-      <div class="pillar-title">Custom Beats</div>
-      <div class="pillar-desc">Conexión directa entre productor y artista para proyectos a medida. Helicon gestiona la relación y los derechos.</div>
-    </div>
-  </div>
 
-  <!-- WHY + STATS -->
-  <div class="why">
-    <div>
-      <div class="why-label">Por qué Helicon</div>
-      <ul class="why-list">
-        <li>No es un marketplace abierto — entras por invitación o no entras</li>
-        <li>La marca Helicon es la señal de calidad — si estás aquí, eres élite</li>
-        <li>Productores con placements reales en artistas con millones de oyentes</li>
-        <li>Studios verificados — no aparece cualquier local de ensayo</li>
-        <li>Construido por músicos y productores, no por tecnólogos sin contexto</li>
+    <div class="cell">
+      <div class="label">Objetivos 2026</div>
+      <ul class="obj-list">
+        <li>Lanzar Beat Marketplace con 30 productores verificados</li>
+        <li>Activar Studio Radar en 10+ ciudades de España</li>
+        <li>Alcanzar €50K GMV en el primer año</li>
+        <li>Cerrar acuerdos con 3 artistas con +1M oyentes mensuales</li>
+        <li>Abrir proceso de inversión seed (Q3 2026)</li>
+        <li>Expansión LATAM: México y Colombia (Q4 2026)</li>
       </ul>
     </div>
-    <div>
-      <div class="why-label">Dónde estamos hoy</div>
-      <div class="stat-stack">
-        <div class="stat-row">
-          <div class="stat-num">7</div>
-          <div class="stat-desc">Productores de élite confirmados<br/>con millones de visualizaciones</div>
+
+    <div class="cell">
+      <div class="label">Modelo de Negocio</div>
+      <div class="bm-item">
+        <div class="bm-icon">🎵</div>
+        <div>
+          <div class="bm-name">Comisión Beat Marketplace</div>
+          <div class="bm-desc">20% sobre cada venta de licencia. El productor cobra el 80% directamente.</div>
         </div>
-        <div class="stat-row">
-          <div class="stat-num">25</div>
-          <div class="stat-desc">Productores en proceso<br/>de validación</div>
+      </div>
+      <div class="bm-item">
+        <div class="bm-icon">📍</div>
+        <div>
+          <div class="bm-name">Studio Radar — Membresía</div>
+          <div class="bm-desc">€49/mes por estudio listado. Plan premium €129/mes con analytics y reservas gestionadas.</div>
         </div>
-        <div class="stat-row">
-          <div class="stat-num">5</div>
-          <div class="stat-desc">Studios activos · Madrid · Barcelona · Cantabria<br/>Expandiendo a toda España</div>
+      </div>
+      <div class="bm-item">
+        <div class="bm-icon">🤝</div>
+        <div>
+          <div class="bm-name">Custom Beats</div>
+          <div class="bm-desc">15% sobre proyectos a medida. Helicon gestiona contrato y derechos.</div>
+        </div>
+      </div>
+      <div class="bm-item">
+        <div class="bm-icon">⭐</div>
+        <div>
+          <div class="bm-name">Membresía Productor</div>
+          <div class="bm-desc">€29/mes para acceso a red, analytics y perfil verificado.</div>
         </div>
       </div>
     </div>
+
   </div>
 
-  <!-- FOR WHO -->
-  <div class="forwho">
-    <div class="why-label">Para quién es Helicon</div>
-    <div class="forwho-grid">
-      <div class="forwho-card">
-        <div class="forwho-who">El productor élite</div>
-        <div class="forwho-pain">Se pierde en el ruido de BeatStars entre miles de mediocres.</div>
-        <div class="forwho-solve">Helicon le da visibilidad real y compradores serios.</div>
+  <!-- ── ROW 2: FUNDADORES ── -->
+  <div class="canvas-half">
+
+    <div class="cell" style="grid-column: span 2;">
+      <div class="label">Fundadores</div>
+      <div class="founders-row">
+
+        <div class="founder-card">
+          <div class="founder-top">
+            <div class="founder-avatar">HE</div>
+            <div>
+              <div class="founder-name">Harold Estela</div>
+              <div class="founder-role">Co-Founder &amp; CEO</div>
+            </div>
+          </div>
+          <div class="founder-bio">
+            Productor e ingeniero de sonido con 5 años de experiencia en la industria musical. Conoce el sector desde adentro: ha dado clases particulares a otros productores y entiende los problemas reales del ecosistema. Fundó Helicon para resolver lo que él mismo vivió: invisibilidad, falta de confianza en los marketplaces y ausencia de herramientas profesionales para la élite.
+          </div>
+          <div class="founder-tags">
+            <span class="founder-tag">Producción Musical</span>
+            <span class="founder-tag">Estrategia</span>
+            <span class="founder-tag">Relaciones Artistas</span>
+            <span class="founder-tag">Licencias</span>
+          </div>
+        </div>
+
+        <div class="founder-card">
+          <div class="founder-top">
+            <div class="founder-avatar">MA</div>
+            <div>
+              <div class="founder-name">Moises Alarcon</div>
+              <div class="founder-role">Co-Founder &amp; CTO</div>
+            </div>
+          </div>
+          <div class="founder-bio">
+            Ingeniero de software especializado en plataformas de marketplace y audio digital. Arquitecto de la plataforma Helicon: desde el radar de estudios con mapas interactivos hasta el motor de pagos y verificación de productores. Apasionado de la intersección entre tecnología y cultura musical.
+          </div>
+          <div class="founder-tags">
+            <span class="founder-tag">Fullstack</span>
+            <span class="founder-tag">Marketplace Tech</span>
+            <span class="founder-tag">Audio Digital</span>
+            <span class="founder-tag">Producto</span>
+          </div>
+        </div>
+
       </div>
-      <div class="forwho-card">
-        <div class="forwho-who">El artista que busca calidad</div>
-        <div class="forwho-pain">No sabe si el productor es legítimo ni si el beat es exclusivo.</div>
-        <div class="forwho-solve">En Helicon cada productor está verificado. Sin sorpresas.</div>
+    </div>
+
+  </div>
+
+  <!-- ── ROW 3: PROYECTOS + MARCA/DOMINIO ── -->
+  <div class="canvas-thirds">
+
+    <div class="cell">
+      <div class="label">Proyectos</div>
+
+      <div class="project-item">
+        <div class="project-name">Beat Marketplace</div>
+        <span class="project-status dev">En Desarrollo</span>
+        <div class="project-desc">Plataforma de venta de beats con licencias exclusivas. Solo productores verificados por Helicon. Motor de pagos, gestión de derechos y contratos automáticos.</div>
       </div>
-      <div class="forwho-card">
-        <div class="forwho-who">El estudio de grabación</div>
-        <div class="forwho-pain">Invisible para los productores que más necesita atraer.</div>
-        <div class="forwho-solve">Estar en el radar de élite los legitima y llena su agenda.</div>
+
+      <div class="project-item">
+        <div class="project-name">Studio Radar</div>
+        <span class="project-status live">Live · Beta</span>
+        <div class="project-desc">Mapa interactivo de estudios de grabación de élite. Reservas directas, perfiles verificados, reseñas de la comunidad. Madrid, Barcelona, Cantabria.</div>
       </div>
+
+      <div class="project-item">
+        <div class="project-name">Custom Beats Engine</div>
+        <span class="project-status plan">Planificado</span>
+        <div class="project-desc">Sistema de conexión directa productor–artista para proyectos a medida. Gestión de briefing, negociación y entrega dentro de la plataforma.</div>
+      </div>
+
+      <div class="project-item">
+        <div class="project-name">Helicon App Móvil</div>
+        <span class="project-status plan">Planificado Q3</span>
+        <div class="project-desc">App nativa iOS/Android para productores y artistas. Preview de beats, reservas de estudio y mensajería integrada.</div>
+      </div>
+    </div>
+
+    <div class="cell">
+      <div class="label">Marca &amp; Dominio</div>
+      <div class="brand-grid">
+        <div class="brand-item">
+          <div class="brand-item-label">Dominio Principal</div>
+          <div class="brand-item-value url ok">heliconradar.com</div>
+        </div>
+        <div class="brand-item">
+          <div class="brand-item-label">Dominio Alt</div>
+          <div class="brand-item-value url ok">helicon.io</div>
+        </div>
+        <div class="brand-item">
+          <div class="brand-item-label">Marca Registrada</div>
+          <div class="brand-item-value pending">HELICON — en trámite</div>
+        </div>
+        <div class="brand-item">
+          <div class="brand-item-label">Nombre Legal</div>
+          <div class="brand-item-value ok">Helicon SL</div>
+        </div>
+        <div class="brand-item">
+          <div class="brand-item-label">Instagram</div>
+          <div class="brand-item-value url ok">@heliconradar</div>
+        </div>
+        <div class="brand-item">
+          <div class="brand-item-label">Email</div>
+          <div class="brand-item-value" style="font-size:11px;color:#888">heliconbusiness@gmail.com</div>
+        </div>
+      </div>
+      <br/>
+      <div class="label" style="margin-top: 8px;">Identidad Visual</div>
+      <p style="font-size:12px;color:#666;line-height:1.6">Dark luxury · Púrpura profundo · Tipografía serif + monospace. Estética de red exclusiva, no de startup tecnológica.</p>
+    </div>
+
+    <div class="cell">
+      <div class="label">Gastos &amp; Facturas</div>
+      <table class="expense-table">
+        <thead>
+          <tr>
+            <th>Concepto</th>
+            <th>Cat.</th>
+            <th>€/mes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Hosting &amp; Servidores (Vercel + Supabase)</td>
+            <td class="cat">Tech</td>
+            <td class="amount">€ 45</td>
+          </tr>
+          <tr>
+            <td>Dominio heliconradar.com</td>
+            <td class="cat">Marca</td>
+            <td class="amount">€ 2</td>
+          </tr>
+          <tr>
+            <td>Google Maps API (Studio Radar)</td>
+            <td class="cat">Tech</td>
+            <td class="amount">€ 30</td>
+          </tr>
+          <tr>
+            <td>Stripe (pasarela de pagos)</td>
+            <td class="cat">Pagos</td>
+            <td class="amount">€ 15</td>
+          </tr>
+          <tr>
+            <td>Herramientas diseño (Figma Pro)</td>
+            <td class="cat">Design</td>
+            <td class="amount">€ 15</td>
+          </tr>
+          <tr>
+            <td>Marketing &amp; Contenido</td>
+            <td class="cat">Marketing</td>
+            <td class="amount">€ 200</td>
+          </tr>
+          <tr>
+            <td>Asesoría legal / marca</td>
+            <td class="cat">Legal</td>
+            <td class="amount">€ 100</td>
+          </tr>
+          <tr>
+            <td>Misc (herramientas, suscripciones)</td>
+            <td class="cat">Ops</td>
+            <td class="amount">€ 50</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="expense-total">
+        <span class="total-label">Total mensual</span>
+        <span class="total-num">€ 457</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── STATS ROW ── -->
+  <div class="canvas-bottom">
+    <div class="cell stat-cell">
+      <div class="stat-num">7</div>
+      <div class="stat-desc">Productores élite<br/>confirmados</div>
+    </div>
+    <div class="cell stat-cell">
+      <div class="stat-num">25</div>
+      <div class="stat-desc">En proceso<br/>de validación</div>
+    </div>
+    <div class="cell stat-cell">
+      <div class="stat-num">5</div>
+      <div class="stat-desc">Studios activos<br/>en España</div>
+    </div>
+    <div class="cell stat-cell">
+      <div class="stat-num">€50K</div>
+      <div class="stat-desc">GMV objetivo<br/>Año 1</div>
+    </div>
+    <div class="cell stat-cell">
+      <div class="stat-num">Q3</div>
+      <div class="stat-desc">Ronda seed<br/>prevista 2026</div>
     </div>
   </div>
 
-  <!-- QUOTE -->
-  <div class="quote-section">
-    <div class="big-quote">
-      "No somos una plataforma de beats más.<br/>
-      Somos donde la élite trabaja."
-    </div>
-  </div>
-
-  <!-- FOOTER -->
+  <!-- ── FOOTER ── -->
   <div class="footer">
-    <div class="footer-team">
-      <strong>Harold Estela</strong> · Co-Founder & CEO<br/>
-      <strong>Moises Alarcon</strong> · Co-Founder & CTO
+    <div class="footer-left">
+      <strong>Harold Estela</strong> · Co-Founder &amp; CEO &nbsp;|&nbsp; <strong>Moises Alarcon</strong> · Co-Founder &amp; CTO
     </div>
-    <div class="footer-contact">
-      heliconradar.com<br/>
-      heliconbusiness@gmail.com
+    <div class="footer-right">
+      <a href="https://heliconradar.com">heliconradar.com</a> &nbsp;·&nbsp; heliconbusiness@gmail.com
     </div>
   </div>
 
-</div>
 </body>
 </html>

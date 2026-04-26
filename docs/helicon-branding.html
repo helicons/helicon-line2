@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<title>Helicon — Brand Guidelines</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
+  * { margin:0; padding:0; box-sizing:border-box; }
+  :root {
+    --black:   #050505;
+    --surface: #1A1A1A;
+    --purple:  #8A2BE2;
+    --purple2: #9b6dff;
+    --plite:   #c4a3ff;
+    --text:    #E0E0E0;
+    --muted:   #666;
+    --border:  #222;
+    --white:   #f5f5f5;
+  }
+  body {
+    background: var(--black);
+    color: var(--text);
+    font-family: 'Space Mono', 'Courier New', monospace;
+    padding: 0;
+    width: 960px;
+    margin: 0 auto;
+  }
+
+  /* ── COVER ── */
+  .cover {
+    height: 340px;
+    background: var(--black);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 0 60px;
+    position: relative;
+    overflow: hidden;
+  }
+  .cover::before {
+    content:'';
+    position:absolute;
+    top:-120px; right:-120px;
+    width:500px; height:500px;
+    background: radial-gradient(circle, rgba(138,43,226,0.15) 0%, transparent 65%);
+  }
+  .cover::after {
+    content:'';
+    position:absolute;
+    bottom:0; left:0; right:0;
+    height:1px;
+    background: linear-gradient(90deg, var(--purple), transparent);
+  }
+  .cover-label {
+    font-size:10px; letter-spacing:5px; text-transform:uppercase;
+    color:var(--purple); margin-bottom:24px;
+  }
+  .cover-logo {
+    font-family: Georgia, serif;
+    font-size:64px; letter-spacing:16px; text-transform:uppercase;
+    color:var(--white); line-height:1; margin-bottom:16px;
+  }
+  .cover-logo span { color:var(--purple); }
+  .cover-title {
+    font-size:13px; color:var(--muted); letter-spacing:2px; text-transform:uppercase;
+  }
+  .cover-version {
+    position:absolute; bottom:24px; right:60px;
+    font-size:10px; color:#333; letter-spacing:2px;
+  }
+
+  /* ── SECTION ── */
+  .section {
+    padding: 48px 60px;
+    border-bottom: 1px solid var(--border);
+  }
+  .section-label {
+    font-size:9px; letter-spacing:5px; text-transform:uppercase;
+    color:var(--purple); margin-bottom:6px;
+  }
+  .section-title {
+    font-family: Georgia, serif;
+    font-size:28px; color:var(--white); margin-bottom:28px;
+    line-height:1.2;
+  }
+
+  /* ── 2 COL ── */
+  .two-col { display:grid; grid-template-columns:1fr 1fr; gap:32px; }
+  .three-col { display:grid; grid-template-columns:1fr 1fr 1fr; gap:24px; }
+  .four-col { display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:16px; }
+
+  /* ── COLORS ── */
+  .swatch {
+    border: 1px solid var(--border);
+    overflow:hidden;
+  }
+  .swatch-color { height:80px; }
+  .swatch-info { padding:14px; }
+  .swatch-name { font-size:11px; color:var(--white); margin-bottom:4px; }
+  .swatch-hex { font-size:11px; color:var(--muted); }
+  .swatch-use { font-size:10px; color:#444; margin-top:4px; line-height:1.5; }
+
+  /* ── TYPOGRAPHY ── */
+  .type-sample {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 24px;
+    margin-bottom: 16px;
+  }
+  .type-meta {
+    font-size:9px; letter-spacing:3px; text-transform:uppercase;
+    color:var(--purple); margin-bottom:14px;
+    font-family:'Space Mono',monospace;
+  }
+  .type-h1 { font-family:Georgia,serif; font-size:48px; color:var(--white); line-height:1.1; letter-spacing:2px; }
+  .type-h2 { font-family:Georgia,serif; font-size:32px; color:var(--white); line-height:1.2; }
+  .type-h3 { font-family:Georgia,serif; font-size:20px; color:var(--white); }
+  .type-mono { font-family:'Space Mono',monospace; font-size:13px; color:var(--purple); letter-spacing:2px; text-transform:uppercase; }
+  .type-body { font-size:14px; color:#aaa; line-height:1.8; max-width:480px; }
+  .type-small { font-size:11px; color:var(--muted); letter-spacing:1px; }
+
+  /* ── LOGO VARIANTS ── */
+  .logo-box {
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32px;
+    position: relative;
+  }
+  .logo-box-label {
+    position:absolute; top:10px; left:14px;
+    font-size:9px; letter-spacing:2px; color:var(--muted); text-transform:uppercase;
+  }
+  .logo-v1 { font-family:Georgia,serif; font-size:36px; letter-spacing:10px; text-transform:uppercase; color:var(--white); }
+  .logo-v1 span { color:var(--purple); }
+  .logo-v2 { font-family:Georgia,serif; font-size:36px; letter-spacing:10px; text-transform:uppercase; color:var(--purple); }
+  .logo-v3 { font-family:Georgia,serif; font-size:36px; letter-spacing:10px; text-transform:uppercase; color:var(--white); background:var(--purple); padding:10px 20px; }
+  .logo-dark { background: #fff; }
+  .logo-v4 { font-family:Georgia,serif; font-size:36px; letter-spacing:10px; text-transform:uppercase; color:var(--black); }
+  .logo-v4 span { color:var(--purple); }
+
+  /* ── UI COMPONENTS ── */
+  .comp-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 24px;
+  }
+  .comp-label {
+    font-size:9px; letter-spacing:3px; text-transform:uppercase;
+    color:var(--muted); margin-bottom:16px;
+  }
+
+  /* Buttons */
+  .btn-row { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+  .btn-primary {
+    background: var(--purple);
+    color: #fff;
+    padding: 10px 24px;
+    font-family:'Space Mono',monospace;
+    font-size:11px; letter-spacing:2px; text-transform:uppercase;
+    border:none; cursor:pointer;
+  }
+  .btn-outline {
+    background: transparent;
+    color: var(--purple);
+    padding: 10px 24px;
+    font-family:'Space Mono',monospace;
+    font-size:11px; letter-spacing:2px; text-transform:uppercase;
+    border:1px solid var(--purple);
+  }
+  .btn-ghost {
+    background: transparent;
+    color: var(--text);
+    padding: 10px 24px;
+    font-family:'Space Mono',monospace;
+    font-size:11px; letter-spacing:2px; text-transform:uppercase;
+    border:1px solid var(--border);
+  }
+
+  /* Badge */
+  .badge-row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-top:16px; }
+  .badge {
+    font-size:9px; letter-spacing:3px; text-transform:uppercase;
+    padding: 4px 12px; font-family:'Space Mono',monospace;
+    border: 1px solid;
+  }
+  .badge-purple { color:var(--plite); border-color:var(--purple); background:rgba(138,43,226,0.1); }
+  .badge-green  { color:#4eff91; border-color:#4eff91; background:rgba(78,255,145,0.07); }
+  .badge-orange { color:#ffb347; border-color:#ffb347; background:rgba(255,179,71,0.07); }
+  .badge-muted  { color:var(--muted); border-color:var(--border); }
+
+  /* Card */
+  .card-demo {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 20px;
+    position:relative;
+    overflow:hidden;
+  }
+  .card-demo::before { content:''; position:absolute; top:0;left:0; width:2px; height:100%; background:var(--purple); }
+  .card-title { font-family:Georgia,serif; font-size:16px; color:var(--white); margin-bottom:6px; }
+  .card-sub { font-size:11px; color:var(--muted); margin-bottom:12px; font-family:'Space Mono',monospace; }
+  .card-body { font-size:12px; color:#777; line-height:1.6; }
+
+  /* Input */
+  .input-demo {
+    background: #0d0d0d;
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 14px;
+    font-family:'Space Mono',monospace;
+    font-size:12px;
+    width:100%;
+    outline:none;
+    margin-bottom:10px;
+  }
+  .input-demo:focus { border-color: var(--purple); }
+  .input-label { font-size:9px; letter-spacing:3px; text-transform:uppercase; color:var(--muted); margin-bottom:6px; display:block; }
+
+  /* ── SPACING ── */
+  .space-row { display:flex; align-items:flex-end; gap:16px; }
+  .space-item { display:flex; flex-direction:column; align-items:center; gap:8px; }
+  .space-block { background:rgba(138,43,226,0.2); border:1px dashed var(--purple); width:40px; }
+  .space-val { font-size:10px; color:var(--muted); }
+
+  /* ── VOICE ── */
+  .voice-item {
+    padding: 16px 20px;
+    border-left: 2px solid var(--border);
+    margin-bottom: 12px;
+  }
+  .voice-item.yes { border-left-color: #4eff91; }
+  .voice-item.no  { border-left-color: #ff4e4e; }
+  .voice-tag { font-size:9px; letter-spacing:3px; text-transform:uppercase; margin-bottom:6px; font-family:'Space Mono',monospace; }
+  .voice-tag.yes { color:#4eff91; }
+  .voice-tag.no  { color:#ff4e4e; }
+  .voice-text { font-size:13px; color:#aaa; line-height:1.6; font-family:Georgia,serif; font-style:italic; }
+
+  /* ── MOTION ── */
+  .motion-item {
+    background:var(--surface); border:1px solid var(--border);
+    padding:16px 20px;
+  }
+  .motion-name { font-size:12px; color:var(--white); margin-bottom:4px; }
+  .motion-val  { font-family:'Space Mono',monospace; font-size:11px; color:var(--purple); }
+  .motion-use  { font-size:11px; color:var(--muted); margin-top:4px; }
+
+  /* ── DO DONT ── */
+  .dodont { display:grid; grid-template-columns:1fr 1fr; gap:3px; }
+  .do-box, .dont-box { padding:20px; }
+  .do-box   { background:#0a1a0f; border:1px solid #1a3a1f; }
+  .dont-box { background:#1a0a0a; border:1px solid #3a1a1a; }
+  .do-label   { font-size:9px; letter-spacing:3px; color:#4eff91; text-transform:uppercase; margin-bottom:10px; }
+  .dont-label { font-size:9px; letter-spacing:3px; color:#ff4e4e; text-transform:uppercase; margin-bottom:10px; }
+  .dodont-text { font-size:12px; color:#aaa; line-height:1.6; }
+
+  /* ── FOOTER ── */
+  .brand-footer {
+    padding: 24px 60px;
+    display:flex; justify-content:space-between; align-items:center;
+    border-top: 1px solid var(--border);
+  }
+  .brand-footer-logo { font-family:Georgia,serif; font-size:18px; letter-spacing:6px; text-transform:uppercase; color:#333; }
+  .brand-footer-logo span { color:var(--purple); }
+  .brand-footer-info { font-size:10px; color:#333; letter-spacing:1px; text-align:right; }
+
+  @media print {
+    @page { size: 960px 1360px; margin:0; }
+    html, body { width:960px; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══ COVER ══ -->
+<div class="cover">
+  <div class="cover-label">Brand Identity Guidelines</div>
+  <div class="cover-logo">HELIC<span>O</span>N</div>
+  <div class="cover-title">Guía de Marca &amp; Identidad Visual · v1.0 · 2026</div>
+  <div class="cover-version">heliconradar.com</div>
+</div>
+
+<!-- ══ 1. LOGO ══ -->
+<div class="section">
+  <div class="section-label">01 — Logo</div>
+  <div class="section-title">Identidad Visual</div>
+  <div class="four-col">
+    <div>
+      <div class="logo-box" style="background:#050505;">
+        <div class="logo-box-label">Principal</div>
+        <div class="logo-v1">HELIC<span>O</span>N</div>
+      </div>
+    </div>
+    <div>
+      <div class="logo-box" style="background:#050505;">
+        <div class="logo-box-label">Monocromo</div>
+        <div class="logo-v1" style="color:var(--purple);"><span style="color:var(--purple);">HELICON</span></div>
+      </div>
+    </div>
+    <div>
+      <div class="logo-box" style="background:#0d0d0d;">
+        <div class="logo-box-label">Superficie</div>
+        <div class="logo-v1">HELIC<span>O</span>N</div>
+      </div>
+    </div>
+    <div>
+      <div class="logo-box logo-dark">
+        <div class="logo-box-label" style="color:#999;">Fondo claro</div>
+        <div class="logo-v4">HELIC<span>O</span>N</div>
+      </div>
+    </div>
+  </div>
+  <div style="margin-top:16px;padding:14px 18px;background:#0d0d0d;border:1px solid var(--border);font-size:12px;color:var(--muted);line-height:1.7;">
+    ⚠ &nbsp;No deformes el logo · No cambies la tipografía · Mantén siempre el espaciado de letras · La "O" en púrpura es el elemento diferenciador de marca
+  </div>
+</div>
+
+<!-- ══ 2. COLORES ══ -->
+<div class="section">
+  <div class="section-label">02 — Colores</div>
+  <div class="section-title">Paleta de Marca</div>
+  <div class="four-col" style="margin-bottom:20px;">
+    <div class="swatch">
+      <div class="swatch-color" style="background:#050505;border-bottom:1px solid #222;"></div>
+      <div class="swatch-info">
+        <div class="swatch-name">Black</div>
+        <div class="swatch-hex">#050505</div>
+        <div class="swatch-use">Fondo principal de toda la plataforma</div>
+      </div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-color" style="background:#8A2BE2;"></div>
+      <div class="swatch-info">
+        <div class="swatch-name">Accent Purple</div>
+        <div class="swatch-hex">#8A2BE2</div>
+        <div class="swatch-use">CTAs, highlights, logo mark, glow</div>
+      </div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-color" style="background:#1A1A1A;border-bottom:1px solid #222;"></div>
+      <div class="swatch-info">
+        <div class="swatch-name">Surface</div>
+        <div class="swatch-hex">#1A1A1A</div>
+        <div class="swatch-use">Cards, paneles, inputs, nav</div>
+      </div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-color" style="background:#E0E0E0;"></div>
+      <div class="swatch-info">
+        <div class="swatch-name">Text</div>
+        <div class="swatch-hex">#E0E0E0</div>
+        <div class="swatch-use">Texto principal y titulares</div>
+      </div>
+    </div>
+  </div>
+  <div class="four-col">
+    <div class="swatch">
+      <div class="swatch-color" style="background:#c4a3ff;"></div>
+      <div class="swatch-info">
+        <div class="swatch-name">Purple Light</div>
+        <div class="swatch-hex">#c4a3ff</div>
+        <div class="swatch-use">Textos de acento, roles, links</div>
+      </div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-color" style="background:#4eff91;"></div>
+      <div class="swatch-info">
+        <div class="swatch-name">Live Green</div>
+        <div class="swatch-hex">#4eff91</div>
+        <div class="swatch-use">Estados activos, verificado, live</div>
+      </div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-color" style="background:#ffb347;"></div>
+      <div class="swatch-info">
+        <div class="swatch-name">Amber</div>
+        <div class="swatch-hex">#ffb347</div>
+        <div class="swatch-use">Alertas, estados pendientes</div>
+      </div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-color" style="background:#222222;border-bottom:1px solid #333;"></div>
+      <div class="swatch-info">
+        <div class="swatch-name">Border</div>
+        <div class="swatch-hex">#222222</div>
+        <div class="swatch-use">Bordes, separadores, líneas</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 3. TIPOGRAFÍA ══ -->
+<div class="section">
+  <div class="section-label">03 — Tipografía</div>
+  <div class="section-title">Sistema de Fuentes</div>
+
+  <div class="type-sample">
+    <div class="type-meta">Clash Display — Titulares / Display</div>
+    <div class="type-h1">La Red Privada<br/>de la Élite</div>
+    <div style="margin-top:12px;font-size:11px;color:var(--muted);">Uso: H1, H2, taglines, covers · Peso: 600–700 · No usar para cuerpo de texto</div>
+  </div>
+
+  <div class="type-sample">
+    <div class="type-meta">Space Mono — UI / Labels / Código</div>
+    <div class="type-mono">Beat Marketplace · Studio Radar · Fase I · 2026</div>
+    <div style="margin-top:6px;font-size:11px;color:var(--muted);">Uso: Labels, badges, nav, botones, datos, precios · Peso: 400–700</div>
+  </div>
+
+  <div class="type-sample">
+    <div class="type-meta">Georgia (Serif) — Cuerpo / Editorial</div>
+    <div class="type-body">No somos una plataforma de beats más. Somos donde la élite trabaja. Una red cerrada y curada donde los mejores productores del mundo venden sus beats, encuentran estudios de grabación de élite y conectan directamente con artistas.</div>
+    <div style="margin-top:10px;font-size:11px;color:var(--muted);">Uso: Cuerpo de texto, citas, descripciones largas · Peso: 400 regular, 700 bold</div>
+  </div>
+
+  <div class="three-col" style="margin-top:4px;">
+    <div style="background:var(--surface);border:1px solid var(--border);padding:16px;">
+      <div class="type-meta">Jerarquía</div>
+      <div style="font-family:Georgia,serif;font-size:32px;color:var(--white);line-height:1.2;margin-bottom:4px;">H1 · 48px</div>
+      <div style="font-family:Georgia,serif;font-size:22px;color:var(--white);margin-bottom:4px;">H2 · 32px</div>
+      <div style="font-family:Georgia,serif;font-size:16px;color:var(--white);margin-bottom:4px;">H3 · 20px</div>
+      <div style="font-size:13px;color:#aaa;">Body · 14–15px</div>
+    </div>
+    <div style="background:var(--surface);border:1px solid var(--border);padding:16px;">
+      <div class="type-meta">Espaciado de letras</div>
+      <div style="font-family:'Space Mono',monospace;font-size:12px;color:var(--white);letter-spacing:5px;margin-bottom:8px;">HELICON</div>
+      <div style="font-family:'Space Mono',monospace;font-size:12px;color:var(--muted);letter-spacing:3px;margin-bottom:8px;">FASE I · 2026</div>
+      <div style="font-family:'Space Mono',monospace;font-size:12px;color:var(--purple);letter-spacing:2px;">heliconradar.com</div>
+    </div>
+    <div style="background:var(--surface);border:1px solid var(--border);padding:16px;">
+      <div class="type-meta">Line Height</div>
+      <div style="font-size:12px;color:#aaa;line-height:1.2;margin-bottom:8px;">Titulares: 1.1–1.2<br/>muy compacto y potente</div>
+      <div style="font-size:12px;color:#aaa;line-height:1.6;margin-bottom:8px;">Subtítulos: 1.4–1.5<br/>legible y claro</div>
+      <div style="font-size:12px;color:#aaa;line-height:1.8;">Cuerpo: 1.7–1.8<br/>cómodo para leer párrafos</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 4. COMPONENTES ══ -->
+<div class="section">
+  <div class="section-label">04 — Componentes UI</div>
+  <div class="section-title">Librería de Elementos</div>
+
+  <div class="three-col" style="margin-bottom:20px;">
+
+    <div class="comp-box">
+      <div class="comp-label">Botones</div>
+      <div class="btn-row">
+        <button class="btn-primary">Acceder</button>
+        <button class="btn-outline">Ver más</button>
+        <button class="btn-ghost">Cancelar</button>
+      </div>
+    </div>
+
+    <div class="comp-box">
+      <div class="comp-label">Badges / Estados</div>
+      <div class="badge-row">
+        <span class="badge badge-purple">Verificado</span>
+        <span class="badge badge-green">Live</span>
+        <span class="badge badge-orange">Pendiente</span>
+        <span class="badge badge-muted">Fase I</span>
+      </div>
+    </div>
+
+    <div class="comp-box">
+      <div class="comp-label">Inputs</div>
+      <label class="input-label">Nombre del estudio</label>
+      <input class="input-demo" type="text" placeholder="Ej: Studio Black, Madrid" readonly/>
+      <label class="input-label">Ciudad</label>
+      <input class="input-demo" type="text" placeholder="Madrid, Barcelona..." readonly/>
+    </div>
+
+  </div>
+
+  <div class="two-col">
+    <div class="comp-box">
+      <div class="comp-label">Card — Studio / Productor</div>
+      <div class="card-demo">
+        <div class="card-title">Studio Black · Madrid</div>
+        <div class="card-sub">Disponible · Desde €80/h</div>
+        <div class="card-body">Estudio de grabación profesional en el centro de Madrid. SSL console, Pro Tools, cabina insonorizada. Verificado por Helicon.</div>
+        <div style="margin-top:12px;">
+          <span class="badge badge-green" style="margin-right:6px;">Verificado</span>
+          <span class="badge badge-purple">Élite</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="comp-box">
+      <div class="comp-label">Efectos visuales</div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div style="padding:14px;background:rgba(138,43,226,0.08);border:1px solid rgba(138,43,226,0.3);font-size:12px;color:#aaa;">
+          <span style="color:var(--purple);">Glass panel</span> — bg rgba + backdrop-blur + border blanco/5
+        </div>
+        <div style="padding:14px;background:var(--surface);border:1px solid var(--border);font-size:12px;color:#aaa;box-shadow:0 0 30px -8px var(--purple);">
+          <span style="color:var(--purple);">Purple glow</span> — box-shadow purple -10px spread
+        </div>
+        <div style="padding:14px;background:var(--surface);border-left:2px solid var(--purple);border-top:1px solid var(--border);border-right:1px solid var(--border);border-bottom:1px solid var(--border);font-size:12px;color:#aaa;">
+          <span style="color:var(--purple);">Left accent</span> — borde izquierdo 2px solid purple
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 5. VOZ Y TONO ══ -->
+<div class="section">
+  <div class="section-label">05 — Voz &amp; Tono</div>
+  <div class="section-title">Cómo Habla Helicon</div>
+  <div class="two-col">
+    <div>
+      <div class="voice-item yes">
+        <div class="voice-tag yes">✓ Así sí</div>
+        <div class="voice-text">"No somos una plataforma de beats más. Somos donde la élite trabaja."</div>
+      </div>
+      <div class="voice-item yes">
+        <div class="voice-tag yes">✓ Así sí</div>
+        <div class="voice-text">"Si estás aquí, es porque mereces estar aquí."</div>
+      </div>
+      <div class="voice-item yes">
+        <div class="voice-tag yes">✓ Así sí</div>
+        <div class="voice-text">"Acceso por invitación. La calidad no negocia."</div>
+      </div>
+    </div>
+    <div>
+      <div class="voice-item no">
+        <div class="voice-tag no">✗ Así no</div>
+        <div class="voice-text">"¡Sube tus beats gratis y gana dinero con nuestra super plataforma!"</div>
+      </div>
+      <div class="voice-item no">
+        <div class="voice-tag no">✗ Así no</div>
+        <div class="voice-text">"Regístrate ahora y obtén un 50% de descuento en tu primer mes."</div>
+      </div>
+      <div class="voice-item no">
+        <div class="voice-tag no">✗ Así no</div>
+        <div class="voice-text">"Somos la mejor plataforma del mercado con miles de usuarios."</div>
+      </div>
+    </div>
+  </div>
+  <div style="margin-top:20px;display:flex;gap:12px;flex-wrap:wrap;">
+    <span style="padding:6px 16px;border:1px solid var(--border);font-size:11px;color:#aaa;">Exclusivo</span>
+    <span style="padding:6px 16px;border:1px solid var(--border);font-size:11px;color:#aaa;">Directo</span>
+    <span style="padding:6px 16px;border:1px solid var(--border);font-size:11px;color:#aaa;">Confianza</span>
+    <span style="padding:6px 16px;border:1px solid var(--border);font-size:11px;color:#aaa;">Sin ruido</span>
+    <span style="padding:6px 16px;border:1px solid var(--border);font-size:11px;color:#aaa;">Élite sin arrogancia</span>
+    <span style="padding:6px 16px;border:1px solid var(--border);font-size:11px;color:#aaa;">Industria real</span>
+  </div>
+</div>
+
+<!-- ══ 6. DO & DON'T ══ -->
+<div class="section">
+  <div class="section-label">06 — Do &amp; Don't</div>
+  <div class="section-title">Uso Correcto de Marca</div>
+  <div class="dodont">
+    <div class="do-box">
+      <div class="do-label">✓ Correcto</div>
+      <div class="dodont-text">
+        — Usar negro puro (#050505) como fondo base<br/>
+        — El púrpura solo para acentos y CTAs<br/>
+        — Space Mono para todos los labels y UI<br/>
+        — Clash Display / Georgia solo para titulares<br/>
+        — Mantener el noise-texture sutil (opacity 0.03)<br/>
+        — Imágenes oscuras, cinematográficas, en blanco y negro
+      </div>
+    </div>
+    <div class="dont-box">
+      <div class="dont-label">✗ Incorrecto</div>
+      <div class="dodont-text">
+        — Fondos blancos o grises claros<br/>
+        — Colores brillantes o neones distintos al púrpura<br/>
+        — Tipografías sans-serif genéricas (Arial, Roboto)<br/>
+        — Logos deformados o con sombras añadidas<br/>
+        — Imágenes de stock genéricas o muy saturadas<br/>
+        — Gradientes de colores que no sean negro→púrpura
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ FOOTER ══ -->
+<div class="brand-footer">
+  <div class="brand-footer-logo">HELIC<span>O</span>N</div>
+  <div class="brand-footer-info">
+    Brand Guidelines v1.0 · 2026<br/>
+    heliconbusiness@gmail.com · heliconradar.com
+  </div>
+</div>
+
+</body>
+</html>

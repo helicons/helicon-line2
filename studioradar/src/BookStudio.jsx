@@ -1,6 +1,6 @@
 import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MapPin, Calendar, Clock, ArrowLeft, ArrowRight, Activity, CreditCard, ShieldCheck, Search, Navigation, ChevronLeft, ChevronRight, ExternalLink, Star, LayoutGrid, Map as MapIcon } from 'lucide-react';
+import { MapPin, Calendar, Clock, ArrowLeft, ArrowRight, Activity, CreditCard, ShieldCheck, Search, Navigation, ChevronLeft, ChevronRight, ExternalLink, Star, LayoutGrid, Map as MapIcon, SlidersHorizontal, X, ChevronDown } from 'lucide-react';
 import { supabase } from './lib/supabase';
 import SlotPicker from './components/SlotPicker';
 const StudioMap = lazy(() => import('./components/StudioMap'));
@@ -53,6 +53,7 @@ export default function BookStudio() {
   const [filterEquipment, setFilterEquipment] = useState([]);
   const [visibleStudios, setVisibleStudios] = useState([]);
   const [hoveredStudio, setHoveredStudio] = useState(null);
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   const [reviews, setReviews] = useState([]);
   const [userReview, setUserReview] = useState(null);
@@ -247,19 +248,23 @@ export default function BookStudio() {
     return true;
   });
 
-  const ViewToggle = ({ current }) => (
+  const ViewToggle = ({ current, iconsOnly = false }) => (
     <div className="flex items-center bg-[#0f0f0f]/90 backdrop-blur-md border border-white/10 rounded-full p-1 gap-0.5">
       <button
         onClick={() => setViewMode('grid')}
-        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full font-mono text-xs transition-all ${current === 'grid' ? 'bg-accent text-white shadow-sm' : 'text-white/40 hover:text-white'}`}
+        title="Vista lista"
+        className={`flex items-center gap-1.5 rounded-full font-mono text-xs transition-all ${iconsOnly ? 'p-2' : 'px-3 py-1.5'} ${current === 'grid' ? 'bg-accent text-white shadow-sm' : 'text-white/40 hover:text-white'}`}
       >
-        <LayoutGrid className="w-3.5 h-3.5" /> Lista
+        <LayoutGrid className="w-3.5 h-3.5" />
+        {!iconsOnly && <span>Lista</span>}
       </button>
       <button
         onClick={() => setViewMode('map')}
-        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full font-mono text-xs transition-all ${current === 'map' ? 'bg-accent text-white shadow-sm' : 'text-white/40 hover:text-white'}`}
+        title="Vista mapa"
+        className={`flex items-center gap-1.5 rounded-full font-mono text-xs transition-all ${iconsOnly ? 'p-2' : 'px-3 py-1.5'} ${current === 'map' ? 'bg-accent text-white shadow-sm' : 'text-white/40 hover:text-white'}`}
       >
-        <MapIcon className="w-3.5 h-3.5" /> Mapa
+        <MapIcon className="w-3.5 h-3.5" />
+        {!iconsOnly && <span>Mapa</span>}
       </button>
     </div>
   );
@@ -286,65 +291,87 @@ export default function BookStudio() {
               <ViewToggle current="grid" />
             </div>
 
-            {/* Filter bar */}
-            <div className="max-w-5xl mx-auto px-6 pb-4 flex flex-col gap-2.5">
-              {/* Row 1: ciudad + precio */}
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-mono text-[10px] text-white/25 uppercase tracking-widest shrink-0">Ciudad</span>
+            {/* Filter bar — desktop inline / mobile collapsed */}
+            <div className="max-w-5xl mx-auto px-6 pb-3">
+
+              {/* ── Botón filtros (solo móvil) ── */}
+              <div className="flex items-center gap-2 md:hidden mb-2">
                 <button
-                  onClick={() => setFilterCity('')}
-                  className={`px-3 py-1 rounded-full font-mono text-[11px] border transition-all ${!filterCity ? 'bg-accent text-white border-accent shadow-[0_0_10px_rgba(138,43,226,0.3)]' : 'border-white/10 text-white/40 hover:border-accent/40 hover:text-white/70'}`}
+                  onClick={() => setFiltersOpen(o => !o)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-full border font-mono text-xs transition-all ${filtersOpen ? 'bg-accent text-white border-accent' : 'border-white/15 text-white/50 hover:border-accent/40 hover:text-white'}`}
                 >
-                  Todas
+                  <SlidersHorizontal className="w-3.5 h-3.5" />
+                  Filtros
+                  {(filterCity || filterMaxPrice > 0 || filterEquipment.length > 0) && (
+                    <span className="w-4 h-4 rounded-full bg-accent text-white text-[9px] flex items-center justify-center font-bold">
+                      {[filterCity, filterMaxPrice > 0, ...filterEquipment].filter(Boolean).length}
+                    </span>
+                  )}
+                  <ChevronDown className={`w-3 h-3 transition-transform ${filtersOpen ? 'rotate-180' : ''}`} />
                 </button>
-                {allCities.map(city => (
+                {(filterCity || filterMaxPrice > 0 || filterEquipment.length > 0) && (
                   <button
-                    key={city}
-                    onClick={() => setFilterCity(city === filterCity ? '' : city)}
-                    className={`px-3 py-1 rounded-full font-mono text-[11px] border transition-all ${filterCity === city ? 'bg-accent text-white border-accent shadow-[0_0_10px_rgba(138,43,226,0.3)]' : 'border-white/10 text-white/40 hover:border-accent/40 hover:text-white/70'}`}
+                    onClick={() => { setFilterCity(''); setFilterMaxPrice(0); setFilterEquipment([]); }}
+                    className="flex items-center gap-1 px-3 py-2 rounded-full border border-red-500/20 text-red-400/50 hover:text-red-400 font-mono text-xs transition-all"
                   >
-                    {city}
+                    <X className="w-3 h-3" /> Limpiar
                   </button>
-                ))}
-                <div className="ml-auto flex items-center gap-2 shrink-0">
-                  <span className="font-mono text-[10px] text-white/25 uppercase tracking-widest">Precio máx.</span>
-                  <select
-                    value={filterMaxPrice}
-                    onChange={e => setFilterMaxPrice(Number(e.target.value))}
-                    className="bg-[#111] border border-white/10 rounded-lg px-3 py-1 font-mono text-xs text-white/60 focus:outline-none focus:border-accent/50 transition-colors cursor-pointer"
-                  >
-                    <option value={0}>Sin límite</option>
-                    <option value={30}>≤ 30 €/h</option>
-                    <option value={50}>≤ 50 €/h</option>
-                    <option value={80}>≤ 80 €/h</option>
-                    <option value={120}>≤ 120 €/h</option>
-                  </select>
-                </div>
+                )}
               </div>
 
-              {/* Row 2: equipment chips */}
-              {allEquipmentTags.length > 0 && (
+              {/* ── Panel filtros: siempre visible en desktop, colapsable en móvil ── */}
+              <div className={`flex-col gap-2.5 ${filtersOpen ? 'flex' : 'hidden'} md:flex`}>
+
+                {/* Row 1: ciudad + precio */}
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-mono text-[10px] text-white/25 uppercase tracking-widest shrink-0">Equipo</span>
-                  {allEquipmentTags.slice(0, 14).map(tag => (
+                  <span className="font-mono text-[10px] text-white/25 uppercase tracking-widest shrink-0 hidden md:block">Ciudad</span>
+                  <button
+                    onClick={() => setFilterCity('')}
+                    className={`px-3 py-1.5 rounded-full font-mono text-[11px] border transition-all ${!filterCity ? 'bg-accent text-white border-accent shadow-[0_0_10px_rgba(138,43,226,0.3)]' : 'border-white/10 text-white/40 hover:border-accent/40 hover:text-white/70'}`}
+                  >
+                    Todas
+                  </button>
+                  {allCities.map(city => (
                     <button
-                      key={tag}
-                      onClick={() => setFilterEquipment(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag])}
-                      className={`px-3 py-1 rounded-full font-mono text-[11px] border transition-all ${filterEquipment.includes(tag) ? 'bg-accent/15 text-accent border-accent/40' : 'border-white/8 text-white/30 hover:border-white/20 hover:text-white/60'}`}
+                      key={city}
+                      onClick={() => setFilterCity(city === filterCity ? '' : city)}
+                      className={`px-3 py-1.5 rounded-full font-mono text-[11px] border transition-all ${filterCity === city ? 'bg-accent text-white border-accent shadow-[0_0_10px_rgba(138,43,226,0.3)]' : 'border-white/10 text-white/40 hover:border-accent/40 hover:text-white/70'}`}
                     >
-                      {tag}
+                      {city}
                     </button>
                   ))}
-                  {filterEquipment.length > 0 && (
-                    <button
-                      onClick={() => setFilterEquipment([])}
-                      className="px-3 py-1 rounded-full font-mono text-[11px] border border-red-500/20 text-red-400/50 hover:border-red-400/40 hover:text-red-400 transition-all"
+                  <div className="ml-auto flex items-center gap-2 shrink-0">
+                    <span className="font-mono text-[10px] text-white/25 uppercase tracking-widest hidden md:block">Precio máx.</span>
+                    <select
+                      value={filterMaxPrice}
+                      onChange={e => setFilterMaxPrice(Number(e.target.value))}
+                      className="bg-[#111] border border-white/10 rounded-full px-4 py-1.5 font-mono text-xs text-white/60 focus:outline-none focus:border-accent/50 transition-colors cursor-pointer"
                     >
-                      × Limpiar
-                    </button>
-                  )}
+                      <option value={0}>Precio: Todos</option>
+                      <option value={30}>≤ 30 €/h</option>
+                      <option value={50}>≤ 50 €/h</option>
+                      <option value={80}>≤ 80 €/h</option>
+                      <option value={120}>≤ 120 €/h</option>
+                    </select>
+                  </div>
                 </div>
-              )}
+
+                {/* Row 2: equipment chips */}
+                {allEquipmentTags.length > 0 && (
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-mono text-[10px] text-white/25 uppercase tracking-widest shrink-0 hidden md:block">Equipo</span>
+                    {allEquipmentTags.slice(0, 14).map(tag => (
+                      <button
+                        key={tag}
+                        onClick={() => setFilterEquipment(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag])}
+                        className={`px-3 py-1.5 rounded-full font-mono text-[11px] border transition-all ${filterEquipment.includes(tag) ? 'bg-accent/15 text-accent border-accent/40' : 'border-white/8 text-white/30 hover:border-white/20 hover:text-white/60'}`}
+                      >
+                        {tag}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
@@ -366,46 +393,65 @@ export default function BookStudio() {
                 </button>
               </div>
             ) : (
-              <div className="flex flex-col gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4">
                 {filteredStudios.map(studio => (
                   <button
                     key={studio.id}
                     onClick={() => { setSelectedStudio(studio); setStep(2); }}
-                    className="group w-full text-left flex bg-[#0c0c0c] border border-transparent hover:border-[#8A2BE2] rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-[0_4px_40px_rgba(138,43,226,0.25)] hover:bg-[#0f0f0f]"
-                    style={{ minHeight: '160px' }}
+                    className="group w-full text-left flex flex-col lg:flex-row bg-[#0c0c0c] border border-transparent hover:border-[#8A2BE2] rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-[0_4px_40px_rgba(138,43,226,0.25)] hover:bg-[#0f0f0f]"
                   >
-                    {/* Foto */}
-                    <div className="relative w-56 shrink-0 overflow-hidden">
+                    {/* Foto — arriba en móvil/tablet, izquierda en desktop */}
+                    <div className="relative w-full h-48 lg:w-56 lg:h-auto shrink-0 overflow-hidden">
                       <img
                         src={studio.photos?.[0] ?? studio.image_url ?? 'https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?auto=format&fit=crop&q=80&w=400'}
                         alt={studio.name}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-[#0c0c0c] pointer-events-none" />
+                      <div className="absolute inset-0 bg-gradient-to-t lg:bg-gradient-to-r from-[#0c0c0c]/60 via-transparent to-transparent pointer-events-none" />
+                      {/* Precio encima de la foto en móvil */}
+                      {studio.price_per_hour && (
+                        <div className="absolute top-3 right-3 lg:hidden bg-black/70 backdrop-blur-md px-3 py-1 rounded-full border border-white/10">
+                          <span className="font-heading font-bold text-white text-sm">{studio.price_per_hour}€</span>
+                          <span className="font-mono text-[9px] text-white/40">/h</span>
+                        </div>
+                      )}
                     </div>
 
-                    {/* Info central */}
-                    <div className="flex-1 px-6 py-5 flex flex-col justify-between min-w-0 border-r border-white/5">
+                    {/* Info */}
+                    <div className="flex-1 p-4 lg:px-6 lg:py-5 flex flex-col justify-between min-w-0 lg:border-r border-white/5">
                       <div>
-                        <h3 className="font-heading font-bold text-white text-xl leading-tight mb-1 group-hover:text-accent/90 transition-colors">{studio.name}</h3>
-                        <div className="flex items-center gap-1.5 mb-3">
+                        <h3 className="font-heading font-bold text-white text-lg lg:text-xl leading-tight mb-1 group-hover:text-accent/90 transition-colors">{studio.name}</h3>
+                        <div className="flex items-center gap-1.5 mb-2">
                           <MapPin className="w-3 h-3 text-accent/70 shrink-0" />
                           <span className="font-mono text-xs text-white/40">{studio.address || studio.city || studio.location || 'Madrid'}</span>
                         </div>
                         {studio.description && (
-                          <p className="font-mono text-[11px] text-white/30 line-clamp-3 leading-relaxed">{studio.description}</p>
+                          <p className="font-mono text-[11px] text-white/30 line-clamp-2 leading-relaxed">{studio.description}</p>
                         )}
                       </div>
-                      {studio.equipment_tags?.length > 0 && (
-                        <p className="font-mono text-[10px] text-accent/40 mt-3 flex items-center gap-1">
-                          <span className="w-1 h-1 rounded-full bg-accent/40 inline-block" />
-                          {studio.equipment_tags.length} equipos disponibles
-                        </p>
-                      )}
+                      {/* Tags + CTA en móvil */}
+                      <div className="mt-3 flex items-center justify-between gap-2 lg:block">
+                        <div className="flex flex-wrap gap-1.5">
+                          {studio.equipment_tags?.slice(0, 3).map(tag => (
+                            <span key={tag} className="px-2 py-0.5 rounded-full bg-accent/10 border border-accent/20 font-mono text-[10px] text-accent/70 leading-tight">
+                              {tag}
+                            </span>
+                          ))}
+                          {(studio.equipment_tags?.length ?? 0) > 3 && (
+                            <span className="px-2 py-0.5 rounded-full bg-white/5 border border-white/8 font-mono text-[10px] text-white/25 leading-tight">
+                              +{studio.equipment_tags.length - 3}
+                            </span>
+                          )}
+                        </div>
+                        {/* CTA solo visible en móvil/tablet */}
+                        <div className="lg:hidden shrink-0 px-4 py-1.5 rounded-xl bg-accent/10 border border-accent/20 font-mono text-[11px] text-accent uppercase tracking-widest group-hover:bg-accent group-hover:text-white transition-all duration-200 whitespace-nowrap">
+                          Reservar →
+                        </div>
+                      </div>
                     </div>
 
-                    {/* Panel derecho: precio + equipamiento */}
-                    <div className="w-52 shrink-0 px-5 py-5 flex flex-col justify-between">
+                    {/* Panel derecho — solo desktop */}
+                    <div className="hidden lg:flex w-52 shrink-0 px-5 py-5 flex-col justify-between">
                       <div className="text-right">
                         {studio.price_per_hour ? (
                           <>
@@ -416,26 +462,18 @@ export default function BookStudio() {
                           <div className="font-mono text-xs text-white/20">Consultar</div>
                         )}
                       </div>
-
                       <div className="flex flex-wrap gap-1.5 justify-end mt-3">
-                        {studio.equipment_tags && studio.equipment_tags.length > 0 ? (
-                          <>
-                            {studio.equipment_tags.slice(0, 4).map(tag => (
-                              <span key={tag} className="px-2 py-0.5 rounded-full bg-accent/10 border border-accent/20 font-mono text-[10px] text-accent/70 leading-tight">
-                                {tag}
-                              </span>
-                            ))}
-                            {studio.equipment_tags.length > 4 && (
-                              <span className="px-2 py-0.5 rounded-full bg-white/5 border border-white/8 font-mono text-[10px] text-white/25 leading-tight">
-                                +{studio.equipment_tags.length - 4} más
-                              </span>
-                            )}
-                          </>
-                        ) : (
-                          <span className="font-mono text-[10px] text-white/15">Sin equipo listado</span>
+                        {studio.equipment_tags?.slice(0, 4).map(tag => (
+                          <span key={tag} className="px-2 py-0.5 rounded-full bg-accent/10 border border-accent/20 font-mono text-[10px] text-accent/70 leading-tight">
+                            {tag}
+                          </span>
+                        ))}
+                        {(studio.equipment_tags?.length ?? 0) > 4 && (
+                          <span className="px-2 py-0.5 rounded-full bg-white/5 border border-white/8 font-mono text-[10px] text-white/25 leading-tight">
+                            +{studio.equipment_tags.length - 4} más
+                          </span>
                         )}
                       </div>
-
                       <div className="mt-4 w-full py-2 rounded-xl bg-accent/10 border border-accent/20 font-mono text-[11px] text-accent text-center uppercase tracking-widest group-hover:bg-accent group-hover:text-white group-hover:border-accent transition-all duration-200">
                         Ver y reservar →
                       </div>
@@ -681,16 +719,12 @@ export default function BookStudio() {
               />
             </Suspense>
 
-            {/* Botón volver */}
-            <div className="absolute top-4 left-4 z-20">
+            {/* Botón volver + toggle vista — juntos a la izquierda */}
+            <div className="absolute top-4 left-4 z-20 flex items-center gap-2">
               <button onClick={() => navigate('/')} className="flex items-center gap-2 bg-[#050505]/80 backdrop-blur border border-white/10 px-4 py-2 rounded-full font-mono text-xs hover:bg-white/5 transition-colors shadow-lg">
-                <ArrowLeft className="w-4 h-4 text-accent" /> Volver al Inicio
+                <ArrowLeft className="w-4 h-4 text-accent" /> Volver
               </button>
-            </div>
-
-            {/* Toggle vista */}
-            <div className="absolute top-4 right-4 z-20">
-              <ViewToggle current="map" />
+              <ViewToggle current="map" iconsOnly />
             </div>
 
             {/* Badge Scanning */}
