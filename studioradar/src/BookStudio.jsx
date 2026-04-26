@@ -283,10 +283,7 @@ export default function BookStudio() {
                   <ArrowLeft className="w-4 h-4" /> Volver
                 </button>
                 <div className="w-px h-4 bg-white/10" />
-                <div className="flex items-baseline gap-2">
-                  <span className="font-heading font-bold text-white text-lg">Estudios</span>
-                  {!loading && <span className="font-mono text-xs text-white/25">{filteredStudios.length} {filteredStudios.length === 1 ? 'resultado' : 'resultados'}</span>}
-                </div>
+                {!loading && <span className="font-mono text-xs text-white/40">{filteredStudios.length} {filteredStudios.length === 1 ? 'estudio' : 'estudios'}</span>}
               </div>
               <ViewToggle current="grid" />
             </div>
@@ -719,12 +716,16 @@ export default function BookStudio() {
               />
             </Suspense>
 
-            {/* Botón volver + toggle vista — juntos a la izquierda */}
-            <div className="absolute top-4 left-4 z-20 flex items-center gap-2">
+            {/* Botón volver — izquierda */}
+            <div className="absolute top-4 left-4 z-20">
               <button onClick={() => navigate('/')} className="flex items-center gap-2 bg-[#050505]/80 backdrop-blur border border-white/10 px-4 py-2 rounded-full font-mono text-xs hover:bg-white/5 transition-colors shadow-lg">
                 <ArrowLeft className="w-4 h-4 text-accent" /> Volver
               </button>
-              <ViewToggle current="map" iconsOnly />
+            </div>
+
+            {/* Toggle vista — derecha */}
+            <div className="absolute top-4 right-4 z-20">
+              <ViewToggle current="map" />
             </div>
 
             {/* Badge Scanning */}

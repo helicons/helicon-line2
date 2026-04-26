@@ -57,15 +57,15 @@ function ProfileEditor({ producer, onSaved, navigate }) {
   }
 
   return (
-    <form onSubmit={handleSave} className="max-w-lg space-y-6">
-      <div className="flex items-center justify-between">
+    <form onSubmit={handleSave} className="w-full max-w-lg space-y-6">
+      <div className="flex items-center justify-between gap-3">
         <h3 className="text-white font-bold text-sm font-mono uppercase tracking-widest">Mi Perfil Público</h3>
         <button
           type="button"
           onClick={() => navigate(`/producer/${producer.id}`)}
-          className="flex items-center gap-1.5 text-text/40 text-xs font-mono hover:text-accent transition-colors"
+          className="flex items-center gap-1.5 text-text/40 text-xs font-mono hover:text-accent transition-colors shrink-0"
         >
-          <ExternalLink size={12} /> Ver perfil público
+          <ExternalLink size={12} /> <span className="hidden sm:inline">Ver perfil público</span>
         </button>
       </div>
 
@@ -173,9 +173,9 @@ export default function ProducerDashboard() {
   const navigate = useNavigate()
   const [tab, setTab]               = useState('studio')
   const [producer, setProducer]     = useState(null)
-  const [studios, setStudios]       = useState([])           // todos los estudios del productor
-  const [activeStudioId, setActiveStudioId] = useState(null) // para tabs de gestión
-  const [editingStudio, setEditingStudio]   = useState(null) // null | 'new' | studio object
+  const [studios, setStudios]       = useState([])
+  const [activeStudioId, setActiveStudioId] = useState(null)
+  const [editingStudio, setEditingStudio]   = useState(null)
   const [spaces, setSpaces]         = useState([])
   const [selectedSpaceId, setSelectedSpaceId] = useState(null)
   const [bookings, setBookings]     = useState([])
@@ -195,13 +195,11 @@ export default function ProducerDashboard() {
 
   const activeStudio = studios.find(s => s.id === activeStudioId) ?? studios[0] ?? null
 
-  // ── Carga inicial ──────────────────────────────────────────────
   useEffect(() => {
     const load = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
-      // Obtener o crear productor
       let prod
       const { data: existing } = await supabase
         .from('producers')
@@ -222,12 +220,10 @@ export default function ProducerDashboard() {
       }
       setProducer(prod)
 
-      // Detectar retorno desde Stripe Connect
       const params = new URLSearchParams(window.location.search)
       if (params.get('connect') === 'success' || params.get('connect') === 'refresh') {
         setTab('cobros')
         window.history.replaceState({}, '', window.location.pathname)
-        // Verificar estado real en Stripe inmediatamente
         if (prod?.id) {
           const { data: { session: authSession } } = await supabase.auth.getSession()
           if (authSession) {
@@ -245,7 +241,6 @@ export default function ProducerDashboard() {
         }
       }
 
-      // Cargar TODOS los estudios del productor
       const { data: studioData } = await supabase
         .from('studios')
         .select('*')
@@ -259,7 +254,6 @@ export default function ProducerDashboard() {
     load()
   }, [])
 
-  // Recargar spaces cuando cambia estudio activo o tab
   useEffect(() => {
     if (!activeStudio) return
     supabase.from('spaces').select('*').eq('studio_id', activeStudio.id).order('created_at')
@@ -272,12 +266,10 @@ export default function ProducerDashboard() {
       })
   }, [activeStudioId, tab])
 
-  // Cargar datos de cobros
   useEffect(() => {
     if (tab !== 'cobros' || !producer) return
     setCobrosLoading(true)
     const load = async () => {
-      // Beat sales del productor
       const { data: beatRows } = await supabase
         .from('beats').select('id').eq('producer_id', producer.id)
       const beatIds = (beatRows || []).map(b => b.id)
@@ -292,7 +284,6 @@ export default function ProducerDashboard() {
         beatSales = data || []
       }
 
-      // Reservas confirmadas de los estudios del productor
       const studioIds = studios.map(s => s.id)
       let studioBookings = []
       if (studioIds.length > 0) {
@@ -324,7 +315,6 @@ export default function ProducerDashboard() {
     load()
   }, [tab, producer, studios])
 
-  // Cargar ofertas exclusive pendientes
   useEffect(() => {
     if (tab !== 'ofertas' || !producer) return
     setOfertasLoading(true)
@@ -345,7 +335,6 @@ export default function ProducerDashboard() {
     load()
   }, [tab, producer])
 
-  // Cargar ventas del productor
   useEffect(() => {
     if (tab !== 'ventas' || !producer) return
     setSalesLoading(true)
@@ -374,7 +363,6 @@ export default function ProducerDashboard() {
     load()
   }, [tab, producer])
 
-  // Cargar beats del productor
   useEffect(() => {
     if (tab !== 'beats' || !producer) return
     setBeatsLoading(true)
@@ -389,7 +377,6 @@ export default function ProducerDashboard() {
       })
   }, [tab, producer])
 
-  // Cargar reservas
   useEffect(() => {
     if (tab !== 'bookings' || !activeStudio) return
     setBookingsLoading(true)
@@ -405,15 +392,14 @@ export default function ProducerDashboard() {
       })
   }, [tab, activeStudioId])
 
-const filteredBookings = bookingsFilter === 'all'
+  const filteredBookings = bookingsFilter === 'all'
     ? bookings
     : bookings.filter(b => b.status === bookingsFilter)
 
-  // Selector de estudio para tabs de gestión
   const StudioSelector = () => {
     if (studios.length <= 1) return null
     return (
-      <div className="flex items-center gap-3 mb-6">
+      <div className="flex items-center gap-3 mb-5">
         <label className="text-[10px] font-mono text-text/40 uppercase tracking-widest shrink-0">Estudio:</label>
         <div className="relative">
           <select
@@ -492,42 +478,65 @@ const filteredBookings = bookingsFilter === 'all'
 
   return (
     <div className="min-h-screen bg-[#050505] text-white">
-      {/* Header */}
+
+      {/* ── Header ── */}
       <header className="border-b border-white/5 bg-[#050505]/90 backdrop-blur sticky top-0 z-40">
-        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <span onClick={() => navigate('/')} className="font-mono text-lg font-bold tracking-[0.2em] text-white cursor-pointer hover:text-accent transition-colors">HELICON</span>
-            <span className="text-white/10">|</span>
-            <span className="text-[11px] font-mono text-text/50 uppercase tracking-widest">Producer</span>
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+            <span
+              onClick={() => navigate('/')}
+              className="font-mono text-base sm:text-lg font-bold tracking-[0.2em] text-white cursor-pointer hover:text-accent transition-colors shrink-0"
+            >
+              HELICON
+            </span>
+            <span className="text-white/10 hidden sm:inline">|</span>
+            <span className="text-[11px] font-mono text-text/50 uppercase tracking-widest hidden sm:inline">Producer</span>
             {studios.length > 0 && (
               <>
-                <span className="text-white/10">|</span>
-                <span className="text-xs font-mono text-accent">{studios.length} estudio{studios.length !== 1 ? 's' : ''}</span>
+                <span className="text-white/10 hidden sm:inline">|</span>
+                <span className="text-xs font-mono text-accent hidden sm:inline">
+                  {studios.length} estudio{studios.length !== 1 ? 's' : ''}
+                </span>
+                <span className="text-xs font-mono text-accent sm:hidden">
+                  {studios.length} est.
+                </span>
               </>
             )}
           </div>
-          <button onClick={() => navigate('/')} className="flex items-center gap-1.5 text-text/40 text-xs font-mono hover:text-white transition-colors">
-            <LogOut size={14} /> Salir
+          <button
+            onClick={() => navigate('/')}
+            className="flex items-center gap-1.5 text-text/40 text-xs font-mono hover:text-white transition-colors shrink-0"
+          >
+            <LogOut size={14} />
+            <span className="hidden sm:inline">Salir</span>
           </button>
         </div>
       </header>
 
-      <div className="max-w-6xl mx-auto px-6 py-8">
-        {/* Tabs */}
-        <div className="flex gap-1 mb-8 bg-white/3 border border-white/5 rounded-xl p-1 w-fit overflow-x-auto">
-          {TABS.map(({ id, label, Icon }) => (
-            <button
-              key={id}
-              onClick={() => { setTab(id); setEditingStudio(null) }}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-mono transition-all whitespace-nowrap ${tab === id ? 'bg-accent text-white shadow-lg shadow-accent/20' : 'text-text/50 hover:text-white'}`}
-            >
-              <Icon size={13} /> {label}
-            </button>
-          ))}
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-5 sm:py-8">
+
+        {/* ── Tabs ── */}
+        <div className="mb-5 sm:mb-7 overflow-x-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none] -mx-4 sm:mx-0 px-4 sm:px-0">
+          <div className="flex gap-1 bg-white/[0.03] border border-white/5 rounded-xl p-1 w-max min-w-full sm:min-w-0 sm:w-fit">
+            {TABS.map(({ id, label, Icon }) => (
+              <button
+                key={id}
+                onClick={() => { setTab(id); setEditingStudio(null) }}
+                className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg text-xs font-mono transition-all whitespace-nowrap ${
+                  tab === id
+                    ? 'bg-accent text-white shadow-lg shadow-accent/20'
+                    : 'text-text/50 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                <Icon size={13} />
+                <span>{label}</span>
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* Panel de contenido */}
-        <div className="bg-[#1A1A1A] border border-white/5 rounded-2xl p-6 shadow-xl">
+        {/* ── Panel de contenido ── */}
+        <div className="bg-[#1A1A1A] border border-white/5 rounded-2xl p-4 sm:p-6 shadow-xl">
 
           {/* ── MI PERFIL ── */}
           {tab === 'profile' && producer && (
@@ -537,28 +546,27 @@ const filteredBookings = bookingsFilter === 'all'
           {/* ── MIS ESTUDIOS ── */}
           {tab === 'studio' && (
             <div>
-              {/* Vista: lista de estudios */}
               {editingStudio === null && (
-                <div className="space-y-6">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-white font-bold text-sm font-mono uppercase tracking-widest">
-                      Mis Estudios
-                    </h3>
+                <div className="space-y-5">
+                  <div className="flex items-center justify-between gap-3">
+                    <h3 className="text-white font-bold text-sm font-mono uppercase tracking-widest">Mis Estudios</h3>
                     <button
                       onClick={() => setEditingStudio('new')}
-                      className="flex items-center gap-2 bg-accent text-white font-mono font-bold text-xs px-4 py-2 rounded-xl hover:bg-[#9d3df2] transition-all shadow-lg shadow-accent/20"
+                      className="flex items-center gap-2 bg-accent text-white font-mono font-bold text-xs px-3 sm:px-4 py-2 rounded-xl hover:bg-[#9d3df2] transition-all shadow-lg shadow-accent/20 shrink-0"
                     >
-                      <PlusCircle size={14} /> Nuevo estudio
+                      <PlusCircle size={14} />
+                      <span className="hidden xs:inline sm:inline">Nuevo estudio</span>
+                      <span className="xs:hidden sm:hidden">Nuevo</span>
                     </button>
                   </div>
 
                   {studios.length === 0 && (
-                    <div className="flex flex-col items-center justify-center py-16 text-center">
-                      <div className="w-16 h-16 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center mb-6">
-                        <Building2 size={28} className="text-accent" />
+                    <div className="flex flex-col items-center justify-center py-14 text-center">
+                      <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center mb-5">
+                        <Building2 size={26} className="text-accent" />
                       </div>
-                      <h3 className="text-white font-bold text-lg mb-2">Aún no tienes estudios</h3>
-                      <p className="text-text/40 text-sm font-mono max-w-xs mb-8">
+                      <h3 className="text-white font-bold text-base sm:text-lg mb-2">Aún no tienes estudios</h3>
+                      <p className="text-text/40 text-sm font-mono max-w-xs mb-6">
                         Crea tu primer estudio para que los artistas puedan encontrarte en el Radar y reservar sesiones.
                       </p>
                     </div>
@@ -567,17 +575,16 @@ const filteredBookings = bookingsFilter === 'all'
                   {studios.length > 0 && (
                     <div className="grid gap-3">
                       {studios.map(s => (
-                        <div key={s.id} className="flex items-center gap-4 bg-white/3 border border-white/5 rounded-xl p-4 hover:border-white/10 transition-all">
-                          {(s.photos?.[0] || s.image_url) && (
+                        <div key={s.id} className="flex items-center gap-3 sm:gap-4 bg-white/[0.03] border border-white/5 rounded-xl p-3 sm:p-4 hover:border-white/10 transition-all">
+                          {(s.photos?.[0] || s.image_url) ? (
                             <img
                               src={s.photos?.[0] ?? s.image_url}
                               alt={s.name}
-                              className="w-16 h-16 rounded-lg object-cover border border-white/10 shrink-0"
+                              className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg object-cover border border-white/10 shrink-0"
                             />
-                          )}
-                          {!s.photos?.[0] && !s.image_url && (
-                            <div className="w-16 h-16 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center shrink-0">
-                              <Building2 size={20} className="text-text/20" />
+                          ) : (
+                            <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center shrink-0">
+                              <Building2 size={18} className="text-text/20" />
                             </div>
                           )}
                           <div className="flex-1 min-w-0">
@@ -587,18 +594,14 @@ const filteredBookings = bookingsFilter === 'all'
                                 {s.is_published ? 'Publicado' : 'Borrador'}
                               </span>
                             </div>
-                            {s.city && (
-                              <p className="text-text/40 text-xs font-mono mt-0.5">{s.city}</p>
-                            )}
-                            {s.price_per_hour && (
-                              <p className="text-accent text-xs font-mono mt-0.5">{s.price_per_hour}€/h</p>
-                            )}
+                            {s.city && <p className="text-text/40 text-xs font-mono mt-0.5">{s.city}</p>}
+                            {s.price_per_hour && <p className="text-accent text-xs font-mono mt-0.5">{s.price_per_hour}€/h</p>}
                           </div>
                           <button
                             onClick={() => setEditingStudio(s)}
-                            className="flex items-center gap-1.5 text-text/40 text-xs font-mono hover:text-white border border-white/10 px-3 py-1.5 rounded-lg hover:border-white/30 transition-all shrink-0"
+                            className="flex items-center gap-1.5 text-text/40 text-xs font-mono hover:text-white border border-white/10 px-2.5 sm:px-3 py-1.5 rounded-lg hover:border-white/30 transition-all shrink-0"
                           >
-                            <Pencil size={12} /> Editar
+                            <Pencil size={12} /> <span className="hidden sm:inline">Editar</span>
                           </button>
                         </div>
                       ))}
@@ -607,18 +610,17 @@ const filteredBookings = bookingsFilter === 'all'
                 </div>
               )}
 
-              {/* Vista: formulario (nuevo o editar) */}
               {editingStudio !== null && (
                 <div>
-                  <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-white font-bold text-sm font-mono uppercase tracking-widest">
+                  <div className="flex items-center justify-between gap-3 mb-5">
+                    <h3 className="text-white font-bold text-sm font-mono uppercase tracking-widest truncate">
                       {editingStudio === 'new' ? 'Nuevo Estudio' : `Editar: ${editingStudio.name}`}
                     </h3>
                     <button
                       onClick={() => setEditingStudio(null)}
-                      className="flex items-center gap-1.5 text-text/40 text-xs font-mono hover:text-white transition-colors"
+                      className="flex items-center gap-1.5 text-text/40 text-xs font-mono hover:text-white transition-colors shrink-0"
                     >
-                      <ArrowLeft size={13} /> Volver a la lista
+                      <ArrowLeft size={13} /> Volver
                     </button>
                   </div>
                   <StudioForm
@@ -661,7 +663,7 @@ const filteredBookings = bookingsFilter === 'all'
 
           {/* ── DISPONIBILIDAD ── */}
           {tab === 'availability' && (
-            <div className="space-y-6">
+            <div className="space-y-5">
               <StudioSelector />
               {spaces.length > 0 && (
                 <div className="flex items-center gap-3">
@@ -688,10 +690,12 @@ const filteredBookings = bookingsFilter === 'all'
               {!addingBeat && !editingBeat ? (
                 <>
                   {/* Toggle etiquetado */}
-                  <div className="flex items-center justify-between bg-white/3 border border-white/8 rounded-xl px-4 py-3">
-                    <div className="flex-1 min-w-0 pr-4">
+                  <div className="flex items-start gap-3 bg-white/[0.03] border border-white/[0.08] rounded-xl px-4 py-3">
+                    <div className="flex-1 min-w-0 pr-3">
                       <p className="text-white text-xs font-mono font-bold">Consentimiento de mención en plataformas</p>
-                      <p className="text-text/40 text-[10px] font-mono mt-0.5">Autorizo a los compradores a etiquetarme como colaborador en Spotify, YouTube Music y otras plataformas de streaming.</p>
+                      <p className="text-text/40 text-[10px] font-mono mt-1 leading-relaxed">
+                        Autorizo a los compradores a etiquetarme como colaborador en Spotify, YouTube Music y otras plataformas de streaming.
+                      </p>
                     </div>
                     <button
                       onClick={async () => {
@@ -699,17 +703,17 @@ const filteredBookings = bookingsFilter === 'all'
                         await supabase.from('producers').update({ allows_tagging: newVal }).eq('id', producer.id)
                         setProducer(p => ({ ...p, allows_tagging: newVal }))
                       }}
-                      className={`relative shrink-0 w-11 h-6 rounded-full transition-colors duration-200 focus:outline-none ${producer.allows_tagging ? 'bg-accent' : 'bg-white/10'}`}
+                      className={`relative shrink-0 w-11 h-6 rounded-full transition-colors duration-200 focus:outline-none mt-0.5 ${producer.allows_tagging ? 'bg-accent' : 'bg-white/10'}`}
                     >
                       <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform duration-200 ${producer.allows_tagging ? 'translate-x-5' : 'translate-x-0'}`} />
                     </button>
                   </div>
 
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between gap-3">
                     <h3 className="text-white font-bold text-sm font-mono uppercase tracking-widest">Mis Beats</h3>
                     <button
                       onClick={() => setAddingBeat(true)}
-                      className="flex items-center gap-2 bg-accent text-white font-mono font-bold text-xs px-4 py-2 rounded-xl hover:bg-[#9d3df2] transition-all shadow-lg shadow-accent/20"
+                      className="flex items-center gap-2 bg-accent text-white font-mono font-bold text-xs px-3 sm:px-4 py-2 rounded-xl hover:bg-[#9d3df2] transition-all shadow-lg shadow-accent/20 shrink-0"
                     >
                       <PlusCircle size={14} /> Subir Beat
                     </button>
@@ -718,11 +722,11 @@ const filteredBookings = bookingsFilter === 'all'
                   {beatsLoading && <p className="text-text/30 text-xs font-mono text-center py-12">Cargando…</p>}
 
                   {!beatsLoading && beats.length === 0 && (
-                    <div className="flex flex-col items-center justify-center py-16 text-center">
-                      <div className="w-16 h-16 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center mb-6">
-                        <Music2 size={28} className="text-accent" />
+                    <div className="flex flex-col items-center justify-center py-14 text-center">
+                      <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center mb-5">
+                        <Music2 size={26} className="text-accent" />
                       </div>
-                      <h3 className="text-white font-bold text-lg mb-2">Aún no tienes beats</h3>
+                      <h3 className="text-white font-bold text-base sm:text-lg mb-2">Aún no tienes beats</h3>
                       <p className="text-text/40 text-sm font-mono max-w-xs">Sube tu primer beat para que los artistas puedan descubrirlo en el Beat Market.</p>
                     </div>
                   )}
@@ -730,66 +734,79 @@ const filteredBookings = bookingsFilter === 'all'
                   {!beatsLoading && beats.length > 0 && (
                     <div className="space-y-2">
                       {beats.map(beat => (
-                        <div key={beat.id} className="flex items-center gap-4 bg-white/3 border border-white/5 rounded-xl p-3 hover:border-white/10 transition-all">
-                          {beat.image_url ? (
-                            <img src={beat.image_url} alt={beat.title} className="w-12 h-12 rounded-lg object-cover border border-white/10 shrink-0" />
-                          ) : (
-                            <div className="w-12 h-12 rounded-lg bg-accent/10 border border-accent/20 flex items-center justify-center shrink-0">
-                              <Music2 size={18} className="text-accent/50" />
+                        <div key={beat.id} className="bg-white/[0.03] border border-white/5 rounded-xl p-3 hover:border-white/10 transition-all">
+                          <div className="flex items-start gap-3">
+                            {/* Thumbnail */}
+                            {beat.image_url ? (
+                              <img src={beat.image_url} alt={beat.title} className="w-11 h-11 sm:w-12 sm:h-12 rounded-lg object-cover border border-white/10 shrink-0" />
+                            ) : (
+                              <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-lg bg-accent/10 border border-accent/20 flex items-center justify-center shrink-0">
+                                <Music2 size={18} className="text-accent/50" />
+                              </div>
+                            )}
+
+                            {/* Info */}
+                            <div className="flex-1 min-w-0">
+                              {/* Title row */}
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <h4 className="text-white font-bold text-sm truncate">{beat.title}</h4>
+                                    <span className={`text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-full border shrink-0 ${beat.is_published ? 'bg-accent/15 text-accent border-accent/30' : 'bg-white/5 text-text/30 border-white/10'}`}>
+                                      {beat.is_published ? 'Publicado' : 'Oculto'}
+                                    </span>
+                                  </div>
+                                  <p className="text-text/40 text-[11px] font-mono mt-0.5">
+                                    {[beat.genre, beat.mood, beat.bpm && `${beat.bpm} BPM`, beat.key].filter(Boolean).join(' · ')}
+                                  </p>
+                                </div>
+                                {/* Actions */}
+                                <div className="flex items-center gap-2 shrink-0">
+                                  <button
+                                    onClick={() => setEditingBeat(beat)}
+                                    className="text-text/30 hover:text-white transition-colors p-1"
+                                    title="Editar"
+                                  >
+                                    <Pencil size={14} />
+                                  </button>
+                                  <button
+                                    onClick={async () => {
+                                      await supabase.from('beats').update({ is_published: !beat.is_published }).eq('id', beat.id)
+                                      setBeats(prev => prev.map(b => b.id === beat.id ? { ...b, is_published: !b.is_published } : b))
+                                    }}
+                                    className="text-text/30 hover:text-white transition-colors p-1"
+                                    title={beat.is_published ? 'Ocultar' : 'Publicar'}
+                                  >
+                                    {beat.is_published ? <EyeOff size={14} /> : <Eye size={14} />}
+                                  </button>
+                                  <button
+                                    onClick={async () => {
+                                      if (!confirm('¿Eliminar este beat?')) return
+                                      await supabase.from('beats').delete().eq('id', beat.id)
+                                      setBeats(prev => prev.filter(b => b.id !== beat.id))
+                                    }}
+                                    className="text-text/30 hover:text-red-400 transition-colors p-1"
+                                    title="Eliminar"
+                                  >
+                                    <Trash2 size={14} />
+                                  </button>
+                                </div>
+                              </div>
+
+                              {/* Price badges */}
+                              <div className="flex items-center gap-1.5 flex-wrap mt-2">
+                                {[
+                                  { label: 'Basic',     price: beat.price_basic,     color: 'text-accent border-accent/30 bg-accent/10' },
+                                  { label: 'Premium',   price: beat.price_premium,   color: 'text-purple-300 border-purple-400/30 bg-purple-400/10' },
+                                  { label: 'Exclusive', price: beat.price_exclusive, color: 'text-yellow-400 border-yellow-400/30 bg-yellow-400/10' },
+                                  { label: 'Stems',     price: beat.price_stems,     color: 'text-green-400 border-green-500/30 bg-green-500/10' },
+                                ].map(({ label, price, color }) => (
+                                  <span key={label} className={`text-[10px] font-mono font-bold px-2 py-1 rounded-lg border ${color}`}>
+                                    {label} {price != null ? `${price}€` : '—'}
+                                  </span>
+                                ))}
+                              </div>
                             </div>
-                          )}
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <h4 className="text-white font-bold text-sm truncate">{beat.title}</h4>
-                              <span className={`text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-full border ${beat.is_published ? 'bg-accent/15 text-accent border-accent/30' : 'bg-white/5 text-text/30 border-white/10'}`}>
-                                {beat.is_published ? 'Publicado' : 'Oculto'}
-                              </span>
-                            </div>
-                            <p className="text-text/40 text-xs font-mono mt-0.5">
-                              {[beat.genre, beat.mood, beat.bpm && `${beat.bpm} BPM`, beat.key].filter(Boolean).join(' · ')}
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
-                            {[
-                              { label: 'Basic',     price: beat.price_basic,     color: 'text-accent border-accent/30 bg-accent/10' },
-                              { label: 'Premium',   price: beat.price_premium,   color: 'text-purple-300 border-purple-400/30 bg-purple-400/10' },
-                              { label: 'Exclusive', price: beat.price_exclusive, color: 'text-yellow-400 border-yellow-400/30 bg-yellow-400/10' },
-                              { label: 'Stems',     price: beat.price_stems,     color: 'text-green-400 border-green-500/30 bg-green-500/10' },
-                            ].map(({ label, price, color }) => (
-                              <span key={label} className={`text-[10px] font-mono font-bold px-2 py-1 rounded-lg border ${color}`}>
-                                {label} {price != null ? `${price}€` : '—'}
-                              </span>
-                            ))}
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={() => setEditingBeat(beat)}
-                              className="text-text/30 hover:text-white transition-colors"
-                              title="Editar"
-                            >
-                              <Pencil size={15} />
-                            </button>
-                            <button
-                              onClick={async () => {
-                                await supabase.from('beats').update({ is_published: !beat.is_published }).eq('id', beat.id)
-                                setBeats(prev => prev.map(b => b.id === beat.id ? { ...b, is_published: !b.is_published } : b))
-                              }}
-                              className="text-text/30 hover:text-white transition-colors shrink-0"
-                              title={beat.is_published ? 'Ocultar' : 'Publicar'}
-                            >
-                              {beat.is_published ? <EyeOff size={15} /> : <Eye size={15} />}
-                            </button>
-                            <button
-                              onClick={async () => {
-                                if (!confirm('¿Eliminar este beat?')) return
-                                await supabase.from('beats').delete().eq('id', beat.id)
-                                setBeats(prev => prev.filter(b => b.id !== beat.id))
-                              }}
-                              className="text-text/30 hover:text-red-400 transition-colors shrink-0"
-                              title="Eliminar"
-                            >
-                              <Trash2 size={15} />
-                            </button>
                           </div>
                         </div>
                       ))}
@@ -798,11 +815,11 @@ const filteredBookings = bookingsFilter === 'all'
                 </>
               ) : (
                 <div>
-                  <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-white font-bold text-sm font-mono uppercase tracking-widest">
+                  <div className="flex items-center justify-between gap-3 mb-5">
+                    <h3 className="text-white font-bold text-sm font-mono uppercase tracking-widest truncate">
                       {editingBeat ? `Editar: ${editingBeat.title}` : 'Subir Beat'}
                     </h3>
-                    <button onClick={() => { setAddingBeat(false); setEditingBeat(null) }} className="flex items-center gap-1.5 text-text/40 text-xs font-mono hover:text-white transition-colors">
+                    <button onClick={() => { setAddingBeat(false); setEditingBeat(null) }} className="flex items-center gap-1.5 text-text/40 text-xs font-mono hover:text-white transition-colors shrink-0">
                       <ArrowLeft size={13} /> Volver
                     </button>
                   </div>
@@ -812,9 +829,7 @@ const filteredBookings = bookingsFilter === 'all'
                     onSaved={(savedBeat) => {
                       setBeats(prev => {
                         const exists = prev.find(b => b.id === savedBeat.id)
-                        if (exists) {
-                          return prev.map(b => b.id === savedBeat.id ? savedBeat : b)
-                        }
+                        if (exists) return prev.map(b => b.id === savedBeat.id ? savedBeat : b)
                         return [savedBeat, ...prev]
                       })
                       setAddingBeat(false)
@@ -831,9 +846,9 @@ const filteredBookings = bookingsFilter === 'all'
           {tab === 'bookings' && (
             <div className="space-y-4">
               <StudioSelector />
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <h3 className="text-white font-bold text-sm font-mono uppercase tracking-widest">Reservas</h3>
-                <div className="flex gap-1">
+                <div className="flex gap-1 flex-wrap">
                   {['all', 'confirmed', 'pending', 'cancelled'].map(f => (
                     <button
                       key={f}
@@ -852,39 +867,68 @@ const filteredBookings = bookingsFilter === 'all'
                 <p className="text-text/20 text-xs font-mono text-center py-12">No hay reservas</p>
               )}
 
+              {/* Mobile cards */}
               {!bookingsLoading && filteredBookings.length > 0 && (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-xs font-mono">
-                    <thead>
-                      <tr className="border-b border-white/5">
-                        {['Fecha', 'Hora', 'Cliente', 'Sala', 'Importe', 'Estado'].map(h => (
-                          <th key={h} className="text-left py-3 px-2 text-[10px] text-text/30 uppercase tracking-widest font-normal">{h}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredBookings.map(b => {
-                        const start   = new Date(b.start_datetime)
-                        const dateStr = start.toLocaleDateString('es-ES', { timeZone: 'Europe/Madrid', day: '2-digit', month: '2-digit', year: 'numeric' })
-                        const timeStr = start.toLocaleTimeString('es-ES', { timeZone: 'Europe/Madrid', hour: '2-digit', minute: '2-digit' })
-                        return (
-                          <tr key={b.id} className="border-b border-white/3 hover:bg-white/2 transition-colors">
-                            <td className="py-3 px-2 text-text/60">{dateStr}</td>
-                            <td className="py-3 px-2 text-text/60">{timeStr}</td>
-                            <td className="py-3 px-2 text-white">{b.client_name}</td>
-                            <td className="py-3 px-2 text-text/60">{b.spaces?.name ?? '—'}</td>
-                            <td className="py-3 px-2 text-accent font-bold">{b.amount_paid ? `${b.amount_paid}€` : '—'}</td>
-                            <td className="py-3 px-2">
-                              <span className={`px-2 py-0.5 rounded-full border text-[10px] uppercase tracking-wider ${STATUS_BADGE[b.status] ?? STATUS_BADGE.cancelled}`}>
-                                {STATUS_LABELS[b.status] ?? b.status}
-                              </span>
-                            </td>
-                          </tr>
-                        )
-                      })}
-                    </tbody>
-                  </table>
-                </div>
+                <>
+                  <div className="space-y-2 sm:hidden">
+                    {filteredBookings.map(b => {
+                      const start = new Date(b.start_datetime)
+                      const dateStr = start.toLocaleDateString('es-ES', { timeZone: 'Europe/Madrid', day: '2-digit', month: '2-digit', year: 'numeric' })
+                      const timeStr = start.toLocaleTimeString('es-ES', { timeZone: 'Europe/Madrid', hour: '2-digit', minute: '2-digit' })
+                      return (
+                        <div key={b.id} className="bg-white/[0.03] border border-white/5 rounded-xl p-3 space-y-2">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-white text-sm font-mono font-bold truncate">{b.client_name}</span>
+                            <span className={`px-2 py-0.5 rounded-full border text-[10px] font-mono uppercase tracking-wider shrink-0 ${STATUS_BADGE[b.status] ?? STATUS_BADGE.cancelled}`}>
+                              {STATUS_LABELS[b.status] ?? b.status}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-3 text-[11px] font-mono text-text/50">
+                            <span>{dateStr} · {timeStr}</span>
+                            {b.spaces?.name && <span className="truncate">{b.spaces.name}</span>}
+                          </div>
+                          {b.amount_paid && (
+                            <span className="text-accent font-bold text-sm font-mono">{b.amount_paid}€</span>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+
+                  {/* Desktop table */}
+                  <div className="hidden sm:block overflow-x-auto">
+                    <table className="w-full text-xs font-mono">
+                      <thead>
+                        <tr className="border-b border-white/5">
+                          {['Fecha', 'Hora', 'Cliente', 'Sala', 'Importe', 'Estado'].map(h => (
+                            <th key={h} className="text-left py-3 px-2 text-[10px] text-text/30 uppercase tracking-widest font-normal">{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredBookings.map(b => {
+                          const start   = new Date(b.start_datetime)
+                          const dateStr = start.toLocaleDateString('es-ES', { timeZone: 'Europe/Madrid', day: '2-digit', month: '2-digit', year: 'numeric' })
+                          const timeStr = start.toLocaleTimeString('es-ES', { timeZone: 'Europe/Madrid', hour: '2-digit', minute: '2-digit' })
+                          return (
+                            <tr key={b.id} className="border-b border-white/[0.03] hover:bg-white/[0.02] transition-colors">
+                              <td className="py-3 px-2 text-text/60">{dateStr}</td>
+                              <td className="py-3 px-2 text-text/60">{timeStr}</td>
+                              <td className="py-3 px-2 text-white">{b.client_name}</td>
+                              <td className="py-3 px-2 text-text/60">{b.spaces?.name ?? '—'}</td>
+                              <td className="py-3 px-2 text-accent font-bold">{b.amount_paid ? `${b.amount_paid}€` : '—'}</td>
+                              <td className="py-3 px-2">
+                                <span className={`px-2 py-0.5 rounded-full border text-[10px] uppercase tracking-wider ${STATUS_BADGE[b.status] ?? STATUS_BADGE.cancelled}`}>
+                                  {STATUS_LABELS[b.status] ?? b.status}
+                                </span>
+                              </td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
               )}
             </div>
           )}
@@ -897,11 +941,11 @@ const filteredBookings = bookingsFilter === 'all'
               {salesLoading && <p className="text-text/30 text-xs font-mono text-center py-12">Cargando…</p>}
 
               {!salesLoading && sales.length === 0 && (
-                <div className="flex flex-col items-center justify-center py-16 text-center">
-                  <div className="w-16 h-16 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center mb-6">
-                    <ShoppingBag size={28} className="text-accent" />
+                <div className="flex flex-col items-center justify-center py-14 text-center">
+                  <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center mb-5">
+                    <ShoppingBag size={26} className="text-accent" />
                   </div>
-                  <h3 className="text-white font-bold text-lg mb-2">Aún no hay ventas</h3>
+                  <h3 className="text-white font-bold text-base sm:text-lg mb-2">Aún no hay ventas</h3>
                   <p className="text-text/40 text-sm font-mono max-w-xs">Cuando un artista compre uno de tus beats aparecerá aquí.</p>
                 </div>
               )}
@@ -920,43 +964,49 @@ const filteredBookings = bookingsFilter === 'all'
                     const ig = sale.buyer?.instagram
 
                     return (
-                      <div key={sale.id} className="flex items-center gap-4 bg-white/3 border border-white/5 rounded-xl p-3 hover:border-white/10 transition-all">
-                        {sale.beats?.image_url ? (
-                          <img src={sale.beats.image_url} alt={sale.beats?.title} className="w-12 h-12 rounded-lg object-cover border border-white/10 shrink-0" />
-                        ) : (
-                          <div className="w-12 h-12 rounded-lg bg-accent/10 border border-accent/20 flex items-center justify-center shrink-0">
-                            <Music2 size={18} className="text-accent/50" />
-                          </div>
-                        )}
+                      <div key={sale.id} className="bg-white/[0.03] border border-white/5 rounded-xl p-3 hover:border-white/10 transition-all">
+                        <div className="flex items-start gap-3">
+                          {/* Thumbnail */}
+                          {sale.beats?.image_url ? (
+                            <img src={sale.beats.image_url} alt={sale.beats?.title} className="w-11 h-11 sm:w-12 sm:h-12 rounded-lg object-cover border border-white/10 shrink-0" />
+                          ) : (
+                            <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-lg bg-accent/10 border border-accent/20 flex items-center justify-center shrink-0">
+                              <Music2 size={18} className="text-accent/50" />
+                            </div>
+                          )}
 
-                        <div className="flex-1 min-w-0">
-                          <p className="text-white font-bold text-sm truncate">{sale.beats?.title ?? '—'}</p>
-                          <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                            <span className="text-text/50 text-xs font-mono truncate">{buyerName}</span>
-                            {ig && (
-                              <a
-                                href={ig.startsWith('http') ? ig : `https://instagram.com/${ig.replace('@','')}`}
-                                target="_blank" rel="noopener noreferrer"
-                                className="text-[10px] font-mono px-1.5 py-0.5 rounded border border-pink-500/30 bg-pink-500/10 text-pink-400 hover:bg-pink-500/20 transition-colors"
-                              >
-                                IG @{getIgHandle(ig)}
-                              </a>
-                            )}
+                          {/* Info */}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="min-w-0 flex-1">
+                                <p className="text-white font-bold text-sm truncate">{sale.beats?.title ?? '—'}</p>
+                                <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                                  <span className="text-text/50 text-[11px] font-mono truncate">{buyerName}</span>
+                                  {ig && (
+                                    <a
+                                      href={ig.startsWith('http') ? ig : `https://instagram.com/${ig.replace('@','')}`}
+                                      target="_blank" rel="noopener noreferrer"
+                                      className="text-[10px] font-mono px-1.5 py-0.5 rounded border border-pink-500/30 bg-pink-500/10 text-pink-400 hover:bg-pink-500/20 transition-colors shrink-0"
+                                    >
+                                      IG @{getIgHandle(ig)}
+                                    </a>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2 shrink-0">
+                                <span className={`text-[10px] font-mono font-bold px-2 py-1 rounded-lg border ${color}`}>
+                                  {licenseLabel[sale.license_type] ?? sale.license_type}
+                                </span>
+                                <span className="text-white font-bold text-sm font-mono">
+                                  {sale.amount_paid != null ? `${sale.amount_paid}€` : '—'}
+                                </span>
+                              </div>
+                            </div>
+                            <p className="text-text/30 text-[10px] font-mono mt-1.5">
+                              {new Date(sale.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
+                            </p>
                           </div>
                         </div>
-
-                        <div className="flex items-center gap-2 shrink-0">
-                          <span className={`text-[10px] font-mono font-bold px-2 py-1 rounded-lg border ${color}`}>
-                            {licenseLabel[sale.license_type] ?? sale.license_type}
-                          </span>
-                          <span className="text-white font-bold text-sm font-mono w-16 text-right">
-                            {sale.amount_paid != null ? `${sale.amount_paid}€` : '—'}
-                          </span>
-                        </div>
-
-                        <p className="text-text/30 text-[10px] font-mono shrink-0 hidden sm:block">
-                          {new Date(sale.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
-                        </p>
                       </div>
                     )
                   })}
@@ -973,11 +1023,11 @@ const filteredBookings = bookingsFilter === 'all'
               {ofertasLoading && <p className="text-text/30 text-xs font-mono text-center py-12">Cargando…</p>}
 
               {!ofertasLoading && ofertas.length === 0 && (
-                <div className="flex flex-col items-center justify-center py-16 text-center">
-                  <div className="w-16 h-16 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center mb-6">
-                    <Tag size={28} className="text-accent" />
+                <div className="flex flex-col items-center justify-center py-14 text-center">
+                  <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center mb-5">
+                    <Tag size={26} className="text-accent" />
                   </div>
-                  <h3 className="text-white font-bold text-lg mb-2">Sin ofertas aún</h3>
+                  <h3 className="text-white font-bold text-base sm:text-lg mb-2">Sin ofertas aún</h3>
                   <p className="text-text/40 text-sm font-mono max-w-xs">Cuando un artista haga una oferta por una licencia Exclusive aparecerá aquí.</p>
                 </div>
               )}
@@ -992,45 +1042,57 @@ const filteredBookings = bookingsFilter === 'all'
                     }[oferta.status] ?? ''
                     const statusLabel = { pending: 'Pendiente', accepted: 'Aceptada', rejected: 'Rechazada' }[oferta.status]
                     return (
-                      <div key={oferta.id} className="bg-white/3 border border-white/5 rounded-xl p-4 hover:border-white/10 transition-all space-y-3">
-                        <div className="flex items-start justify-between gap-3 flex-wrap">
-                          <div className="flex items-center gap-3 min-w-0">
-                            {oferta.beat_image ? (
-                              <img src={oferta.beat_image} alt={oferta.beat_title} className="w-12 h-12 rounded-lg object-cover border border-white/10 shrink-0" />
-                            ) : (
-                              <div className="w-12 h-12 rounded-lg bg-accent/10 border border-accent/20 flex items-center justify-center shrink-0">
-                                <Music2 size={18} className="text-accent/50" />
+                      <div key={oferta.id} className="bg-white/[0.03] border border-white/5 rounded-xl p-3 sm:p-4 hover:border-white/10 transition-all space-y-3">
+                        <div className="flex items-start gap-3">
+                          {oferta.beat_image ? (
+                            <img src={oferta.beat_image} alt={oferta.beat_title} className="w-11 h-11 sm:w-12 sm:h-12 rounded-lg object-cover border border-white/10 shrink-0" />
+                          ) : (
+                            <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-lg bg-accent/10 border border-accent/20 flex items-center justify-center shrink-0">
+                              <Music2 size={18} className="text-accent/50" />
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="min-w-0 flex-1">
+                                <p className="text-white font-bold text-sm truncate">{oferta.beat_title}</p>
+                                <p className="text-text/50 text-[11px] font-mono mt-0.5 truncate">{oferta.buyer_email}</p>
                               </div>
-                            )}
-                            <div className="min-w-0">
-                              <p className="text-white font-bold text-sm truncate">{oferta.beat_title}</p>
-                              <p className="text-text/50 text-xs font-mono mt-0.5">{oferta.buyer_email}</p>
+                              <div className="flex items-center gap-2 shrink-0">
+                                <span className="text-white font-bold text-sm font-mono">{oferta.offer_amount}€</span>
+                                <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full border ${statusStyle}`}>{statusLabel}</span>
+                              </div>
                             </div>
                           </div>
-                          <div className="flex items-center gap-2 shrink-0">
-                            <span className="text-white font-bold text-sm font-mono">{oferta.offer_amount}€</span>
-                            <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full border ${statusStyle}`}>{statusLabel}</span>
-                          </div>
                         </div>
+
                         {oferta.message && (
-                          <p className="text-white/50 text-xs font-mono bg-white/3 rounded-lg px-3 py-2 border border-white/5">"{oferta.message}"</p>
+                          <p className="text-white/50 text-xs font-mono bg-white/[0.03] rounded-lg px-3 py-2 border border-white/5">"{oferta.message}"</p>
                         )}
+
                         <div className="flex items-center justify-between gap-2 flex-wrap">
-                          <p className="text-text/30 text-[10px] font-mono">{new Date(oferta.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                          <p className="text-text/30 text-[10px] font-mono">
+                            {new Date(oferta.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
+                          </p>
                           {oferta.status === 'pending' && (
                             <div className="flex gap-2">
                               <button
                                 onClick={() => handleRechazarOferta(oferta)}
-                                className="font-ui text-xs px-3 py-1.5 rounded-lg border border-red-500/30 text-red-400 hover:bg-red-500/10 transition-colors"
-                              >Rechazar</button>
+                                className="font-mono text-xs px-3 py-1.5 rounded-lg border border-red-500/30 text-red-400 hover:bg-red-500/10 transition-colors"
+                              >
+                                Rechazar
+                              </button>
                               <button
                                 onClick={() => handleAceptarOferta(oferta)}
-                                className="font-ui text-xs px-3 py-1.5 rounded-lg bg-accent text-white hover:bg-accent/80 transition-colors"
-                              >Aceptar</button>
+                                className="font-mono text-xs px-3 py-1.5 rounded-lg bg-accent text-white hover:bg-accent/80 transition-colors"
+                              >
+                                Aceptar
+                              </button>
                             </div>
                           )}
                           {oferta.status === 'accepted' && oferta.checkout_url && (
-                            <a href={oferta.checkout_url} target="_blank" rel="noopener noreferrer" className="font-ui text-[10px] text-accent hover:underline">Ver link de pago</a>
+                            <a href={oferta.checkout_url} target="_blank" rel="noopener noreferrer" className="text-[10px] font-mono text-accent hover:underline">
+                              Ver link de pago
+                            </a>
                           )}
                         </div>
                       </div>
@@ -1043,8 +1105,8 @@ const filteredBookings = bookingsFilter === 'all'
 
           {/* ── COBROS ── */}
           {tab === 'cobros' && producer && (
-            <div className="space-y-6">
-              {/* Cabecera + estado de conexión */}
+            <div className="space-y-5">
+              {/* Cabecera + estado */}
               <div className="flex items-center justify-between flex-wrap gap-3">
                 <h3 className="text-white font-bold text-sm font-mono uppercase tracking-widest">Cobros</h3>
                 {producer.stripe_connect_status === 'active' && (
@@ -1060,15 +1122,17 @@ const filteredBookings = bookingsFilter === 'all'
 
               {/* Bloque de acción si no está activo */}
               {producer.stripe_connect_status !== 'active' && (
-                <div className="bg-white/3 border border-white/8 rounded-xl p-5 flex items-start gap-4">
+                <div className="bg-white/[0.03] border border-white/[0.08] rounded-xl p-4 sm:p-5 flex items-start gap-4">
                   <div className="w-10 h-10 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center shrink-0 mt-0.5">
                     <Wallet size={18} className="text-accent" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-white font-bold text-sm mb-1">
-                      {producer.stripe_connect_status === 'pending' ? 'Completa la verificación para recibir pagos' : 'Conecta tu cuenta bancaria para recibir pagos'}
+                      {producer.stripe_connect_status === 'pending'
+                        ? 'Completa la verificación para recibir pagos'
+                        : 'Conecta tu cuenta bancaria para recibir pagos'}
                     </p>
-                    <p className="text-text/40 text-xs font-mono mb-4">
+                    <p className="text-text/40 text-xs font-mono mb-4 leading-relaxed">
                       {producer.stripe_connect_status === 'pending'
                         ? 'Stripe necesita más información para activar tu cuenta. Haz clic en el botón para continuar.'
                         : 'Conecta tu IBAN vía Stripe. El proceso tarda 3-5 minutos y solo se hace una vez. Tu saldo acumulado se transferirá automáticamente.'}
@@ -1089,7 +1153,6 @@ const filteredBookings = bookingsFilter === 'all'
               {/* Botones si está activo */}
               {producer.stripe_connect_status === 'active' && (
                 <div className="flex items-center gap-3 flex-wrap">
-                  {/* Retirar fondos */}
                   {cobrosData && (cobrosData.beatsPending > 0 || cobrosData.studiosPending > 0) && (
                     <button
                       onClick={async () => {
@@ -1104,7 +1167,6 @@ const filteredBookings = bookingsFilter === 'all'
                               body: JSON.stringify({ producer_id: producer.id }),
                             }
                           )
-                          // Recargar cobros
                           setCobrosData(null)
                           setTab('cobros')
                         } finally {
@@ -1117,7 +1179,6 @@ const filteredBookings = bookingsFilter === 'all'
                       {connectLoading ? <><Loader size={13} className="animate-spin" /> Procesando…</> : <><Wallet size={13} /> Retirar fondos</>}
                     </button>
                   )}
-                  {/* Gestionar cuenta Stripe */}
                   <button
                     onClick={handleActivarCobros}
                     disabled={connectLoading}
@@ -1152,27 +1213,27 @@ const filteredBookings = bookingsFilter === 'all'
                       <div className="space-y-1.5">
                         {cobrosData.beatSales.map(sale => {
                           const licenseColors = {
-                            basic: 'text-accent border-accent/30 bg-accent/10',
-                            premium: 'text-purple-300 border-purple-400/30 bg-purple-400/10',
+                            basic:     'text-accent border-accent/30 bg-accent/10',
+                            premium:   'text-purple-300 border-purple-400/30 bg-purple-400/10',
                             exclusive: 'text-yellow-400 border-yellow-400/30 bg-yellow-400/10',
-                            stems: 'text-green-400 border-green-500/30 bg-green-500/10',
+                            stems:     'text-green-400 border-green-500/30 bg-green-500/10',
                           }
                           const paid = !!sale.payout_transferred_at
                           return (
-                            <div key={sale.id} className="flex items-center gap-3 bg-white/2 border border-white/5 rounded-xl px-4 py-2.5">
+                            <div key={sale.id} className="flex items-center gap-2 sm:gap-3 bg-white/[0.02] border border-white/5 rounded-xl px-3 sm:px-4 py-2.5">
                               <div className="flex-1 min-w-0">
                                 <p className="text-white text-xs font-mono truncate">{sale.beats?.title ?? '—'}</p>
                                 <p className="text-text/30 text-[10px] font-mono mt-0.5">
                                   {new Date(sale.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
                                 </p>
                               </div>
-                              <span className={`text-[10px] font-mono px-2 py-0.5 rounded-lg border ${licenseColors[sale.license_type] ?? licenseColors.basic}`}>
+                              <span className={`text-[10px] font-mono px-2 py-0.5 rounded-lg border shrink-0 ${licenseColors[sale.license_type] ?? licenseColors.basic}`}>
                                 {sale.license_type}
                               </span>
-                              <span className="text-white text-xs font-mono font-bold w-16 text-right">
+                              <span className="text-white text-xs font-mono font-bold shrink-0 text-right min-w-[52px]">
                                 {sale.amount_paid != null ? `${(sale.amount_paid * 0.90).toFixed(2)}€` : '—'}
                               </span>
-                              <span className={`text-[10px] font-mono w-20 text-right ${paid ? 'text-green-400' : 'text-yellow-400'}`}>
+                              <span className={`text-[10px] font-mono shrink-0 text-right min-w-[64px] ${paid ? 'text-green-400' : 'text-yellow-400'}`}>
                                 {paid ? 'transferido ✓' : 'pendiente'}
                               </span>
                             </div>
@@ -1208,15 +1269,15 @@ const filteredBookings = bookingsFilter === 'all'
                           const statusColor = paid ? 'text-green-400' : ended ? 'text-yellow-400' : 'text-text/40'
                           const dateStr = new Date(booking.start_datetime).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })
                           return (
-                            <div key={booking.id} className="flex items-center gap-3 bg-white/2 border border-white/5 rounded-xl px-4 py-2.5">
+                            <div key={booking.id} className="flex items-center gap-2 sm:gap-3 bg-white/[0.02] border border-white/5 rounded-xl px-3 sm:px-4 py-2.5">
                               <div className="flex-1 min-w-0">
                                 <p className="text-white text-xs font-mono truncate">{booking.client_name}</p>
                                 <p className="text-text/30 text-[10px] font-mono mt-0.5">{dateStr} · {booking.spaces?.name ?? '—'}</p>
                               </div>
-                              <span className="text-white text-xs font-mono font-bold w-16 text-right">
+                              <span className="text-white text-xs font-mono font-bold shrink-0 text-right min-w-[52px]">
                                 {booking.amount_paid != null ? `${(booking.amount_paid * 0.90).toFixed(2)}€` : '—'}
                               </span>
-                              <span className={`text-[10px] font-mono w-20 text-right ${statusColor}`}>
+                              <span className={`text-[10px] font-mono shrink-0 text-right min-w-[64px] ${statusColor}`}>
                                 {statusLabel}
                               </span>
                             </div>
