@@ -191,6 +191,8 @@ export default function ProducerDashboard() {
   const [cobrosLoading, setCobrosLoading] = useState(false)
   const [connectLoading, setConnectLoading] = useState(false)
   const [payoutSuccess, setPayoutSuccess] = useState(false)
+  const [stripeBalance, setStripeBalance] = useState(null)
+  const [balanceLoading, setBalanceLoading] = useState(false)
   const [ofertas, setOfertas] = useState([])
   const [ofertasLoading, setOfertasLoading] = useState(false)
 
@@ -315,6 +317,26 @@ export default function ProducerDashboard() {
     }
     load()
   }, [tab, producer, studios])
+
+  useEffect(() => {
+    if (tab !== 'cobros' || producer?.stripe_connect_status !== 'active') return
+    setBalanceLoading(true)
+    const load = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/process-payouts`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+          body: JSON.stringify({ action: 'check_balance' }),
+        }
+      )
+      const data = await res.json()
+      setStripeBalance(data)
+      setBalanceLoading(false)
+    }
+    load()
+  }, [tab, producer])
 
   useEffect(() => {
     if (tab !== 'ofertas' || !producer) return
@@ -1151,72 +1173,98 @@ export default function ProducerDashboard() {
               )}
 
               {/* Botones si está activo */}
-              {producer.stripe_connect_status === 'active' && (
-                <div className="flex items-center gap-3 flex-wrap">
-                  {cobrosData && (cobrosData.beatsPending > 0 || cobrosData.studiosPending > 0) && (
-                    <button
-                      onClick={async () => {
-                        setConnectLoading(true)
-                        setPayoutSuccess(false)
-                        try {
-                          const { data: { session: s } } = await supabase.auth.getSession()
-                          await fetch(
-                            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/process-payouts`,
-                            {
-                              method: 'POST',
-                              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${s.access_token}` },
-                              body: JSON.stringify({ producer_id: producer.id }),
+              {producer.stripe_connect_status === 'active' && (() => {
+                const hasPending = cobrosData && (cobrosData.beatsPending > 0 || cobrosData.studiosPending > 0)
+                const canWithdraw = hasPending && stripeBalance?.available_eur > 0
+                const inTransit   = hasPending && !canWithdraw && stripeBalance?.pending_eur > 0
+                return (
+                  <>
+                    <div className="flex items-center gap-3 flex-wrap">
+                      {canWithdraw && (
+                        <button
+                          onClick={async () => {
+                            setConnectLoading(true)
+                            setPayoutSuccess(false)
+                            try {
+                              const { data: { session: s } } = await supabase.auth.getSession()
+                              await fetch(
+                                `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/process-payouts`,
+                                {
+                                  method: 'POST',
+                                  headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${s.access_token}` },
+                                  body: JSON.stringify({ producer_id: producer.id }),
+                                }
+                              )
+                              setPayoutSuccess(true)
+                              setCobrosData(null)
+                              setStripeBalance(null)
+                            } finally {
+                              setConnectLoading(false)
                             }
-                          )
-                          setPayoutSuccess(true)
-                          setCobrosData(null)
-                        } finally {
-                          setConnectLoading(false)
-                        }
-                      }}
-                      disabled={connectLoading}
-                      className="flex items-center gap-2 bg-accent text-white font-mono font-bold text-xs px-5 py-2.5 rounded-xl hover:bg-[#9d3df2] transition-all shadow-lg shadow-accent/20 disabled:opacity-60"
-                    >
-                      {connectLoading ? <><Loader size={13} className="animate-spin" /> Procesando…</> : <><Wallet size={13} /> Retirar fondos</>}
-                    </button>
-                  )}
-                  <button
-                    onClick={handleActivarCobros}
-                    disabled={connectLoading}
-                    className="flex items-center gap-2 text-text/50 font-mono text-xs px-4 py-2 rounded-xl border border-white/10 hover:border-white/20 hover:text-white transition-all disabled:opacity-60"
-                  >
-                    {connectLoading ? <><Loader size={12} className="animate-spin" /> Cargando…</> : <><ExternalLink size={12} /> Gestionar cuenta Stripe</>}
-                  </button>
-                </div>
-              )}
+                          }}
+                          disabled={connectLoading}
+                          className="flex items-center gap-2 bg-accent text-white font-mono font-bold text-xs px-5 py-2.5 rounded-xl hover:bg-[#9d3df2] transition-all shadow-lg shadow-accent/20 disabled:opacity-60"
+                        >
+                          {connectLoading ? <><Loader size={13} className="animate-spin" /> Procesando…</> : <><Wallet size={13} /> Retirar fondos</>}
+                        </button>
+                      )}
+                      <button
+                        onClick={handleActivarCobros}
+                        disabled={connectLoading}
+                        className="flex items-center gap-2 text-text/50 font-mono text-xs px-4 py-2 rounded-xl border border-white/10 hover:border-white/20 hover:text-white transition-all disabled:opacity-60"
+                      >
+                        {connectLoading ? <><Loader size={12} className="animate-spin" /> Cargando…</> : <><ExternalLink size={12} /> Gestionar cuenta Stripe</>}
+                      </button>
+                    </div>
 
-              {/* Banner de éxito tras retirar fondos */}
-              {payoutSuccess && (
-                <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-4 flex items-start gap-3">
-                  <span className="text-green-400 text-base shrink-0 mt-0.5">✓</span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-green-400 font-bold text-xs font-mono mb-1">¡Fondos enviados correctamente!</p>
-                    <p className="text-text/50 text-xs font-mono leading-relaxed">
-                      El dinero tardará <span className="text-white/70 font-bold">1–3 días hábiles</span> en aparecer en tu cuenta bancaria según el calendario de pagos de Stripe.
-                      Puedes ver el estado de la transferencia en tu{' '}
-                      <button onClick={handleActivarCobros} className="text-accent hover:underline transition-colors">panel de Stripe →</button>
-                    </p>
-                  </div>
-                </div>
-              )}
+                    {/* Banner de éxito tras retirar fondos */}
+                    {payoutSuccess && (
+                      <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-4 flex items-start gap-3">
+                        <span className="text-green-400 text-base shrink-0 mt-0.5">✓</span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-green-400 font-bold text-xs font-mono mb-1">¡Fondos enviados correctamente!</p>
+                          <p className="text-text/50 text-xs font-mono leading-relaxed">
+                            El dinero tardará <span className="text-white/70 font-bold">1–3 días hábiles</span> en aparecer en tu cuenta bancaria.
+                            Puedes ver el estado en tu{' '}
+                            <button onClick={handleActivarCobros} className="text-accent hover:underline transition-colors">panel de Stripe →</button>
+                          </p>
+                        </div>
+                      </div>
+                    )}
 
-              {/* Aviso permanente de tiempos (solo cuando cuenta activa) */}
-              {producer.stripe_connect_status === 'active' && !payoutSuccess && (
-                <div className="bg-white/[0.02] border border-white/[0.05] rounded-xl px-4 py-3 flex items-start gap-2.5">
-                  <Clock size={12} className="text-text/25 shrink-0 mt-0.5" />
-                  <p className="text-text/30 text-[11px] font-mono leading-relaxed">
-                    Los fondos retirados tardan <span className="text-text/50">1–3 días hábiles</span> en llegar a tu banco.
-                    Las transferencias realizadas son visibles en tu{' '}
-                    <button onClick={handleActivarCobros} className="text-accent/50 hover:text-accent transition-colors">panel de Stripe</button>{' '}
-                    una vez procesadas.
-                  </p>
-                </div>
-              )}
+                    {/* Fondos en tránsito — Stripe aún no los ha liberado */}
+                    {inTransit && !payoutSuccess && (
+                      <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-4 flex items-start gap-3">
+                        <Clock size={14} className="text-yellow-400 shrink-0 mt-0.5" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-yellow-400 font-bold text-xs font-mono mb-1">Fondos en tránsito</p>
+                          <p className="text-text/50 text-xs font-mono leading-relaxed">
+                            Tu saldo está siendo procesado por Stripe y estará disponible para retirar en{' '}
+                            <span className="text-white/70">2–7 días hábiles</span>.
+                            El botón de retiro aparecerá automáticamente cuando los fondos estén listos.
+                          </p>
+                          <p className="text-text/30 text-[10px] font-mono mt-2 leading-relaxed">
+                            Tu panel de Stripe reflejará el movimiento solo después de que se complete la transferencia — hasta entonces aparecerá vacío, es normal.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Aviso neutro cuando hay fondos disponibles o no hay pendiente */}
+                    {!inTransit && !payoutSuccess && (
+                      <div className="bg-white/[0.02] border border-white/[0.05] rounded-xl px-4 py-3 flex items-start gap-2.5">
+                        <Clock size={12} className="text-text/25 shrink-0 mt-0.5" />
+                        <p className="text-text/30 text-[11px] font-mono leading-relaxed">
+                          Los fondos retirados tardan <span className="text-text/50">1–3 días hábiles</span> en llegar a tu banco.
+                          Las transferencias son visibles en tu{' '}
+                          <button onClick={handleActivarCobros} className="text-accent/50 hover:text-accent transition-colors">panel de Stripe</button>{' '}
+                          una vez procesadas.
+                        </p>
+                      </div>
+                    )}
+                  </>
+                )
+              })()}
 
               {cobrosLoading && <p className="text-text/30 text-xs font-mono text-center py-8">Cargando…</p>}
 

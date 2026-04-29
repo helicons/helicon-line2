@@ -33,10 +33,20 @@ serve(async (req) => {
 
   // Si viene producer_id en el body, procesar solo ese productor (retiro manual)
   let filterProducerId: string | null = null;
+  let requestAction: string | null = null;
   try {
     const body = await req.json();
     filterProducerId = body?.producer_id ?? null;
+    requestAction = body?.action ?? null;
   } catch { /* cron llama sin body */ }
+
+  // Acción: consultar balance de la plataforma en Stripe (sin ejecutar transfers)
+  if (requestAction === 'check_balance') {
+    const balance = await stripe.balance.retrieve();
+    const available = balance.available.find((b: any) => b.currency === 'eur')?.amount ?? 0;
+    const pending   = balance.pending.find((b: any) => b.currency === 'eur')?.amount ?? 0;
+    return Response.json({ available_eur: available / 100, pending_eur: pending / 100 }, { headers: CORS });
+  }
 
   // Obtener productores con cuenta Stripe
   let query = supabase
@@ -46,10 +56,12 @@ serve(async (req) => {
 
   if (filterProducerId) query = query.eq("id", filterProducerId);
 
-  const { data: producers } = await query;
+  const { data: producers, error: prodError } = await query;
+
+  console.log("process-payouts: producers found:", producers?.length ?? 0, "filter:", filterProducerId, "error:", prodError?.message);
 
   if (!producers || producers.length === 0) {
-    return Response.json({ processed: 0, message: "No producers with Stripe accounts" }, { headers: CORS });
+    return Response.json({ processed: 0, message: "No producers with Stripe accounts", filter: filterProducerId }, { headers: CORS });
   }
 
   let totalTransfers = 0;
@@ -67,6 +79,8 @@ serve(async (req) => {
 
     const isActive = account.charges_enabled && account.payouts_enabled;
 
+    console.log(`producer ${producer.id}: charges_enabled=${account.charges_enabled} payouts_enabled=${account.payouts_enabled} isActive=${isActive}`);
+
     // Actualizar estado en DB si cambió
     if (isActive && producer.stripe_connect_status !== "active") {
       await supabase
@@ -75,7 +89,10 @@ serve(async (req) => {
         .eq("id", producer.id);
     }
 
-    if (!isActive) continue; // No procesar pagos hasta verificación completa
+    if (!isActive) {
+      console.log(`producer ${producer.id}: account not active, skipping`);
+      continue;
+    }
 
     // ── Ventas de beats pendientes ────────────────────────────────
     const { data: beatRows } = await supabase
@@ -93,12 +110,16 @@ serve(async (req) => {
         .is("payout_transferred_at", null)
         .not("amount_paid", "is", null);
 
+      console.log(`producer ${producer.id}: pending beat sales=${pendingSales?.length ?? 0}`);
+
       for (const sale of pendingSales ?? []) {
         const basePrice = (sale.amount_paid ?? 0) / SERVICE_FEE_FACTOR;
         const amount = Math.round(basePrice * PRODUCER_SHARE * 100);
+        console.log(`sale ${sale.id}: amount_paid=${sale.amount_paid} basePrice=${basePrice.toFixed(2)} transferCents=${amount}`);
         if (amount < STRIPE_MIN_CENTS) continue;
 
         try {
+          console.log(`Attempting transfer for sale ${sale.id}: ${amount} cents to ${producer.stripe_account_id}`);
           const transfer = await stripe.transfers.create({
             amount,
             currency: "eur",
@@ -106,6 +127,7 @@ serve(async (req) => {
             metadata: { sale_id: sale.id, type: "beat_sale" },
           });
 
+          console.log(`Transfer OK: ${transfer.id}`);
           await supabase
             .from("sales")
             .update({
@@ -116,7 +138,9 @@ serve(async (req) => {
 
           totalTransfers++;
         } catch (err) {
-          errors.push(`Beat sale ${sale.id}: ${err.message}`);
+          const msg = err instanceof Error ? err.message : String(err);
+          console.error(`Transfer FAILED for sale ${sale.id}:`, msg);
+          errors.push(`Beat sale ${sale.id}: ${msg}`);
         }
       }
     }
@@ -170,7 +194,9 @@ serve(async (req) => {
 
             totalTransfers++;
           } catch (err) {
-            errors.push(`Booking ${booking.id}: ${err.message}`);
+            const msg = err instanceof Error ? err.message : String(err);
+            console.error(`Transfer FAILED for booking ${booking.id}:`, msg);
+            errors.push(`Booking ${booking.id}: ${msg}`);
           }
         }
       }
