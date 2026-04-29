@@ -150,47 +150,48 @@ const getIgHandle = (ig) => {
 }
 
 const TABS = [
-  { id: 'profile',      label: 'Mi Perfil',       Icon: UserCircle  },
-  { id: 'studio',       label: 'Mis Estudios',    Icon: Building2   },
-  { id: 'calendar',     label: 'Calendario',      Icon: CalendarDays },
-  { id: 'spaces',       label: 'Espacios',        Icon: Layers      },
-  { id: 'availability', label: 'Disponibilidad',  Icon: Clock       },
-  { id: 'bookings',     label: 'Reservas',        Icon: BookOpen    },
-  { id: 'beats',        label: 'Beats',           Icon: Music2      },
-  { id: 'ventas',       label: 'Ventas',          Icon: ShoppingBag },
-  { id: 'ofertas',      label: 'Ofertas',         Icon: Tag         },
-  { id: 'cobros',       label: 'Cobros',          Icon: Wallet      },
+  { id: 'profile', label: 'Mi Perfil', Icon: UserCircle },
+  { id: 'studio', label: 'Mis Estudios', Icon: Building2 },
+  { id: 'calendar', label: 'Calendario', Icon: CalendarDays },
+  { id: 'spaces', label: 'Espacios', Icon: Layers },
+  { id: 'availability', label: 'Disponibilidad', Icon: Clock },
+  { id: 'bookings', label: 'Reservas', Icon: BookOpen },
+  { id: 'beats', label: 'Beats', Icon: Music2 },
+  { id: 'ventas', label: 'Ventas', Icon: ShoppingBag },
+  { id: 'ofertas', label: 'Ofertas', Icon: Tag },
+  { id: 'cobros', label: 'Cobros', Icon: Wallet },
 ]
 
 const STATUS_BADGE = {
   confirmed: 'bg-accent/20 text-accent border-accent/30',
-  pending:   'bg-yellow-500/15 text-yellow-400 border-yellow-500/20',
+  pending: 'bg-yellow-500/15 text-yellow-400 border-yellow-500/20',
   cancelled: 'bg-white/5 text-text/30 border-white/10',
 }
 const STATUS_LABELS = { confirmed: 'Confirmada', pending: 'Pendiente', cancelled: 'Cancelada' }
 
 export default function ProducerDashboard() {
   const navigate = useNavigate()
-  const [tab, setTab]               = useState('studio')
-  const [producer, setProducer]     = useState(null)
-  const [studios, setStudios]       = useState([])
+  const [tab, setTab] = useState('studio')
+  const [producer, setProducer] = useState(null)
+  const [studios, setStudios] = useState([])
   const [activeStudioId, setActiveStudioId] = useState(null)
-  const [editingStudio, setEditingStudio]   = useState(null)
-  const [spaces, setSpaces]         = useState([])
+  const [editingStudio, setEditingStudio] = useState(null)
+  const [spaces, setSpaces] = useState([])
   const [selectedSpaceId, setSelectedSpaceId] = useState(null)
-  const [bookings, setBookings]     = useState([])
+  const [bookings, setBookings] = useState([])
   const [bookingsLoading, setBookingsLoading] = useState(false)
-  const [bookingsFilter, setBookingsFilter]   = useState('all')
-  const [beats, setBeats]           = useState([])
+  const [bookingsFilter, setBookingsFilter] = useState('all')
+  const [beats, setBeats] = useState([])
   const [beatsLoading, setBeatsLoading] = useState(false)
   const [addingBeat, setAddingBeat] = useState(false)
   const [editingBeat, setEditingBeat] = useState(null)
-  const [sales, setSales]           = useState([])
+  const [sales, setSales] = useState([])
   const [salesLoading, setSalesLoading] = useState(false)
-  const [cobrosData, setCobrosData]     = useState(null)
+  const [cobrosData, setCobrosData] = useState(null)
   const [cobrosLoading, setCobrosLoading] = useState(false)
   const [connectLoading, setConnectLoading] = useState(false)
-  const [ofertas, setOfertas]           = useState([])
+  const [payoutSuccess, setPayoutSuccess] = useState(false)
+  const [ofertas, setOfertas] = useState([])
   const [ofertasLoading, setOfertasLoading] = useState(false)
 
   const activeStudio = studios.find(s => s.id === activeStudioId) ?? studios[0] ?? null
@@ -522,11 +523,10 @@ export default function ProducerDashboard() {
               <button
                 key={id}
                 onClick={() => { setTab(id); setEditingStudio(null) }}
-                className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg text-xs font-mono transition-all whitespace-nowrap ${
-                  tab === id
+                className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg text-xs font-mono transition-all whitespace-nowrap ${tab === id
                     ? 'bg-accent text-white shadow-lg shadow-accent/20'
                     : 'text-text/50 hover:text-white hover:bg-white/5'
-                }`}
+                  }`}
               >
                 <Icon size={13} />
                 <span>{label}</span>
@@ -796,10 +796,10 @@ export default function ProducerDashboard() {
                               {/* Price badges */}
                               <div className="flex items-center gap-1.5 flex-wrap mt-2">
                                 {[
-                                  { label: 'Basic',     price: beat.price_basic,     color: 'text-accent border-accent/30 bg-accent/10' },
-                                  { label: 'Premium',   price: beat.price_premium,   color: 'text-purple-300 border-purple-400/30 bg-purple-400/10' },
+                                  { label: 'Basic', price: beat.price_basic, color: 'text-accent border-accent/30 bg-accent/10' },
+                                  { label: 'Premium', price: beat.price_premium, color: 'text-purple-300 border-purple-400/30 bg-purple-400/10' },
                                   { label: 'Exclusive', price: beat.price_exclusive, color: 'text-yellow-400 border-yellow-400/30 bg-yellow-400/10' },
-                                  { label: 'Stems',     price: beat.price_stems,     color: 'text-green-400 border-green-500/30 bg-green-500/10' },
+                                  { label: 'Stems', price: beat.price_stems, color: 'text-green-400 border-green-500/30 bg-green-500/10' },
                                 ].map(({ label, price, color }) => (
                                   <span key={label} className={`text-[10px] font-mono font-bold px-2 py-1 rounded-lg border ${color}`}>
                                     {label} {price != null ? `${price}€` : '—'}
@@ -907,7 +907,7 @@ export default function ProducerDashboard() {
                       </thead>
                       <tbody>
                         {filteredBookings.map(b => {
-                          const start   = new Date(b.start_datetime)
+                          const start = new Date(b.start_datetime)
                           const dateStr = start.toLocaleDateString('es-ES', { timeZone: 'Europe/Madrid', day: '2-digit', month: '2-digit', year: 'numeric' })
                           const timeStr = start.toLocaleTimeString('es-ES', { timeZone: 'Europe/Madrid', hour: '2-digit', minute: '2-digit' })
                           return (
@@ -954,8 +954,8 @@ export default function ProducerDashboard() {
                 <div className="space-y-2">
                   {sales.map(sale => {
                     const licenseColors = {
-                      basic:     'text-accent border-accent/30 bg-accent/10',
-                      premium:   'text-purple-300 border-purple-400/30 bg-purple-400/10',
+                      basic: 'text-accent border-accent/30 bg-accent/10',
+                      premium: 'text-purple-300 border-purple-400/30 bg-purple-400/10',
                       exclusive: 'text-yellow-400 border-yellow-400/30 bg-yellow-400/10',
                     }
                     const licenseLabel = { basic: 'Basic', premium: 'Premium', exclusive: 'Exclusive' }
@@ -984,7 +984,7 @@ export default function ProducerDashboard() {
                                   <span className="text-text/50 text-[11px] font-mono truncate">{buyerName}</span>
                                   {ig && (
                                     <a
-                                      href={ig.startsWith('http') ? ig : `https://instagram.com/${ig.replace('@','')}`}
+                                      href={ig.startsWith('http') ? ig : `https://instagram.com/${ig.replace('@', '')}`}
                                       target="_blank" rel="noopener noreferrer"
                                       className="text-[10px] font-mono px-1.5 py-0.5 rounded border border-pink-500/30 bg-pink-500/10 text-pink-400 hover:bg-pink-500/20 transition-colors shrink-0"
                                     >
@@ -1036,7 +1036,7 @@ export default function ProducerDashboard() {
                 <div className="space-y-2">
                   {ofertas.map(oferta => {
                     const statusStyle = {
-                      pending:  'text-yellow-400 border-yellow-400/30 bg-yellow-400/10',
+                      pending: 'text-yellow-400 border-yellow-400/30 bg-yellow-400/10',
                       accepted: 'text-green-400 border-green-400/30 bg-green-400/10',
                       rejected: 'text-red-400 border-red-400/30 bg-red-400/10',
                     }[oferta.status] ?? ''
@@ -1135,7 +1135,7 @@ export default function ProducerDashboard() {
                     <p className="text-text/40 text-xs font-mono mb-4 leading-relaxed">
                       {producer.stripe_connect_status === 'pending'
                         ? 'Stripe necesita más información para activar tu cuenta. Haz clic en el botón para continuar.'
-                        : 'Conecta tu IBAN vía Stripe. El proceso tarda 3-5 minutos y solo se hace una vez. Tu saldo acumulado se transferirá automáticamente.'}
+                        : 'Conecta tu IBAN vía Stripe. El proceso tarda 3-5 minutos y solo se hace una vez.'}
                     </p>
                     <button
                       onClick={handleActivarCobros}
@@ -1157,6 +1157,7 @@ export default function ProducerDashboard() {
                     <button
                       onClick={async () => {
                         setConnectLoading(true)
+                        setPayoutSuccess(false)
                         try {
                           const { data: { session: s } } = await supabase.auth.getSession()
                           await fetch(
@@ -1167,8 +1168,8 @@ export default function ProducerDashboard() {
                               body: JSON.stringify({ producer_id: producer.id }),
                             }
                           )
+                          setPayoutSuccess(true)
                           setCobrosData(null)
-                          setTab('cobros')
                         } finally {
                           setConnectLoading(false)
                         }
@@ -1186,6 +1187,34 @@ export default function ProducerDashboard() {
                   >
                     {connectLoading ? <><Loader size={12} className="animate-spin" /> Cargando…</> : <><ExternalLink size={12} /> Gestionar cuenta Stripe</>}
                   </button>
+                </div>
+              )}
+
+              {/* Banner de éxito tras retirar fondos */}
+              {payoutSuccess && (
+                <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-4 flex items-start gap-3">
+                  <span className="text-green-400 text-base shrink-0 mt-0.5">✓</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-green-400 font-bold text-xs font-mono mb-1">¡Fondos enviados correctamente!</p>
+                    <p className="text-text/50 text-xs font-mono leading-relaxed">
+                      El dinero tardará <span className="text-white/70 font-bold">1–3 días hábiles</span> en aparecer en tu cuenta bancaria según el calendario de pagos de Stripe.
+                      Puedes ver el estado de la transferencia en tu{' '}
+                      <button onClick={handleActivarCobros} className="text-accent hover:underline transition-colors">panel de Stripe →</button>
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Aviso permanente de tiempos (solo cuando cuenta activa) */}
+              {producer.stripe_connect_status === 'active' && !payoutSuccess && (
+                <div className="bg-white/[0.02] border border-white/[0.05] rounded-xl px-4 py-3 flex items-start gap-2.5">
+                  <Clock size={12} className="text-text/25 shrink-0 mt-0.5" />
+                  <p className="text-text/30 text-[11px] font-mono leading-relaxed">
+                    Los fondos retirados tardan <span className="text-text/50">1–3 días hábiles</span> en llegar a tu banco.
+                    Las transferencias realizadas son visibles en tu{' '}
+                    <button onClick={handleActivarCobros} className="text-accent/50 hover:text-accent transition-colors">panel de Stripe</button>{' '}
+                    una vez procesadas.
+                  </p>
                 </div>
               )}
 
@@ -1213,10 +1242,10 @@ export default function ProducerDashboard() {
                       <div className="space-y-1.5">
                         {cobrosData.beatSales.map(sale => {
                           const licenseColors = {
-                            basic:     'text-accent border-accent/30 bg-accent/10',
-                            premium:   'text-purple-300 border-purple-400/30 bg-purple-400/10',
+                            basic: 'text-accent border-accent/30 bg-accent/10',
+                            premium: 'text-purple-300 border-purple-400/30 bg-purple-400/10',
                             exclusive: 'text-yellow-400 border-yellow-400/30 bg-yellow-400/10',
-                            stems:     'text-green-400 border-green-500/30 bg-green-500/10',
+                            stems: 'text-green-400 border-green-500/30 bg-green-500/10',
                           }
                           const paid = !!sale.payout_transferred_at
                           return (
