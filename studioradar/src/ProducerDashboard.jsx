@@ -304,7 +304,7 @@ export default function ProducerDashboard() {
       const now = new Date()
       const beatsPending = beatSales
         .filter(s => !s.payout_transferred_at)
-        .reduce((sum, s) => sum + (s.amount_paid || 0) * 0.90, 0)
+        .reduce((sum, s) => sum + ((s.amount_paid || 0) / 1.05) * 0.90, 0)
       const studiosPending = studioBookings
         .filter(b => !b.payout_transferred_at && new Date(b.end_datetime) < now)
         .reduce((sum, b) => sum + (b.amount_paid || 0) * 0.90, 0)
@@ -1231,7 +1231,7 @@ export default function ProducerDashboard() {
                                 {sale.license_type}
                               </span>
                               <span className="text-white text-xs font-mono font-bold shrink-0 text-right min-w-[52px]">
-                                {sale.amount_paid != null ? `${(sale.amount_paid * 0.90).toFixed(2)}€` : '—'}
+                                {sale.amount_paid != null ? `${((sale.amount_paid / 1.05) * 0.90).toFixed(2)}€` : '—'}
                               </span>
                               <span className={`text-[10px] font-mono shrink-0 text-right min-w-[64px] ${paid ? 'text-green-400' : 'text-yellow-400'}`}>
                                 {paid ? 'transferido ✓' : 'pendiente'}

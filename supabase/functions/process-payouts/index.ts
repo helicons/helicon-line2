@@ -6,7 +6,8 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import Stripe from "npm:stripe@17";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const PRODUCER_SHARE = 0.90; // 90% para el productor, 10% comisión de plataforma
+const PRODUCER_SHARE = 0.90; // 90% sobre precio base (sin tarifa de servicio)
+const SERVICE_FEE_FACTOR = 1.05; // El amount_paid de beats incluye un 5% de tarifa de servicio
 const STRIPE_MIN_CENTS = 50; // Mínimo de Stripe: 0.50€
 
 const CORS = {
@@ -93,7 +94,8 @@ serve(async (req) => {
         .not("amount_paid", "is", null);
 
       for (const sale of pendingSales ?? []) {
-        const amount = Math.round((sale.amount_paid ?? 0) * PRODUCER_SHARE * 100);
+        const basePrice = (sale.amount_paid ?? 0) / SERVICE_FEE_FACTOR;
+        const amount = Math.round(basePrice * PRODUCER_SHARE * 100);
         if (amount < STRIPE_MIN_CENTS) continue;
 
         try {
