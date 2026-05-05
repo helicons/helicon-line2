@@ -17,6 +17,8 @@ import UserProfile from './UserProfile.jsx'
 import ProducerOnboarding from './ProducerOnboarding.jsx'
 import ProducerPublicProfile from './ProducerPublicProfile.jsx'
 import UserOnboarding from './UserOnboarding.jsx'
+import Sorteo from './Sorteo.jsx'
+import Sorteo2 from './Sorteo2.jsx'
 import './index.css'
 
 createRoot(document.getElementById('root')).render(
@@ -40,6 +42,8 @@ createRoot(document.getElementById('root')).render(
         <Route path="/onboarding" element={<ProducerOnboarding />} />
         <Route path="/producer/:producerId" element={<ProducerPublicProfile />} />
         <Route path="/user-onboarding" element={<UserOnboarding />} />
+        <Route path="/sorteo" element={<Sorteo />} />
+        <Route path="/sorteo2" element={<Sorteo2 />} />
       </Routes>
     </BrowserRouter>
   </StrictMode>,
