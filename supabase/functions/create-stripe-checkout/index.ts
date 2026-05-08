@@ -1,6 +1,7 @@
 // Edge Function: create-stripe-checkout
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import Stripe from "npm:stripe@17";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -13,7 +14,9 @@ serve(async (req) => {
   try {
     const body = await req.json();
     const { type = 'studio' } = body;
-    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
+    const stripeKey    = Deno.env.get("STRIPE_SECRET_KEY");
+    const supabaseUrl  = Deno.env.get("SUPABASE_URL")!;
+    const serviceKey   = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
     if (!stripeKey) {
       return Response.json({ error: "STRIPE_SECRET_KEY no configurada" }, { status: 500, headers: CORS });
@@ -31,7 +34,7 @@ serve(async (req) => {
       mode: "payment",
       expires_at: Math.floor(Date.now() / 1000) + 1800,
       metadata: { type },
-      customer_email: body.customerEmail || null, // Pre-rellenar email si viene del frontend
+      customer_email: body.customerEmail || null,
     };
 
     if (type === 'beat') {
@@ -56,9 +59,40 @@ serve(async (req) => {
           quantity: 1,
         }],
         success_url: `${origin}/beats?success=true&beat=${beatId}`,
-        cancel_url: `${origin}/beats?cancelled=true`,
+        cancel_url:  `${origin}/beats?cancelled=true`,
         metadata: { ...sessionConfig.metadata, beat_id: beatId, license_type: licenseType, beat_title: beatTitle },
       };
+
+      // ── Destination charge: si el productor tiene Stripe activo, el dinero
+      //    va directo a su cuenta en el momento del pago ──────────────────────
+      try {
+        const supabase = createClient(supabaseUrl, serviceKey);
+        const { data: beat } = await supabase
+          .from('beats')
+          .select('producers(stripe_account_id, stripe_connect_status)')
+          .eq('id', beatId)
+          .single();
+
+        const producer = (beat as any)?.producers;
+        if (producer?.stripe_connect_status === 'active' && producer?.stripe_account_id) {
+          // 90% del precio base (sin la tarifa de servicio del 5%)
+          const producerAmount = Math.round((unitAmount / 1.05) * 0.90);
+          sessionConfig.payment_intent_data = {
+            transfer_data: {
+              destination: producer.stripe_account_id,
+              amount: producerAmount,
+            },
+          };
+          sessionConfig.metadata.destination_charge = 'true';
+          console.log(`Destination charge: ${producerAmount} cents → ${producer.stripe_account_id}`);
+        } else {
+          console.log(`Producer sin Stripe activo para beat ${beatId} — pago queda en plataforma`);
+        }
+      } catch (lookupErr) {
+        // Si falla el lookup del productor, continuamos sin destination charge
+        console.error('Producer lookup failed:', lookupErr);
+      }
+
     } else {
       const { studioName, bookingId, totalPrice } = body;
       sessionConfig = {
@@ -72,7 +106,7 @@ serve(async (req) => {
           quantity: 1,
         }],
         success_url: `${origin}/book-studio?success=true&booking=${bookingId}`,
-        cancel_url: `${origin}/book-studio?cancelled=true&booking=${bookingId}`,
+        cancel_url:  `${origin}/book-studio?cancelled=true&booking=${bookingId}`,
         metadata: { ...sessionConfig.metadata, booking_id: bookingId },
       };
     }

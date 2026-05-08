@@ -37,21 +37,32 @@ serve(async (req) => {
     const type = session.metadata?.type || 'studio';
 
     if (type === 'beat') {
-      const { beat_id, license_type, beat_title } = session.metadata;
+      const { beat_id, license_type, beat_title, destination_charge } = session.metadata as any;
       const buyer_email = session.customer_details?.email;
       const amount_paid = (session.amount_total ?? 0) / 100;
 
-      await supabase.from("sales").insert({
+      const saleRecord: any = {
         beat_id,
         buyer_email,
         license_type,
         amount_paid,
         stripe_session_id: session.id,
-      });
+      };
+
+      // Si fue destination charge, el pago ya llegó al productor en el momento
+      // del cobro — lo marcamos como transferido para que no lo reintente process-payouts
+      if (destination_charge === 'true') {
+        saleRecord.payout_transferred_at = new Date().toISOString();
+        saleRecord.payout_transfer_id    = `auto_${session.id}`;
+        console.log(`Destination charge sale recorded as already paid: beat ${beat_id}`);
+      }
+
+      await supabase.from("sales").insert(saleRecord);
 
       await supabase.functions.invoke("send-booking-emails", {
         body: { type: 'beat_delivery', beat_id, buyer_email, license_type, beat_title },
       });
+
     } else {
       const bookingId = session.metadata?.booking_id;
       if (bookingId) {

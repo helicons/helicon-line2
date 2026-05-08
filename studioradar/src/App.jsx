@@ -672,12 +672,12 @@ const Credits = () => {
           </div>
           <div className="flex gap-6 shrink-0">
             <div className="text-center">
-              <p className="font-heading font-bold text-3xl text-white">+{Math.floor(totalViews)}M</p>
+              <p className="font-heading font-bold text-3xl text-white">+300M</p>
               <p className="font-ui text-[10px] text-text/40 tracking-widest mt-1">PLAYS TOTALES</p>
             </div>
             <div className="w-px bg-white/10 self-stretch" />
             <div className="text-center">
-              <p className="font-heading font-bold text-3xl text-white">{PRODUCERS_CREDITS.flatMap(p => p.credits).length}+</p>
+              <p className="font-heading font-bold text-3xl text-white">24+</p>
               <p className="font-ui text-[10px] text-text/40 tracking-widest mt-1">ARTISTAS TOP</p>
             </div>
           </div>
