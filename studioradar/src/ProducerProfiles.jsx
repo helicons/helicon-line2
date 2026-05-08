@@ -6,62 +6,68 @@ import { ActivitySquare, Star, Zap, X, MessageSquare, CheckCircle2, Music2, Head
 const PRODUCERS = [
   {
     id: 1,
-    name: 'Helicon Origin',
-    hp: '10M', // Streams
+    name: 'Tiannboi',
+    hp: '300M',
     type: 'TRAP',
-    color: '#8A2BE2', // Neon Violet
-    image: '/images/prod1.jpeg',
+    color: '#8A2BE2',
+    image: '/images/tiannboi.jpeg',
+    country: 'Ecuador 🇪🇨',
     abilities: [
-      { name: 'Platinum Hook', desc: '50,000 Sales. Hook +15% Catch Rate.', damage: '50k' },
-      { name: '808 Earthquake', desc: 'Shatters speakers. +20% Bass.', damage: 'MAX' }
+      { name: 'Multi-Platinum Producer', desc: 'Más de 300M de streams. Artistas de élite.', damage: 'MAX' },
+      { name: 'Street Certified', desc: 'Arcángel · Beele · Kris R · Yan Block & más.', damage: '300M' }
     ],
-    weakness: 'Acoustic',
-    resistance: 'Drill',
-    retreat: 2
-  },
-  {
-    id: 2,
-    name: 'Metro Shadows',
-    hp: '24M',
-    type: 'DRILL',
-    color: '#FF003C', // Red/Magenta
-    image: '/images/prod2.jpeg',
-    abilities: [
-      { name: 'Ghost Melody', desc: 'Haunting counter-melodies.', damage: '30k' },
-      { name: 'Sliding Bass', desc: 'Unpredictable 808 glides.', damage: '80k' }
-    ],
-    weakness: 'Lo-Fi',
-    resistance: 'Boom Bap',
+    weakness: 'Silence',
+    resistance: 'All Genres',
     retreat: 1
   },
   {
-    id: 3,
-    name: 'Cloud Nine',
-    hp: '5M',
-    type: 'R&B',
-    color: '#00F0FF', // Neon Cyan
-    image: '/images/prod3.jpeg',
+    id: 2,
+    name: 'Dzey',
+    hp: '+8M',
+    type: 'TRAP',
+    color: '#a64dff',
+    image: '/images/dzey.jpeg',
+    country: 'México 🇲🇽',
     abilities: [
-      { name: 'Silk Chords', desc: 'Instant vibe setter.', damage: '15k' },
-      { name: 'Midnight Groove', desc: 'Irresistible slow jam.', damage: '40k' }
+      { name: 'Full Control', desc: 'Productor · Mix Engineer · Rec Engineer · Compositor.', damage: 'MAX' },
+      { name: 'Rare Sound', desc: 'Kanye · Travis Scott · Future. Sonidos fuera del límite.', damage: '8M' }
     ],
-    weakness: 'Hardstyle',
-    resistance: 'Chillwave',
-    retreat: 3
+    weakness: 'Lo-Fi',
+    resistance: 'Trap',
+    retreat: 2
+  },
+  {
+    id: 3,
+    locked: true,
+    name: '???',
+    hp: '???',
+    type: '???',
+    color: '#555555',
+    image: '',
+    country: 'Próximamente',
+    abilities: [
+      { name: '???', desc: 'Información no disponible aún.', damage: '???' },
+      { name: '???', desc: 'Próximamente en Helicon.', damage: '???' }
+    ],
+    weakness: '???',
+    resistance: '???',
+    retreat: 0
   },
   {
     id: 4,
-    name: 'Iron Foundry',
-    hp: '12M',
-    type: 'TECHNO',
-    color: '#FFD700', // Gold
-    image: '/images/prod1.jpeg',
+    locked: true,
+    name: '???',
+    hp: '???',
+    type: '???',
+    color: '#555555',
+    image: '',
+    country: 'Próximamente',
     abilities: [
-      { name: 'Industrial Kick', desc: 'Punches through any mix.', damage: '45k' },
-      { name: 'Acid Arp', desc: 'Tearout synth line sequence.', damage: '90k' }
+      { name: '???', desc: 'Información no disponible aún.', damage: '???' },
+      { name: '???', desc: 'Próximamente en Helicon.', damage: '???' }
     ],
-    weakness: 'Pop',
-    resistance: 'House',
+    weakness: '???',
+    resistance: '???',
     retreat: 4
   }
 ];
@@ -69,6 +75,13 @@ const PRODUCERS = [
 // Inner visual part of the card extracted to avoid duplicating code in the modal
 const PokemonCardInner = ({ prod }) => (
   <div className="flex-1 bg-gradient-to-b from-[#1a1a1a] to-[#0a0a0a] rounded-xl flex flex-col overflow-hidden relative border-2 border-black/40">
+    {prod.locked && (
+      <div className="absolute inset-0 z-50 flex flex-col items-center justify-center rounded-xl backdrop-blur-sm bg-black/70">
+        <span style={{ fontSize: 48 }}>🔒</span>
+        <p className="font-heading font-bold text-white text-lg mt-3 tracking-widest">PRÓXIMAMENTE</p>
+        <p className="font-ui text-[10px] text-white/40 mt-1 tracking-widest uppercase">Helicon Producer</p>
+      </div>
+    )}
     <div className="absolute inset-0 opacity-10" style={{ backgroundImage: `radial-gradient(${prod.color} 1px, transparent 1px)`, backgroundSize: '10px 10px' }}></div>
 
     <div className="relative z-10 flex justify-between items-center p-3 font-heading font-bold text-white bg-gradient-to-r from-black/80 to-transparent">
@@ -83,13 +96,26 @@ const PokemonCardInner = ({ prod }) => (
     </div>
 
     <div className="relative z-10 px-3 pb-1">
-      <div className="w-full aspect-[4/3] border-[3px] border-gray-400 bg-surface rounded-sm overflow-hidden relative shadow-[inset_0_0_20px_rgba(0,0,0,0.8)]">
+      <div 
+        className="w-full aspect-[4/3] rounded-t-sm overflow-hidden relative shadow-[0_0_10px_rgba(255,255,255,0.1),inset_0_0_20px_rgba(0,0,0,0.8)]"
+        style={{
+          border: '3px solid transparent',
+          background: 'linear-gradient(#1a1a1a, #1a1a1a) padding-box, linear-gradient(135deg, #ffffff 0%, #7a7a7a 25%, #ffffff 50%, #5c5c5c 75%, #e2e2e2 100%) border-box'
+        }}
+      >
         <img src={prod.image} alt={prod.name} className="w-full h-full object-cover filter contrast-125 saturate-150" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
       </div>
-      <div className="bg-gradient-to-r from-gray-300 via-white to-gray-300 shadow-sm border border-gray-400 text-black text-[9px] sm:text-[10px] font-ui px-2 py-0.5 flex justify-between items-center -mt-2 relative z-20 mx-2">
+      <div 
+        className="text-black text-[9px] sm:text-[10px] font-ui px-2 py-0.5 flex justify-between items-center -mt-[3px] relative z-20 mx-2 rounded-b-sm shadow-sm"
+        style={{
+          border: '3px solid transparent',
+          borderTop: 'none',
+          background: 'linear-gradient(#e5e7eb, #e5e7eb) padding-box, linear-gradient(135deg, #ffffff 0%, #7a7a7a 25%, #ffffff 50%, #5c5c5c 75%, #e2e2e2 100%) border-box'
+        }}
+      >
         <span className="font-bold flex items-center gap-1"><Zap className="w-2 h-2 sm:w-3 sm:h-3" /> {prod.type} TYPE BEATMAKER</span>
-        <span className="hidden sm:inline">Length: 1.8m, Wt: 75kg</span>
+        <span className="hidden sm:inline">{prod.country}</span>
       </div>
     </div>
 
@@ -230,10 +256,6 @@ const PokemonCard = ({ prod }) => {
 
             {/* Right Side: Stats & Contact */}
             <div className="w-full md:w-[55%] p-6 md:p-12 flex flex-col relative z-20">
-              <span className="font-ui text-[10px] text-accent font-bold tracking-widest uppercase mb-4 flex items-center gap-2">
-                <ActivitySquare className="w-4 h-4" /> Certified Helicon Creator
-              </span>
-
               <h2 className="font-heading font-bold text-4xl md:text-5xl text-white mb-6 uppercase tracking-tight leading-none">{prod.name}</h2>
 
               <div className="flex flex-wrap items-center gap-3 mb-10">
@@ -328,26 +350,28 @@ const EliteProducerCard = ({ prod }) => {
         <div
           ref={cardRef}
           onMouseMove={onMove}
-          className="relative rounded-2xl overflow-hidden transition-all duration-200 ease-out"
-          style={{
-            transform: `rotateX(${rot.x}deg) rotateY(${rot.y}deg)`,
-            background: 'linear-gradient(160deg, #141414 0%, #0a0a0a 100%)',
-            border: `1px solid ${hovered ? prod.color + '50' : 'rgba(255,255,255,0.07)'}`,
-            boxShadow: hovered
-              ? `0 24px 60px rgba(0,0,0,0.7), 0 0 50px ${prod.color}20`
-              : '0 8px 32px rgba(0,0,0,0.5)',
-          }}
+          className="w-full h-full relative preserve-3d transition-transform duration-200 ease-out rounded-2xl group/card"
+          style={{ transform: `rotateX(${rot.x}deg) rotateY(${rot.y}deg)` }}
         >
-          {/* Holographic shimmer on hover */}
+          {/* Holographic foil overlay layer */}
           <div
-            className="absolute inset-0 z-20 pointer-events-none mix-blend-screen transition-opacity duration-300"
+            className="absolute inset-0 z-30 rounded-2xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300 mix-blend-color-dodge"
             style={{
-              opacity: hovered ? 0.25 : 0,
-              background: `radial-gradient(circle at ${glow.x}% ${glow.y}%, ${prod.color}cc, transparent 55%)`,
+              background: `radial-gradient(circle at ${glow.x}% ${glow.y}%, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0) 60%), 
+                           linear-gradient(125deg, #ff008450, #00f0ff50, #8a2be250, #ffd70050)`,
+              backgroundSize: '200% 200%',
+              backgroundPosition: `${glow.x}% ${glow.y}%`
             }}
-          />
+          ></div>
 
-          {/* Photo */}
+          {/* Card Border / Neon Glow Spinning */}
+          <div className="relative w-full h-full p-[2px] rounded-2xl overflow-hidden transition-shadow duration-500"
+               style={{ boxShadow: hovered ? `0 0 60px ${prod.color}60` : `0 0 30px ${prod.color}30` }}>
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[200%] h-[200%] animate-[spin_3s_linear_infinite] z-0"
+                 style={{ background: `conic-gradient(from 0deg, transparent 0 340deg, ${prod.color} 360deg)` }}></div>
+            
+            <div className="relative rounded-[14px] bg-[#0a0a0a] flex flex-col z-10 overflow-hidden h-full">
+              {/* Photo */}
           <div className="relative h-52 overflow-hidden">
             <img
               src={prod.image} alt={prod.name}
@@ -374,7 +398,7 @@ const EliteProducerCard = ({ prod }) => {
           </div>
 
           {/* Info body */}
-          <div className="p-4 space-y-3">
+          <div className="p-4 space-y-3 flex flex-col flex-1">
             {/* Name + verified + streams */}
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
@@ -413,7 +437,7 @@ const EliteProducerCard = ({ prod }) => {
 
             {/* CTA */}
             <button
-              className="w-full py-2.5 rounded-xl font-ui font-bold text-xs uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-1.5"
+              className="w-full mt-auto py-2.5 rounded-xl font-ui font-bold text-xs uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-1.5 relative z-20"
               style={{
                 background: hovered ? prod.color : 'transparent',
                 border: `1px solid ${prod.color}50`,
@@ -425,6 +449,8 @@ const EliteProducerCard = ({ prod }) => {
               <Headphones className="w-3.5 h-3.5" />
               Ver Perfil Completo
             </button>
+          </div>
+            </div>
           </div>
         </div>
       </div>
@@ -447,9 +473,10 @@ const EliteProducerCard = ({ prod }) => {
             <div className="w-full md:w-[45%] p-8 flex items-center justify-center relative border-b md:border-b-0 md:border-r border-white/5 min-h-[350px]">
               <div className="absolute inset-0 blur-[120px] opacity-20 pointer-events-none rounded-l-[2rem]"
                 style={{ background: prod.color }} />
-              <div className="w-full max-w-[300px] pointer-events-none relative z-10">
-                <div className="relative rounded-2xl overflow-hidden"
-                  style={{ border: `1px solid ${prod.color}40`, boxShadow: `0 0 60px ${prod.color}30` }}>
+              <div className="w-full max-w-[300px] pointer-events-none relative z-10 p-[2px] rounded-2xl overflow-hidden" style={{ boxShadow: `0 0 50px ${prod.color}40` }}>
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[200%] h-[200%] animate-[spin_3s_linear_infinite]"
+                     style={{ background: `conic-gradient(from 0deg, transparent 0 340deg, ${prod.color} 360deg)` }}></div>
+                <div className="relative rounded-[14px] bg-[#0a0a0a] overflow-hidden">
                   <img src={prod.image} alt={prod.name} className="w-full aspect-square object-cover" draggable={false} />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
                   <div className="absolute bottom-4 left-4">
@@ -466,9 +493,6 @@ const EliteProducerCard = ({ prod }) => {
 
             {/* Right — details */}
             <div className="w-full md:w-[55%] p-6 md:p-12 flex flex-col relative z-20">
-              <span className="font-ui text-[10px] text-accent font-bold tracking-widest uppercase mb-4 flex items-center gap-2">
-                <ActivitySquare className="w-4 h-4" /> Certified Helicon Creator
-              </span>
               <h2 className="font-heading font-bold text-4xl md:text-5xl text-white mb-2 uppercase tracking-tight leading-none">{prod.name}</h2>
               <div className="flex flex-wrap items-center gap-2 mb-8 mt-3">
                 <span className="px-3 py-1 rounded-full font-ui text-xs font-bold uppercase tracking-widest"
@@ -538,10 +562,6 @@ export default function ProducerProfiles() {
       <div className="max-w-7xl mx-auto px-6 relative z-10 pt-24">
 
         <div className="text-center mb-16">
-          <div className="inline-flex items-center gap-2 px-3 py-1 mb-4 rounded-full bg-white/5 border border-white/10 text-accent font-ui text-xs tracking-widest">
-            <ActivitySquare className="w-4 h-4" />
-            Hall of Fame
-          </div>
           <h1 className="font-heading font-bold text-5xl md:text-6xl text-white mb-4 uppercase tracking-tight">Our Producers</h1>
           <p className="font-ui text-text/60 max-w-xl mx-auto">Collecciona beats de creadores de élite. Descubre sus estadísticas de reproducciones y su poder en cada género.</p>
         </div>
