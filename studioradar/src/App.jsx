@@ -230,14 +230,14 @@ const Hero = () => {
         </h1>
 
         <p className="hero-sub font-ui text-lg md:text-xl text-text/80 max-w-2xl mb-10 leading-relaxed">
-          Reserva estudios premium cerca de ti por horas y encuentra el beat perfecto para tu próxima sesión. El estudio nocturno definitivo.
+          Reserva estudios premium cerca de ti y encuentra el beat perfecto para tu próxima sesión.
         </p>
 
         <div className="hero-btn flex flex-col items-center gap-6">
           <div className="flex flex-col sm:flex-row gap-4 items-center">
             <Link to="/book-studio">
               <Button className="group text-lg px-10 py-5">
-                Empieza a Crear Tu Próxima Canción
+                ESTUDIO MÁS CERCANO
                 <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Button>
             </Link>
@@ -444,44 +444,73 @@ const Workflow = () => {
 // -------------------------------------------------------------
 const PRODUCERS_CREDITS = [
   {
-    name: 'Helicon Origin',
-    ig: 'heliconorigin',
-    igUrl: 'https://www.instagram.com/heliconorigin',
-    image: '/images/prod1.jpeg',
+    name: 'Tiannboi',
+    ig: 'tiannboi',
+    igUrl: 'https://www.instagram.com/tiannboi',
+    image: '/images/tiannboi.jpeg',
     color: '#8A2BE2',
     credits: [
-      { artist: 'Yan Block', track: 'En La Noche', views: '6.2M', url: 'https://www.youtube.com/results?search_query=yan+block+en+la+noche' },
-      { artist: 'Dei V', track: 'Sin Ti', views: '3.1M', url: 'https://www.youtube.com/results?search_query=dei+v+sin+ti' },
-      { artist: 'ROA', track: 'Zona Cero', views: '3.9M', url: 'https://www.youtube.com/results?search_query=roa+zona+cero' },
+      { artist: 'Arcángel & Beele', track: 'Por Vos', views: '', url: 'https://www.youtube.com/watch?v=CVPszzXI13w' },
+      { artist: 'Arcángel & Kris R', track: 'Hasta Que El De Arriba Me Quite', views: '', url: 'https://www.youtube.com/watch?v=FXsFtWwBQ_E' },
+      { artist: 'Cookie, Siggy, Lil Jou Jou, Juan Blakee & Yan Block', track: 'Cookie', views: '', url: 'https://www.youtube.com/watch?v=Bgf00qRDDm8' },
     ],
   },
   {
-    name: 'Metro Shadows',
-    ig: 'metroshadows',
-    igUrl: 'https://www.instagram.com/metroshadows',
-    image: '/images/prod2.jpeg',
+    name: 'Dzey',
+    ig: 'dzey',
+    igUrl: 'https://www.instagram.com/dzey',
+    image: '/images/dzey.jpeg',
     color: '#a64dff',
     credits: [
-      { artist: 'Hades66', track: 'Madrugá', views: '4.8M', url: 'https://www.youtube.com/results?search_query=hades66+madruga' },
-      { artist: 'Young Chimi', track: 'Modo Avión', views: '2.7M', url: 'https://www.youtube.com/results?search_query=young+chimi+modo+avion' },
+      { artist: 'Kanye · Travis · Future', track: 'Influencias', views: '', url: '' },
+      { artist: 'México', track: 'Multi-género · Sin límites', views: '+8M', url: '' },
     ],
   },
   {
-    name: 'Cloud Nine',
-    ig: 'cloudninebeats',
-    igUrl: 'https://www.instagram.com/cloudninebeats',
-    image: '/images/prod3.jpeg',
-    color: '#00c2ff',
-    credits: [
-      { artist: 'Yan Block', track: 'Cielo Roto', views: '2.4M', url: 'https://www.youtube.com/results?search_query=yan+block+cielo+roto' },
-      { artist: 'Dei V', track: 'Lejos', views: '1.9M', url: 'https://www.youtube.com/results?search_query=dei+v+lejos' },
-    ],
+    name: '???',
+    locked: true,
+    ig: '',
+    igUrl: '',
+    image: '',
+    color: '#444444',
+    streams: '',
+    credits: [],
   },
 ];
 
 const ProducerVinylCard = ({ producer }) => {
   const [spinning, setSpinning] = React.useState(false);
   const [hovered, setHovered] = React.useState(false);
+
+  if (producer.locked) {
+    return (
+      <div className="credits-card flex flex-col items-center opacity-60">
+        <div className="relative w-44 h-44 lg:w-52 lg:h-52 mb-5">
+          <div className="absolute inset-0 rounded-full blur-2xl" style={{ background: '#333', opacity: 0.3 }} />
+          <div
+            className="relative w-full h-full rounded-full select-none flex items-center justify-center"
+            style={{
+              background: 'radial-gradient(circle at 30% 30%, #1a1a1a 0%, #0a0a0a 100%)',
+              border: '2px solid rgba(255,255,255,0.05)',
+              boxShadow: 'inset 0 0 30px rgba(0,0,0,0.9)',
+            }}
+          >
+            {[16, 24, 33, 42].map(r => (
+              <div key={r} className="absolute inset-0 rounded-full border" style={{ margin: `${r}%`, borderColor: 'rgba(255,255,255,0.03)' }} />
+            ))}
+            <div
+              className="absolute rounded-full overflow-hidden flex items-center justify-center"
+              style={{ inset: '26%', border: '3px solid rgba(255,255,255,0.1)', background: '#111' }}
+            >
+              <span style={{ fontSize: 28 }}>🔒</span>
+            </div>
+          </div>
+        </div>
+        <p className="font-heading font-bold text-white/30 text-base tracking-widest mb-1">PRÓXIMAMENTE</p>
+        <p className="font-ui text-[10px] text-white/20 tracking-widest uppercase">Helicon Producer</p>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -553,10 +582,13 @@ const ProducerVinylCard = ({ producer }) => {
           }}
         >
           <Activity style={{ width: 10, height: 10 }} />
-          {producer.credits.reduce((acc, c) => {
-            const n = parseFloat(c.views);
-            return acc + n;
-          }, 0).toFixed(1)}M
+          {(() => {
+            const total = producer.credits.reduce((acc, c) => {
+              const n = parseFloat(c.views);
+              return acc + (isNaN(n) ? 0 : n);
+            }, 0);
+            return total > 0 ? `${total.toFixed(1)}M` : producer.streams || '';
+          })()}
         </div>
       </div>
 
@@ -645,8 +677,7 @@ const Credits = () => {
     return () => ctx.revert();
   }, []);
 
-  const totalViews = PRODUCERS_CREDITS.flatMap(p => p.credits)
-    .reduce((acc, c) => acc + parseFloat(c.views), 0);
+
 
   return (
     <section ref={sectionRef} className="py-24 relative overflow-hidden" style={{ background: 'linear-gradient(180deg, #050505 0%, #0a0a0a 50%, #050505 100%)' }}>
@@ -672,12 +703,12 @@ const Credits = () => {
           </div>
           <div className="flex gap-6 shrink-0">
             <div className="text-center">
-              <p className="font-heading font-bold text-3xl text-white">+{Math.floor(totalViews)}M</p>
-              <p className="font-ui text-[10px] text-text/40 tracking-widest mt-1">PLAYS TOTALES</p>
+              <p className="font-heading font-bold text-3xl text-white">+300M</p>
+              <p className="font-ui text-[10px] text-text/40 tracking-widest mt-1">STREAMS TOTALES</p>
             </div>
             <div className="w-px bg-white/10 self-stretch" />
             <div className="text-center">
-              <p className="font-heading font-bold text-3xl text-white">{PRODUCERS_CREDITS.flatMap(p => p.credits).length}+</p>
+              <p className="font-heading font-bold text-3xl text-white">20+</p>
               <p className="font-ui text-[10px] text-text/40 tracking-widest mt-1">ARTISTAS TOP</p>
             </div>
           </div>
