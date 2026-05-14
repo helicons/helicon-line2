@@ -444,33 +444,138 @@ serve(async (req) => {
     const { data: booking, error } = await supabase
       .from("bookings")
       .select(`
-        id, client_name, client_email, start_datetime, end_datetime, amount_paid, status,
-        spaces ( name,studios ( name,producers ( name, email ) ) )
+        id, client_name, client_email, start_datetime, end_datetime, amount_paid, status, payment_method,
+        spaces ( name, price_per_hour, studios ( name, producers ( name, email ) ) )
       `)
       .eq("id", booking_id)
       .single();
 
     if (error || !booking) return Response.json({ error: "Booking no encontrado" }, { status: 404, headers: CORS });
 
-    const space = booking.spaces as any;
-    const studio = space?.studios as any;
-    const producer = studio?.producers as any;
-    const amount = booking.amount_paid?.toFixed(2) ?? "—";
+    const space = (booking as any).spaces;
+    const studio = space?.studios;
+    const producer = studio?.producers;
+    const amount = (booking as any).amount_paid?.toFixed(2) ?? "—";
+    const startDate = new Date((booking as any).start_datetime);
+    const endDate = new Date((booking as any).end_datetime);
+    const hours = Math.round((endDate.getTime() - startDate.getTime()) / 3600000);
+    const dateStr = startDate.toLocaleDateString("es-ES", { timeZone: TIMEZONE, weekday: "long", day: "numeric", month: "long", year: "numeric" });
+    const timeStr = startDate.toLocaleTimeString("es-ES", { timeZone: TIMEZONE, hour: "2-digit", minute: "2-digit" });
+    const endTimeStr = endDate.toLocaleTimeString("es-ES", { timeZone: TIMEZONE, hour: "2-digit", minute: "2-digit" });
 
+    // booking_request — to producer when new booking arrives
+    if (type === "booking_request") {
+      if (!producer?.email) return Response.json({ sent: false, reason: "no producer email" }, { headers: CORS });
+      const payMethod = (booking as any).payment_method === "cash" ? "💵 Efectivo" : "💳 Tarjeta";
+      const html = `
+        <div style="background:#050505;color:#fff;padding:40px;font-family:sans-serif;max-width:600px;margin:0 auto;border-radius:12px;border:1px solid #333;">
+          <h1 style="color:#8A2BE2;letter-spacing:2px;text-align:center;">HELICON</h1>
+          <h2 style="margin-top:8px;text-align:center;">Nueva solicitud de reserva</h2>
+          <div style="background:#111;padding:20px;border-radius:8px;margin:20px 0;">
+            <p><strong>Cliente:</strong> ${(booking as any).client_name}</p>
+            <p><strong>Email:</strong> ${(booking as any).client_email}</p>
+            <p><strong>Fecha:</strong> ${dateStr}</p>
+            <p><strong>Hora:</strong> ${timeStr} – ${endTimeStr} (${hours}h)</p>
+            <p><strong>Sala:</strong> ${space?.name ?? "—"}</p>
+            <p><strong>Método de pago:</strong> ${payMethod}</p>
+          </div>
+          <p style="color:#aaa;text-align:center;">Acepta o rechaza la reserva desde tu dashboard.</p>
+        </div>
+      `;
+      await sendEmail(producer.email, `Nueva solicitud — ${(booking as any).client_name}`, html);
+      return Response.json({ sent: true }, { headers: CORS });
+    }
+
+    // booking_rejected — to client
+    if (type === "booking_rejected") {
+      const html = `
+        <div style="background:#050505;color:#fff;padding:40px;font-family:sans-serif;max-width:600px;margin:0 auto;border-radius:12px;border:1px solid #333;text-align:center;">
+          <h1 style="color:#8A2BE2;letter-spacing:2px;">HELICON</h1>
+          <h2>Tu solicitud no pudo confirmarse</h2>
+          <p style="color:#aaa;">El estudio <strong>${studio?.name}</strong> no puede aceptar tu reserva para el ${dateStr} a las ${timeStr}.</p>
+          <p style="color:#aaa;margin-top:16px;">Puedes intentar otro horario directamente en Helicon.</p>
+          <a href="https://heliconradar.com/book-studio" style="display:inline-block;margin-top:24px;background:#8A2BE2;color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:bold;">Ver disponibilidad</a>
+        </div>
+      `;
+      await sendEmail((booking as any).client_email, `Tu reserva en ${studio?.name} no fue aceptada`, html);
+      return Response.json({ sent: true }, { headers: CORS });
+    }
+
+    // booking_accepted_card — to client with link to /booking/:id
+    if (type === "booking_accepted_card") {
+      const checkoutUrl = body.checkout_url;
+      const pricePerHour = Number(space?.price_per_hour ?? 0);
+      const totalEur = (pricePerHour * hours).toFixed(2);
+      const html = `
+        <div style="background:#050505;color:#fff;padding:40px;font-family:sans-serif;max-width:600px;margin:0 auto;border-radius:12px;border:1px solid #333;text-align:center;">
+          <h1 style="color:#8A2BE2;letter-spacing:2px;">HELICON</h1>
+          <h2>¡Tu reserva ha sido aceptada!</h2>
+          <div style="background:#111;padding:20px;border-radius:8px;margin:20px 0;text-align:left;">
+            <p><strong>Estudio:</strong> ${studio?.name}</p>
+            <p><strong>Sala:</strong> ${space?.name ?? "—"}</p>
+            <p><strong>Fecha:</strong> ${dateStr}</p>
+            <p><strong>Hora:</strong> ${timeStr} – ${endTimeStr}</p>
+            <p><strong>Importe:</strong> ${totalEur}€</p>
+          </div>
+          <p style="color:#aaa;margin-bottom:24px;">Completa el pago para confirmar tu sesión. El enlace caduca en 24 horas.</p>
+          <a href="${checkoutUrl}" style="background:#8A2BE2;color:#fff;padding:15px 30px;border-radius:8px;text-decoration:none;font-weight:bold;display:inline-block;">COMPLETAR PAGO</a>
+          <p style="font-size:11px;color:#555;margin-top:24px;">Si no completas el pago, el slot quedará libre para otros artistas.</p>
+        </div>
+      `;
+      await sendEmail((booking as any).client_email, `Tu reserva en ${studio?.name} está aceptada — completa el pago`, html);
+      return Response.json({ sent: true }, { headers: CORS });
+    }
+
+    // booking_confirmed_cash — to client + producer
+    if (type === "booking_confirmed_cash") {
+      const pricePerHour = Number(space?.price_per_hour ?? 0);
+      const totalEur = (pricePerHour * hours).toFixed(2);
+      const clientHtmlCash = `
+        <div style="background:#050505;color:#fff;padding:40px;font-family:sans-serif;max-width:600px;margin:0 auto;border-radius:12px;border:1px solid #333;text-align:center;">
+          <h1 style="color:#8A2BE2;letter-spacing:2px;">HELICON</h1>
+          <h2>Reserva Confirmada</h2>
+          <div style="background:#111;padding:20px;border-radius:8px;margin:20px 0;text-align:left;">
+            <p><strong>Estudio:</strong> ${studio?.name}</p>
+            <p><strong>Sala:</strong> ${space?.name ?? "—"}</p>
+            <p><strong>Fecha:</strong> ${dateStr}</p>
+            <p><strong>Hora:</strong> ${timeStr} – ${endTimeStr}</p>
+            <p><strong>Importe:</strong> ${totalEur}€ <span style="color:#8A2BE2;font-weight:bold;">(efectivo en el estudio)</span></p>
+          </div>
+          <p style="color:#aaa;">Recuerda llevar el importe en efectivo el día de la sesión. ¡Nos vemos!</p>
+        </div>
+      `;
+      await sendEmail((booking as any).client_email, `Reserva confirmada — ${studio?.name}`, clientHtmlCash);
+      if (producer?.email) {
+        const prodHtmlCash = `
+          <div style="background:#050505;color:#fff;padding:40px;font-family:sans-serif;max-width:600px;margin:0 auto;border-radius:12px;border:1px solid #333;">
+            <h1 style="color:#8A2BE2;text-align:center;">NUEVA RESERVA (Efectivo)</h1>
+            <p><strong>Cliente:</strong> ${(booking as any).client_name}</p>
+            <p><strong>Email:</strong> ${(booking as any).client_email}</p>
+            <p><strong>Fecha:</strong> ${dateStr} · ${timeStr} – ${endTimeStr}</p>
+            <p><strong>Sala:</strong> ${space?.name ?? "—"}</p>
+            <p><strong>Importe:</strong> ${totalEur}€ en efectivo</p>
+          </div>
+        `;
+        await sendEmail(producer.email, `Nueva reserva (efectivo) — ${(booking as any).client_name}`, prodHtmlCash);
+      }
+      return Response.json({ sent: true }, { headers: CORS });
+    }
+
+    // Default: booking_confirmation (stripe-webhook triggered, payment already completed)
     const clientHtml = `
       <div style="background:#050505;color:#fff;padding:30px;font-family:sans-serif;">
         <h1 style="color:#8A2BE2;">Reserva Confirmada</h1>
         <p><strong>Estudio:</strong> ${studio?.name}</p>
         <p><strong>Importe:</strong> ${amount}€</p>
-        <p>ID: ${booking.id}</p>
+        <p>ID: ${(booking as any).id}</p>
       </div>
     `;
 
-    await sendEmail(booking.client_email, `Reserva confirmada — ${studio?.name}`, clientHtml);
+    await sendEmail((booking as any).client_email, `Reserva confirmada — ${studio?.name}`, clientHtml);
 
     if (producer?.email) {
-      const prodHtml = `<div style="background:#050505;color:#fff;padding:30px;font-family:sans-serif;"><h1 style="color:#8A2BE2;">Nueva Reserva</h1><p>Cliente: ${booking.client_name}</p></div>`;
-      await sendEmail(producer.email, `Nueva reserva — ${booking.client_name}`, prodHtml);
+      const prodHtml = `<div style="background:#050505;color:#fff;padding:30px;font-family:sans-serif;"><h1 style="color:#8A2BE2;">Nueva Reserva</h1><p>Cliente: ${(booking as any).client_name}</p></div>`;
+      await sendEmail(producer.email, `Nueva reserva — ${(booking as any).client_name}`, prodHtml);
     }
 
     return Response.json({ sent: true }, { headers: CORS });

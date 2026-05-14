@@ -163,11 +163,19 @@ const TABS = [
 ]
 
 const STATUS_BADGE = {
-  confirmed: 'bg-accent/20 text-accent border-accent/30',
-  pending: 'bg-yellow-500/15 text-yellow-400 border-yellow-500/20',
-  cancelled: 'bg-white/5 text-text/30 border-white/10',
+  confirmed:      'bg-accent/20 text-accent border-accent/30',
+  pending:        'bg-yellow-500/15 text-yellow-400 border-yellow-500/20',
+  cancelled:      'bg-white/5 text-text/30 border-white/10',
+  pending_review: 'bg-orange-500/15 text-orange-400 border-orange-500/20',
+  rejected:       'bg-red-500/10 text-red-400/60 border-red-500/15',
 }
-const STATUS_LABELS = { confirmed: 'Confirmada', pending: 'Pendiente', cancelled: 'Cancelada' }
+const STATUS_LABELS = {
+  confirmed:      'Confirmada',
+  pending:        'Pendiente',
+  cancelled:      'Cancelada',
+  pending_review: 'En revisión',
+  rejected:       'Rechazada',
+}
 
 export default function ProducerDashboard() {
   const navigate = useNavigate()
@@ -195,8 +203,10 @@ export default function ProducerDashboard() {
   const [balanceLoading, setBalanceLoading] = useState(false)
   const [ofertas, setOfertas] = useState([])
   const [ofertasLoading, setOfertasLoading] = useState(false)
+  const [respondingId, setRespondingId] = useState(null)
 
   const activeStudio = studios.find(s => s.id === activeStudioId) ?? studios[0] ?? null
+  const pendingReviewCount = bookings.filter(b => b.status === 'pending_review').length
 
   useEffect(() => {
     const load = async () => {
@@ -418,6 +428,28 @@ export default function ProducerDashboard() {
   const filteredBookings = bookingsFilter === 'all'
     ? bookings
     : bookings.filter(b => b.status === bookingsFilter)
+
+  const handleRespond = async (bookingId, action) => {
+    setRespondingId(bookingId)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const { error } = await supabase.functions.invoke('respond-to-booking', {
+        body: { booking_id: bookingId, action, origin: window.location.origin },
+        headers: { Authorization: `Bearer ${session?.access_token}` },
+      })
+      if (error) throw error
+      setBookings(prev => prev.map(b => {
+        if (b.id !== bookingId) return b
+        if (action === 'reject') return { ...b, status: 'rejected' }
+        return { ...b, status: b.payment_method === 'cash' ? 'confirmed' : 'pending' }
+      }))
+    } catch (err) {
+      console.error('respond-to-booking error:', err)
+      alert('Error al procesar la respuesta. Inténtalo de nuevo.')
+    } finally {
+      setRespondingId(null)
+    }
+  }
 
   const StudioSelector = () => {
     if (studios.length <= 1) return null
@@ -869,9 +901,16 @@ export default function ProducerDashboard() {
             <div className="space-y-4">
               <StudioSelector />
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <h3 className="text-white font-bold text-sm font-mono uppercase tracking-widest">Reservas</h3>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-white font-bold text-sm font-mono uppercase tracking-widest">Reservas</h3>
+                  {pendingReviewCount > 0 && (
+                    <span className="w-5 h-5 rounded-full bg-orange-500 text-white text-[10px] font-bold flex items-center justify-center">
+                      {pendingReviewCount}
+                    </span>
+                  )}
+                </div>
                 <div className="flex gap-1 flex-wrap">
-                  {['all', 'confirmed', 'pending', 'cancelled'].map(f => (
+                  {['all', 'pending_review', 'confirmed', 'pending', 'rejected', 'cancelled'].map(f => (
                     <button
                       key={f}
                       onClick={() => setBookingsFilter(f)}
@@ -897,20 +936,41 @@ export default function ProducerDashboard() {
                       const start = new Date(b.start_datetime)
                       const dateStr = start.toLocaleDateString('es-ES', { timeZone: 'Europe/Madrid', day: '2-digit', month: '2-digit', year: 'numeric' })
                       const timeStr = start.toLocaleTimeString('es-ES', { timeZone: 'Europe/Madrid', hour: '2-digit', minute: '2-digit' })
+                      const isResponding = respondingId === b.id
                       return (
-                        <div key={b.id} className="bg-white/[0.03] border border-white/5 rounded-xl p-3 space-y-2">
+                        <div key={b.id} className={`border rounded-xl p-3 space-y-2 ${b.status === 'pending_review' ? 'bg-orange-500/5 border-orange-500/15' : 'bg-white/[0.03] border-white/5'}`}>
                           <div className="flex items-center justify-between gap-2">
                             <span className="text-white text-sm font-mono font-bold truncate">{b.client_name}</span>
-                            <span className={`px-2 py-0.5 rounded-full border text-[10px] font-mono uppercase tracking-wider shrink-0 ${STATUS_BADGE[b.status] ?? STATUS_BADGE.cancelled}`}>
-                              {STATUS_LABELS[b.status] ?? b.status}
-                            </span>
+                            <div className="flex items-center gap-2 shrink-0">
+                              {b.payment_method === 'cash' && (
+                                <span className="px-2 py-0.5 rounded-full bg-green-500/10 border border-green-500/15 text-[9px] font-mono text-green-400 uppercase">Efectivo</span>
+                              )}
+                              <span className={`px-2 py-0.5 rounded-full border text-[10px] font-mono uppercase tracking-wider ${STATUS_BADGE[b.status] ?? STATUS_BADGE.cancelled}`}>
+                                {STATUS_LABELS[b.status] ?? b.status}
+                              </span>
+                            </div>
                           </div>
                           <div className="flex items-center gap-3 text-[11px] font-mono text-text/50">
                             <span>{dateStr} · {timeStr}</span>
                             {b.spaces?.name && <span className="truncate">{b.spaces.name}</span>}
                           </div>
-                          {b.amount_paid && (
-                            <span className="text-accent font-bold text-sm font-mono">{b.amount_paid}€</span>
+                          {b.status === 'pending_review' && (
+                            <div className="flex gap-2 pt-1">
+                              <button
+                                onClick={() => handleRespond(b.id, 'accept')}
+                                disabled={isResponding}
+                                className="flex-1 py-1.5 rounded-lg bg-accent/20 border border-accent/30 text-accent text-[11px] font-mono font-bold uppercase tracking-wider hover:bg-accent hover:text-white transition-all disabled:opacity-50"
+                              >
+                                {isResponding ? '…' : 'Aceptar'}
+                              </button>
+                              <button
+                                onClick={() => handleRespond(b.id, 'reject')}
+                                disabled={isResponding}
+                                className="flex-1 py-1.5 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-[11px] font-mono font-bold uppercase tracking-wider hover:bg-red-500/20 transition-all disabled:opacity-50"
+                              >
+                                {isResponding ? '…' : 'Rechazar'}
+                              </button>
+                            </div>
                           )}
                         </div>
                       )
@@ -922,7 +982,7 @@ export default function ProducerDashboard() {
                     <table className="w-full text-xs font-mono">
                       <thead>
                         <tr className="border-b border-white/5">
-                          {['Fecha', 'Hora', 'Cliente', 'Sala', 'Importe', 'Estado'].map(h => (
+                          {['Fecha', 'Hora', 'Cliente', 'Sala', 'Pago', 'Estado', ''].map(h => (
                             <th key={h} className="text-left py-3 px-2 text-[10px] text-text/30 uppercase tracking-widest font-normal">{h}</th>
                           ))}
                         </tr>
@@ -932,17 +992,43 @@ export default function ProducerDashboard() {
                           const start = new Date(b.start_datetime)
                           const dateStr = start.toLocaleDateString('es-ES', { timeZone: 'Europe/Madrid', day: '2-digit', month: '2-digit', year: 'numeric' })
                           const timeStr = start.toLocaleTimeString('es-ES', { timeZone: 'Europe/Madrid', hour: '2-digit', minute: '2-digit' })
+                          const isResponding = respondingId === b.id
                           return (
-                            <tr key={b.id} className="border-b border-white/[0.03] hover:bg-white/[0.02] transition-colors">
+                            <tr key={b.id} className={`border-b border-white/[0.03] transition-colors ${b.status === 'pending_review' ? 'bg-orange-500/[0.03]' : 'hover:bg-white/[0.02]'}`}>
                               <td className="py-3 px-2 text-text/60">{dateStr}</td>
                               <td className="py-3 px-2 text-text/60">{timeStr}</td>
                               <td className="py-3 px-2 text-white">{b.client_name}</td>
                               <td className="py-3 px-2 text-text/60">{b.spaces?.name ?? '—'}</td>
-                              <td className="py-3 px-2 text-accent font-bold">{b.amount_paid ? `${b.amount_paid}€` : '—'}</td>
+                              <td className="py-3 px-2">
+                                {b.payment_method === 'cash'
+                                  ? <span className="text-green-400/70">Efectivo</span>
+                                  : <span className="text-text/40">Tarjeta</span>
+                                }
+                              </td>
                               <td className="py-3 px-2">
                                 <span className={`px-2 py-0.5 rounded-full border text-[10px] uppercase tracking-wider ${STATUS_BADGE[b.status] ?? STATUS_BADGE.cancelled}`}>
                                   {STATUS_LABELS[b.status] ?? b.status}
                                 </span>
+                              </td>
+                              <td className="py-3 px-2">
+                                {b.status === 'pending_review' && (
+                                  <div className="flex gap-1.5">
+                                    <button
+                                      onClick={() => handleRespond(b.id, 'accept')}
+                                      disabled={isResponding}
+                                      className="px-3 py-1 rounded-lg bg-accent/15 border border-accent/25 text-accent text-[10px] font-bold uppercase tracking-wider hover:bg-accent hover:text-white transition-all disabled:opacity-50 whitespace-nowrap"
+                                    >
+                                      {isResponding ? '…' : 'Aceptar'}
+                                    </button>
+                                    <button
+                                      onClick={() => handleRespond(b.id, 'reject')}
+                                      disabled={isResponding}
+                                      className="px-3 py-1 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-[10px] font-bold uppercase tracking-wider hover:bg-red-500/20 transition-all disabled:opacity-50 whitespace-nowrap"
+                                    >
+                                      {isResponding ? '…' : 'Rechazar'}
+                                    </button>
+                                  </div>
+                                )}
                               </td>
                             </tr>
                           )

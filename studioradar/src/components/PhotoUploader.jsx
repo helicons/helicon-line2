@@ -3,7 +3,7 @@ import { Upload, X, Loader2, GripVertical } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 
 const MAX_FILES = 10
-const MAX_SIZE_MB = 5
+const MAX_SIZE_MB = 10
 const ACCEPTED = ['image/jpeg', 'image/png', 'image/webp']
 const BUCKET = 'studio-photos'
 

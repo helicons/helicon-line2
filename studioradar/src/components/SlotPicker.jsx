@@ -37,6 +37,8 @@ export default function SlotPicker({
   pricePerHour = 0,
   minDuration = 1,
   maxDuration = 4,
+  paymentMethod = 'card',
+  clientPhone = null,
 }) {
   const today = new Date()
   const [currentYear, setCurrentYear] = useState(today.getFullYear())
@@ -112,6 +114,8 @@ export default function SlotPicker({
           date: selectedDate,
           slot_hour: slotHour,
           duration_hours: durationHours,
+          payment_method: paymentMethod,
+          client_phone: clientPhone,
         },
         headers: { Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` }
       })

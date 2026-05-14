@@ -19,6 +19,7 @@ import ProducerPublicProfile from './ProducerPublicProfile.jsx'
 import UserOnboarding from './UserOnboarding.jsx'
 import Sorteo from './Sorteo.jsx'
 import Sorteo2 from './Sorteo2.jsx'
+import BookingPage from './BookingPage.jsx'
 import './index.css'
 
 createRoot(document.getElementById('root')).render(
@@ -44,6 +45,7 @@ createRoot(document.getElementById('root')).render(
         <Route path="/user-onboarding" element={<UserOnboarding />} />
         <Route path="/sorteo" element={<Sorteo />} />
         <Route path="/sorteo2" element={<Sorteo2 />} />
+        <Route path="/booking/:id" element={<BookingPage />} />
       </Routes>
     </BrowserRouter>
   </StrictMode>,

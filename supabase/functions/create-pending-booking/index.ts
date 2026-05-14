@@ -33,9 +33,11 @@ serve(async (req) => {
       space_id,
       client_name,
       client_email,
-      date,        // "YYYY-MM-DD"
-      slot_hour,   // número entero: 14 = 14:00
+      date,                      // "YYYY-MM-DD"
+      slot_hour,                 // número entero: 14 = 14:00
       duration_hours = 1,
+      payment_method = 'card',   // 'card' | 'cash'
+      client_phone = null,
     } = await req.json();
 
     // Validación básica
@@ -70,13 +72,14 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Llamar a la función atómica en Postgres
     const { data: bookingId, error } = await supabase.rpc("create_booking_atomic", {
       p_space_id: space_id,
       p_client_name: client_name,
       p_client_email: client_email,
       p_start_datetime: startUTC.toISOString(),
       p_end_datetime: endUTC.toISOString(),
+      p_payment_method: payment_method,
+      p_client_phone: client_phone,
     });
 
     if (error) {
@@ -89,6 +92,11 @@ serve(async (req) => {
       console.error("create-pending-booking RPC error:", error);
       return Response.json({ error: "Error al crear la reserva" }, { status: 500, headers: CORS });
     }
+
+    // Notify producer of the new booking request
+    await supabase.functions.invoke("send-booking-emails", {
+      body: { type: "booking_request", booking_id: bookingId },
+    });
 
     return Response.json({ booking_id: bookingId }, { headers: CORS });
   } catch (err) {

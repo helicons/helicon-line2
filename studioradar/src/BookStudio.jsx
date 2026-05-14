@@ -1,12 +1,9 @@
 import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MapPin, Calendar, Clock, ArrowLeft, ArrowRight, Activity, CreditCard, ShieldCheck, Search, Navigation, ChevronLeft, ChevronRight, ExternalLink, Star, LayoutGrid, Map as MapIcon, SlidersHorizontal, X, ChevronDown } from 'lucide-react';
+import { MapPin, Calendar, Clock, ArrowLeft, ArrowRight, Activity, CreditCard, ShieldCheck, Search, Navigation, ChevronLeft, ChevronRight, ExternalLink, Star, LayoutGrid, Map as MapIcon, SlidersHorizontal, X, ChevronDown, Banknote } from 'lucide-react';
 import { supabase } from './lib/supabase';
 import SlotPicker from './components/SlotPicker';
 const StudioMap = lazy(() => import('./components/StudioMap'));
-import { loadStripe } from '@stripe/stripe-js';
-
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_placeholder');
 
 const Button = ({ children, className = '', variant = 'primary', ...props }) => {
   const base = "inline-flex items-center justify-center font-ui text-sm uppercase tracking-widest transition-all duration-300 ease-out active:scale-95 active:duration-75 rounded-lg";
@@ -39,13 +36,16 @@ export default function BookStudio() {
   const [studioSpaceId, setStudioSpaceId] = useState(null);
   const [selectedSpace, setSelectedSpace] = useState(null);
   const [selectedDuration, setSelectedDuration] = useState(1);
-  const [isPaying, setIsPaying] = useState(false);
   const [clientEmail, setClientEmail] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('card');
   const [clientPhone, setClientPhone] = useState('');
   const [sessionUser, setSessionUser] = useState(null);
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [pendingBookingId, setPendingBookingId] = useState(null);
+  const [photoIndex, setPhotoIndex] = useState(0);
+  const [lightbox, setLightbox] = useState(false);
+  const [clusterStudios, setClusterStudios] = useState(null);
 
   const [viewMode, setViewMode] = useState('map');
   const [filterCity, setFilterCity] = useState('');
@@ -64,6 +64,20 @@ export default function BookStudio() {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [step]);
+
+  useEffect(() => {
+    setPhotoIndex(0);
+    setLightbox(false);
+  }, [selectedStudio]);
+
+  useEffect(() => {
+    if (!lightbox) return;
+    const onKey = (e) => {
+      if (e.key === 'Escape') setLightbox(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [lightbox]);
 
   // Pre-rellenar email si el usuario está logueado
   useEffect(() => {
@@ -195,48 +209,6 @@ export default function BookStudio() {
     return (parseFloat(space.price_per_hour) || 0) * selectedDuration;
   };
 
-  const handlePayment = async () => {
-    setIsPaying(true);
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token;
-
-      const { data, error } = await supabase.functions.invoke('create-stripe-checkout', {
-        body: {
-          studioId: selectedStudio.id,
-          studioName: selectedStudio.name,
-          bookingId: pendingBookingId,
-          artistName: artistName,
-          totalPrice: calculateTotal(),
-          customerEmail: clientEmail
-        },
-        headers: {
-          Authorization: `Bearer ${token || import.meta.env.VITE_SUPABASE_ANON_KEY}`
-        }
-      });
-
-      if (error) throw error;
-
-      if (data?.url) {
-        window.location.href = data.url;
-      } else {
-        throw new Error('No se recibió la URL de pago.');
-      }
-    } catch (err) {
-      console.error('Error detallado en el pago:', err);
-      const isDevError = err.name === 'FunctionsFetchError' || err.message?.includes('Failed to fetch');
-      const isPlaceholder = !import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY.includes('tu_llave');
-
-      if (isDevError || isPlaceholder) {
-        alert('Simulando redirección a Stripe Checkout...\n(Configura tus llaves para producción)');
-        setTimeout(() => setStep(6), 1500);
-      } else {
-        alert('Error al conectar con la pasarela: ' + (err.message || 'Error desconocido'));
-      }
-    } finally {
-      setIsPaying(false);
-    }
-  };
 
 
   const allCities = [...new Set(studios.map(s => s.city || s.location).filter(Boolean))];
@@ -493,37 +465,66 @@ export default function BookStudio() {
                   <div className="flex flex-col gap-6 flex-1 animate-[fade-in_0.3s_ease-out]">
 
                     {/* Cabecera del estudio */}
-                    <div className="rounded-2xl overflow-hidden h-48 relative border border-white/5 shadow-xl">
-                      <img
-                        src={selectedStudio.photos?.[0] ?? selectedStudio.image_url ?? 'https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?auto=format&fit=crop&q=80&w=500'}
-                        alt={selectedStudio.name}
-                        className="w-full h-full object-cover"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A] via-transparent to-transparent" />
-                      <button
-                        onClick={() => { setSelectedStudio(null); setStep(1); setSelectedCategory(null); setSelectedSpace(null); }}
-                        className="absolute top-4 left-4 w-8 h-8 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center text-white hover:bg-accent transition-colors"
-                      >
-                        <ArrowLeft className="w-4 h-4" />
-                      </button>
-                      <div className="absolute bottom-4 left-4">
-                        <h3 className="font-heading text-2xl font-bold text-white">{selectedStudio.name}</h3>
-                        <div className="flex items-center gap-3 mt-1">
-                          <div className="font-mono text-[10px] text-accent flex items-center gap-1 uppercase tracking-widest">
-                            <MapPin className="w-3 h-3" /> {selectedStudio.address || selectedStudio.location || selectedStudio.city || 'Madrid'}
-                          </div>
-                          {reviews.length > 0 && (
-                            <div className="flex items-center gap-1">
-                              <Star size={10} className="text-yellow-400 fill-yellow-400" />
-                              <span className="font-mono text-[10px] text-yellow-400 font-bold">
-                                {(reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1)}
-                              </span>
-                              <span className="font-mono text-[10px] text-white/30">({reviews.length})</span>
-                            </div>
+                    {(() => {
+                      const photos = selectedStudio.photos?.length > 0 ? selectedStudio.photos : [selectedStudio.image_url ?? 'https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?auto=format&fit=crop&q=80&w=500'];
+                      const total = photos.length;
+                      return (
+                        <div className="rounded-2xl overflow-hidden h-48 relative border border-white/5 shadow-xl">
+                          <img
+                            key={photoIndex}
+                            src={photos[photoIndex]}
+                            alt={selectedStudio.name}
+                            onClick={() => setLightbox(true)}
+                            className="w-full h-full object-cover transition-opacity duration-300 cursor-zoom-in"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A] via-transparent to-transparent pointer-events-none" />
+                          <button
+                            onClick={() => { setSelectedStudio(null); setStep(1); setSelectedCategory(null); setSelectedSpace(null); }}
+                            className="absolute top-4 left-4 w-8 h-8 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center text-white hover:bg-accent transition-colors"
+                          >
+                            <ArrowLeft className="w-4 h-4" />
+                          </button>
+                          {total > 1 && (
+                            <>
+                              <button
+                                onClick={() => setPhotoIndex(i => (i - 1 + total) % total)}
+                                className="absolute left-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center text-white hover:bg-accent transition-colors"
+                              >
+                                <ChevronLeft className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => setPhotoIndex(i => (i + 1) % total)}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center text-white hover:bg-accent transition-colors"
+                              >
+                                <ChevronRight className="w-4 h-4" />
+                              </button>
+                              <div className="absolute bottom-12 left-1/2 -translate-x-1/2 flex gap-1.5">
+                                {photos.map((_, i) => (
+                                  <button key={i} onClick={() => setPhotoIndex(i)} className={`w-1.5 h-1.5 rounded-full transition-all ${i === photoIndex ? 'bg-white w-3' : 'bg-white/40'}`} />
+                                ))}
+                              </div>
+                            </>
                           )}
+                          <div className="absolute bottom-4 left-4">
+                            <h3 className="font-heading text-2xl font-bold text-white">{selectedStudio.name}</h3>
+                            <div className="flex items-center gap-3 mt-1">
+                              <div className="font-mono text-[10px] text-accent flex items-center gap-1 uppercase tracking-widest">
+                                <MapPin className="w-3 h-3" /> {selectedStudio.address || selectedStudio.location || selectedStudio.city || 'Madrid'}
+                              </div>
+                              {reviews.length > 0 && (
+                                <div className="flex items-center gap-1">
+                                  <Star size={10} className="text-yellow-400 fill-yellow-400" />
+                                  <span className="font-mono text-[10px] text-yellow-400 font-bold">
+                                    {(reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1)}
+                                  </span>
+                                  <span className="font-mono text-[10px] text-white/30">({reviews.length})</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    </div>
+                      );
+                    })()}
 
                     {/* Equipamiento */}
                     {selectedStudio.equipment_tags?.length > 0 && (
@@ -602,6 +603,19 @@ export default function BookStudio() {
                             <input type="tel" value={clientPhone} onChange={e => setClientPhone(e.target.value)} placeholder="600 000 000" className="w-full bg-white/5 border border-white/10 rounded-xl py-4 px-4 text-white outline-none focus:border-accent transition-colors font-mono" />
                           </div>
                           <div>
+                            <label className="font-mono text-[10px] text-text/50 uppercase tracking-widest block mb-3">Método de Pago *</label>
+                            <div className="grid grid-cols-2 gap-3">
+                              <button type="button" onClick={() => setPaymentMethod('card')} className={`flex flex-col items-center gap-2 p-4 rounded-xl border transition-all ${paymentMethod === 'card' ? 'bg-accent/10 border-accent text-white' : 'bg-white/5 border-white/10 text-text/50 hover:border-white/20'}`}>
+                                <CreditCard className="w-5 h-5" />
+                                <span className="font-mono text-xs">Tarjeta</span>
+                              </button>
+                              <button type="button" onClick={() => setPaymentMethod('cash')} className={`flex flex-col items-center gap-2 p-4 rounded-xl border transition-all ${paymentMethod === 'cash' ? 'bg-accent/10 border-accent text-white' : 'bg-white/5 border-white/10 text-text/50 hover:border-white/20'}`}>
+                                <Banknote className="w-5 h-5" />
+                                <span className="font-mono text-xs">Efectivo</span>
+                              </button>
+                            </div>
+                          </div>
+                          <div>
                             <div className="flex justify-between items-center mb-2">
                               <label className="font-mono text-[10px] text-text/50 uppercase tracking-widest">Invitados (Máx 3)</label>
                               <button onClick={() => setCompanions([...companions, ''])} disabled={companions.length >= 3} className="text-accent text-[10px] font-bold uppercase tracking-wider">+ Añadir</button>
@@ -642,6 +656,8 @@ export default function BookStudio() {
                               pricePerHour={parseFloat(selectedSpace?.price_per_hour) || 0}
                               minDuration={selectedSpace?.min_duration_hours || 1}
                               maxDuration={selectedSpace?.max_duration_hours || 4}
+                              paymentMethod={paymentMethod}
+                              clientPhone={clientPhone}
                               onSlotSelected={({ date, slot, bookingId, durationHours }) => {
                                 setSelectedDate(date); setSelectedSlot(slot); setSelectedDuration(durationHours); setPendingBookingId(bookingId); setStep(5);
                               }}
@@ -653,8 +669,8 @@ export default function BookStudio() {
 
                     {step === 5 && (
                       <div className="flex flex-col flex-1">
-                        <h3 className="font-heading text-xl font-bold text-white mb-6">Resumen de Reserva</h3>
-                        <div className="bg-white/5 rounded-2xl border border-white/5 p-6 mb-8 space-y-4">
+                        <h3 className="font-heading text-xl font-bold text-white mb-6">Solicitud Enviada</h3>
+                        <div className="bg-white/5 rounded-2xl border border-white/5 p-6 mb-6 space-y-4">
                           <div className="flex justify-between items-center border-b border-white/5 pb-4">
                             <div>
                               <span className="text-accent text-[10px] font-mono uppercase tracking-widest block mb-1">{selectedStudio.name}</span>
@@ -662,33 +678,37 @@ export default function BookStudio() {
                             </div>
                           </div>
                           <div className="flex justify-between items-center py-2">
-                            <span className="text-text/50 font-mono text-xs uppercase tracking-widest">Inversión Total</span>
+                            <span className="text-text/50 font-mono text-xs uppercase tracking-widest">Total</span>
                             <span className="text-white font-bold text-3xl font-heading">{calculateTotal()}€</span>
                           </div>
                           {selectedDate && selectedSlot && (
                             <div className="pt-4 border-t border-white/5">
                               <p className="text-[10px] text-text/40 font-mono uppercase tracking-widest mb-1">Fecha y Hora</p>
                               <p className="text-sm text-white font-mono">{selectedDate} · {selectedSlot} → {(() => { const h = parseInt(selectedSlot) + selectedDuration; return `${String(h).padStart(2, '0')}:00`; })()}</p>
-                              <p className="text-[10px] text-text/40 font-mono mt-0.5">{selectedDuration}h · {parseFloat(selectedSpace?.price_per_hour) || 0}€/h</p>
+                              <p className="text-[10px] text-text/40 font-mono mt-0.5">{selectedDuration}h · {parseFloat(selectedSpace?.price_per_hour) || 0}€/h · {paymentMethod === 'cash' ? 'Efectivo' : 'Tarjeta'}</p>
                             </div>
                           )}
                         </div>
+                        <p className="font-mono text-xs text-text/50 text-center mb-6">
+                          {paymentMethod === 'cash'
+                            ? 'El estudio revisará tu solicitud. Si la acepta, recibirás un email de confirmación. Pagarás en efectivo el día de la sesión.'
+                            : 'El estudio revisará tu solicitud. Si la acepta, recibirás un email con el link de pago.'}
+                        </p>
                         <div className="mt-auto">
-                          <button onClick={handlePayment} disabled={isPaying} className="w-full py-5 rounded-xl bg-accent text-white font-mono font-bold uppercase tracking-widest hover:bg-[#9d3df2] transition-all disabled:opacity-50 shadow-[0_0_20px_rgba(138,43,226,0.2)]">
-                            {isPaying ? 'Iniciando Pasarela...' : `Pagar ${calculateTotal()}€`}
+                          <button onClick={() => navigate(`/booking/${pendingBookingId}`)} className="w-full py-5 rounded-xl bg-accent text-white font-mono font-bold uppercase tracking-widest hover:bg-[#9d3df2] transition-all shadow-[0_0_20px_rgba(138,43,226,0.2)]">
+                            Ver mi reserva
                           </button>
-                          <p className="text-center text-[10px] text-text/40 mt-4 uppercase tracking-[0.2em]">Pago seguro vía Stripe</p>
                         </div>
                       </div>
                     )}
 
                     {step === 6 && (
                       <div className="flex-1 flex flex-col items-center justify-center text-center">
-                        <div className="w-24 h-24 bg-green-500/10 rounded-full border border-green-500/30 flex items-center justify-center mb-8 shadow-[0_0_40px_rgba(34,197,94,0.1)]">
-                          <ShieldCheck className="w-12 h-12 text-green-500" />
+                        <div className="w-24 h-24 bg-accent/10 rounded-full border border-accent/20 flex items-center justify-center mb-8">
+                          <ShieldCheck className="w-12 h-12 text-accent" />
                         </div>
-                        <h2 className="text-white font-heading font-bold text-3xl mb-4">¡Sesión Bloqueada!</h2>
-                        <p className="font-mono text-sm text-text/60 mb-10 max-w-[280px]">Hemos recibido tu reserva. Recibirás un correo con los detalles en unos minutos.</p>
+                        <h2 className="text-white font-heading font-bold text-3xl mb-4">¡Solicitud enviada!</h2>
+                        <p className="font-mono text-sm text-text/60 mb-10 max-w-[280px]">El estudio confirmará tu reserva en breve. Recibirás un correo con los siguientes pasos.</p>
                         <button onClick={() => { navigate('/'); setSelectedStudio(null); setStep(1); }} className="w-full py-4 rounded-xl border border-white/10 text-white font-mono text-xs font-bold uppercase tracking-widest hover:border-accent transition-colors">
                           Volver al Inicio
                         </button>
@@ -712,7 +732,8 @@ export default function BookStudio() {
                 selectedStudio={selectedStudio}
                 hoveredStudio={hoveredStudio}
                 onStudioSelect={(s) => { setSelectedStudio(s); setStep(2); setSelectedTime(null); }}
-                onVisibleChange={setVisibleStudios}
+                onVisibleChange={(s) => { setVisibleStudios(s); setClusterStudios(null); }}
+                onClusterExpand={setClusterStudios}
               />
             </Suspense>
 
@@ -751,7 +772,35 @@ export default function BookStudio() {
                     </div>
                   </div>
 
-                  {visibleStudios.length === 0 ? (
+                  {clusterStudios ? (
+                    <div className="flex-1 overflow-y-auto space-y-2 pr-1">
+                      <button
+                        onClick={() => setClusterStudios(null)}
+                        className="flex items-center gap-1.5 text-[10px] font-mono text-white/30 hover:text-white mb-3 transition-colors"
+                      >
+                        <ArrowLeft className="w-3 h-3" /> Volver al mapa
+                      </button>
+                      <p className="font-mono text-[10px] text-white/25 uppercase tracking-widest mb-2">{clusterStudios.length} estudios en esta ubicación</p>
+                      {clusterStudios.map(studio => (
+                        <button
+                          key={studio.id}
+                          onClick={() => { setSelectedStudio(studio); setStep(2); setSelectedTime(null); setClusterStudios(null); }}
+                          onMouseEnter={() => setHoveredStudio(studio)}
+                          onMouseLeave={() => setHoveredStudio(null)}
+                          className="w-full flex items-center gap-3 bg-white/3 border border-white/5 hover:border-accent/40 hover:bg-accent/5 rounded-xl p-3 text-left transition-all"
+                        >
+                          {(studio.photos?.[0] || studio.image_url) && (
+                            <img src={studio.photos?.[0] ?? studio.image_url} alt={studio.name} className="w-12 h-12 rounded-lg object-cover shrink-0 border border-white/10" />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="font-mono text-sm font-bold text-white truncate">{studio.name}</p>
+                            {(studio.address || studio.city) && <p className="font-mono text-[10px] text-text/40 truncate">{studio.address || studio.city}</p>}
+                          </div>
+                          {studio.price_per_hour && <span className="font-mono text-xs text-accent shrink-0">{studio.price_per_hour}€/h</span>}
+                        </button>
+                      ))}
+                    </div>
+                  ) : visibleStudios.length === 0 ? (
                     <div className="flex-1 flex flex-col items-center justify-center text-center py-8">
                       <p className="font-mono text-sm text-text/40">Mueve el mapa para explorar estudios disponibles.</p>
                       <div className="mt-6 flex gap-2">
@@ -793,37 +842,66 @@ export default function BookStudio() {
                 <div className="flex flex-col gap-6 flex-1 animate-[fade-in_0.3s_ease-out]">
 
                   {/* Studio Header Image Section */}
-                  <div className="rounded-2xl overflow-hidden h-48 relative border border-white/5 shadow-xl">
-                    <img
-                      src={selectedStudio.photos?.[0] ?? selectedStudio.image_url ?? 'https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?auto=format&fit=crop&q=80&w=500'}
-                      alt={selectedStudio.name}
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A] via-transparent to-transparent"></div>
-                    <button
-                      onClick={() => setSelectedStudio(null)}
-                      className="absolute top-4 left-4 w-8 h-8 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center text-white hover:bg-accent transition-colors"
-                    >
-                      <ArrowLeft className="w-4 h-4" />
-                    </button>
-                    <div className="absolute bottom-4 left-4">
-                      <h3 className="font-heading text-2xl font-bold text-white">{selectedStudio.name}</h3>
-                      <div className="flex items-center gap-3 mt-1">
-                        <div className="font-mono text-[10px] text-accent flex items-center gap-1 uppercase tracking-widest">
-                          <MapPin className="w-3 h-3" /> {selectedStudio.address || selectedStudio.location || selectedStudio.city || 'Madrid'}
-                        </div>
-                        {reviews.length > 0 && (
-                          <div className="flex items-center gap-1">
-                            <Star size={10} className="text-yellow-400 fill-yellow-400" />
-                            <span className="font-mono text-[10px] text-yellow-400 font-bold">
-                              {(reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1)}
-                            </span>
-                            <span className="font-mono text-[10px] text-white/30">({reviews.length})</span>
-                          </div>
+                  {(() => {
+                    const photos = selectedStudio.photos?.length > 0 ? selectedStudio.photos : [selectedStudio.image_url ?? 'https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?auto=format&fit=crop&q=80&w=500'];
+                    const total = photos.length;
+                    return (
+                      <div className="rounded-2xl overflow-hidden h-48 relative border border-white/5 shadow-xl">
+                        <img
+                          key={photoIndex}
+                          src={photos[photoIndex]}
+                          alt={selectedStudio.name}
+                          onClick={() => setLightbox(true)}
+                          className="w-full h-full object-cover transition-opacity duration-300 cursor-zoom-in"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A] via-transparent to-transparent pointer-events-none" />
+                        <button
+                          onClick={() => setSelectedStudio(null)}
+                          className="absolute top-4 left-4 w-8 h-8 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center text-white hover:bg-accent transition-colors"
+                        >
+                          <ArrowLeft className="w-4 h-4" />
+                        </button>
+                        {total > 1 && (
+                          <>
+                            <button
+                              onClick={() => setPhotoIndex(i => (i - 1 + total) % total)}
+                              className="absolute left-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center text-white hover:bg-accent transition-colors"
+                            >
+                              <ChevronLeft className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => setPhotoIndex(i => (i + 1) % total)}
+                              className="absolute right-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center text-white hover:bg-accent transition-colors"
+                            >
+                              <ChevronRight className="w-4 h-4" />
+                            </button>
+                            <div className="absolute bottom-12 left-1/2 -translate-x-1/2 flex gap-1.5">
+                              {photos.map((_, i) => (
+                                <button key={i} onClick={() => setPhotoIndex(i)} className={`w-1.5 h-1.5 rounded-full transition-all ${i === photoIndex ? 'bg-white w-3' : 'bg-white/40'}`} />
+                              ))}
+                            </div>
+                          </>
                         )}
+                        <div className="absolute bottom-4 left-4">
+                          <h3 className="font-heading text-2xl font-bold text-white">{selectedStudio.name}</h3>
+                          <div className="flex items-center gap-3 mt-1">
+                            <div className="font-mono text-[10px] text-accent flex items-center gap-1 uppercase tracking-widest">
+                              <MapPin className="w-3 h-3" /> {selectedStudio.address || selectedStudio.location || selectedStudio.city || 'Madrid'}
+                            </div>
+                            {reviews.length > 0 && (
+                              <div className="flex items-center gap-1">
+                                <Star size={10} className="text-yellow-400 fill-yellow-400" />
+                                <span className="font-mono text-[10px] text-yellow-400 font-bold">
+                                  {(reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1)}
+                                </span>
+                                <span className="font-mono text-[10px] text-white/30">({reviews.length})</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
+                    );
+                  })()}
 
                   {/* Equipamiento */}
                   {selectedStudio.equipment_tags?.length > 0 && (
@@ -992,37 +1070,31 @@ export default function BookStudio() {
                       <div className="space-y-6">
                         <div>
                           <label className="font-mono text-[10px] text-text/50 uppercase tracking-widest block mb-2">Nombre Artístico *</label>
-                          <input
-                            type="text"
-                            value={artistName}
-                            onChange={e => setArtistName(e.target.value)}
-                            placeholder="EJ. KAEL"
-                            className="w-full bg-white/5 border border-white/10 rounded-xl py-4 px-4 text-white outline-none focus:border-accent transition-colors font-mono"
-                          />
+                          <input type="text" value={artistName} onChange={e => setArtistName(e.target.value)} placeholder="EJ. KAEL" className="w-full bg-white/5 border border-white/10 rounded-xl py-4 px-4 text-white outline-none focus:border-accent transition-colors font-mono" />
                         </div>
                         <div>
                           <label className="font-mono text-[10px] text-text/50 uppercase tracking-widest block mb-2">
                             Email de Contacto *
                             {sessionUser && <span className="ml-2 text-accent/60 normal-case tracking-normal">· de tu cuenta</span>}
                           </label>
-                          <input
-                            type="email"
-                            value={clientEmail}
-                            onChange={e => !sessionUser && setClientEmail(e.target.value)}
-                            placeholder="tu@email.com"
-                            readOnly={!!sessionUser}
-                            className={`w-full border rounded-xl py-4 px-4 outline-none transition-colors font-mono ${sessionUser ? 'bg-transparent border-white/8 text-white/40 cursor-default' : 'bg-white/5 border-white/10 text-white focus:border-accent'}`}
-                          />
+                          <input type="email" value={clientEmail} onChange={e => !sessionUser && setClientEmail(e.target.value)} placeholder="tu@email.com" readOnly={!!sessionUser} className={`w-full border rounded-xl py-4 px-4 outline-none transition-colors font-mono ${sessionUser ? 'bg-transparent border-white/8 text-white/40 cursor-default' : 'bg-white/5 border-white/10 text-white focus:border-accent'}`} />
                         </div>
                         <div>
                           <label className="font-mono text-[10px] text-text/50 uppercase tracking-widest block mb-2">Teléfono *</label>
-                          <input
-                            type="tel"
-                            value={clientPhone}
-                            onChange={e => setClientPhone(e.target.value)}
-                            placeholder="600 000 000"
-                            className="w-full bg-white/5 border border-white/10 rounded-xl py-4 px-4 text-white outline-none focus:border-accent transition-colors font-mono"
-                          />
+                          <input type="tel" value={clientPhone} onChange={e => setClientPhone(e.target.value)} placeholder="600 000 000" className="w-full bg-white/5 border border-white/10 rounded-xl py-4 px-4 text-white outline-none focus:border-accent transition-colors font-mono" />
+                        </div>
+                        <div>
+                          <label className="font-mono text-[10px] text-text/50 uppercase tracking-widest block mb-3">Método de Pago *</label>
+                          <div className="grid grid-cols-2 gap-3">
+                            <button type="button" onClick={() => setPaymentMethod('card')} className={`flex flex-col items-center gap-2 p-4 rounded-xl border transition-all ${paymentMethod === 'card' ? 'bg-accent/10 border-accent text-white' : 'bg-white/5 border-white/10 text-text/50 hover:border-white/20'}`}>
+                              <CreditCard className="w-5 h-5" />
+                              <span className="font-mono text-xs">Tarjeta</span>
+                            </button>
+                            <button type="button" onClick={() => setPaymentMethod('cash')} className={`flex flex-col items-center gap-2 p-4 rounded-xl border transition-all ${paymentMethod === 'cash' ? 'bg-accent/10 border-accent text-white' : 'bg-white/5 border-white/10 text-text/50 hover:border-white/20'}`}>
+                              <Banknote className="w-5 h-5" />
+                              <span className="font-mono text-xs">Efectivo</span>
+                            </button>
+                          </div>
                         </div>
                         <div>
                           <div className="flex justify-between items-center mb-2">
@@ -1032,13 +1104,7 @@ export default function BookStudio() {
                           <div className="space-y-3">
                             {companions.map((comp, i) => (
                               <div key={i} className="flex gap-2">
-                                <input
-                                  type="text"
-                                  value={comp}
-                                  onChange={e => { const n = [...companions]; n[i] = e.target.value; setCompanions(n); }}
-                                  placeholder={`Invitado ${i + 1}`}
-                                  className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-xs text-white outline-none focus:border-accent font-mono"
-                                />
+                                <input type="text" value={comp} onChange={e => { const n = [...companions]; n[i] = e.target.value; setCompanions(n); }} placeholder={`Invitado ${i + 1}`} className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-xs text-white outline-none focus:border-accent font-mono" />
                                 <button onClick={() => setCompanions(companions.filter((_, idx) => idx !== i))} className="text-red-500/50 hover:text-red-500 px-2 transition-colors">✕</button>
                               </div>
                             ))}
@@ -1046,11 +1112,7 @@ export default function BookStudio() {
                         </div>
                       </div>
                       <div className="mt-auto pt-8">
-                        <button
-                          onClick={() => setStep(4)}
-                          disabled={!artistName.trim() || !clientEmail.includes('@') || !clientPhone.trim()}
-                          className="w-full py-4 rounded-xl bg-accent text-white font-mono font-bold uppercase tracking-widest hover:bg-[#9d3df2] transition-all disabled:opacity-50 shadow-lg"
-                        >
+                        <button onClick={() => setStep(4)} disabled={!artistName.trim() || !clientEmail.includes('@') || !clientPhone.trim()} className="w-full py-4 rounded-xl bg-accent text-white font-mono font-bold uppercase tracking-widest hover:bg-[#9d3df2] transition-all disabled:opacity-50 shadow-lg">
                           Elegir Horario <Calendar className="inline ml-2 w-4 h-4" />
                         </button>
                       </div>
@@ -1075,12 +1137,10 @@ export default function BookStudio() {
                             pricePerHour={parseFloat(selectedSpace?.price_per_hour) || 0}
                             minDuration={selectedSpace?.min_duration_hours || 1}
                             maxDuration={selectedSpace?.max_duration_hours || 4}
+                            paymentMethod={paymentMethod}
+                            clientPhone={clientPhone}
                             onSlotSelected={({ date, slot, bookingId, durationHours }) => {
-                              setSelectedDate(date);
-                              setSelectedSlot(slot);
-                              setSelectedDuration(durationHours);
-                              setPendingBookingId(bookingId);
-                              setStep(5);
+                              setSelectedDate(date); setSelectedSlot(slot); setSelectedDuration(durationHours); setPendingBookingId(bookingId); setStep(5);
                             }}
                           />
                         </div>
@@ -1090,8 +1150,8 @@ export default function BookStudio() {
 
                   {step === 5 && (
                     <div className="flex flex-col flex-1">
-                      <h3 className="font-heading text-xl font-bold text-white mb-6">Resumen de Reserva</h3>
-                      <div className="bg-white/5 rounded-2xl border border-white/5 p-6 mb-8 space-y-4">
+                      <h3 className="font-heading text-xl font-bold text-white mb-6">Solicitud Enviada</h3>
+                      <div className="bg-white/5 rounded-2xl border border-white/5 p-6 mb-6 space-y-4">
                         <div className="flex justify-between items-center border-b border-white/5 pb-4">
                           <div>
                             <span className="text-accent text-[10px] font-mono uppercase tracking-widest block mb-1">{selectedStudio.name}</span>
@@ -1099,41 +1159,38 @@ export default function BookStudio() {
                           </div>
                         </div>
                         <div className="flex justify-between items-center py-2">
-                          <span className="text-text/50 font-mono text-xs uppercase tracking-widest">Inversión Total</span>
+                          <span className="text-text/50 font-mono text-xs uppercase tracking-widest">Total</span>
                           <span className="text-white font-bold text-3xl font-heading">{calculateTotal()}€</span>
                         </div>
                         {selectedDate && selectedSlot && (
                           <div className="pt-4 border-t border-white/5">
                             <p className="text-[10px] text-text/40 font-mono uppercase tracking-widest mb-1">Fecha y Hora</p>
                             <p className="text-sm text-white font-mono">{selectedDate} · {selectedSlot} → {selectedSlot && (() => { const h = parseInt(selectedSlot) + selectedDuration; return `${String(h).padStart(2, '0')}:00` })()}</p>
-                            <p className="text-[10px] text-text/40 font-mono mt-0.5">{selectedDuration}h · {parseFloat(selectedSpace?.price_per_hour) || 0}€/h</p>
+                            <p className="text-[10px] text-text/40 font-mono mt-0.5">{selectedDuration}h · {parseFloat(selectedSpace?.price_per_hour) || 0}€/h · {paymentMethod === 'cash' ? 'Efectivo' : 'Tarjeta'}</p>
                           </div>
                         )}
                       </div>
+                      <p className="font-mono text-xs text-text/50 text-center mb-6">
+                        {paymentMethod === 'cash'
+                          ? 'El estudio revisará tu solicitud. Si la acepta, recibirás un email de confirmación. Pagarás en efectivo el día de la sesión.'
+                          : 'El estudio revisará tu solicitud. Si la acepta, recibirás un email con el link de pago.'}
+                      </p>
                       <div className="mt-auto">
-                        <button
-                          onClick={handlePayment}
-                          disabled={isPaying}
-                          className="w-full py-5 rounded-xl bg-accent text-white font-mono font-bold uppercase tracking-widest hover:bg-[#9d3df2] transition-all disabled:opacity-50 shadow-[0_0_20px_rgba(138,43,226,0.2)]"
-                        >
-                          {isPaying ? 'Iniciando Pasarela...' : `Pagar ${calculateTotal()}€`}
+                        <button onClick={() => navigate(`/booking/${pendingBookingId}`)} className="w-full py-5 rounded-xl bg-accent text-white font-mono font-bold uppercase tracking-widest hover:bg-[#9d3df2] transition-all shadow-[0_0_20px_rgba(138,43,226,0.2)]">
+                          Ver mi reserva
                         </button>
-                        <p className="text-center text-[10px] text-text/40 mt-4 uppercase tracking-[0.2em]">Pago seguro vía Stripe</p>
                       </div>
                     </div>
                   )}
 
                   {step === 6 && (
                     <div className="flex-1 flex flex-col items-center justify-center text-center">
-                      <div className="w-24 h-24 bg-green-500/10 rounded-full border border-green-500/30 flex items-center justify-center mb-8 shadow-[0_0_40px_rgba(34,197,94,0.1)]">
-                        <ShieldCheck className="w-12 h-12 text-green-500" />
+                      <div className="w-24 h-24 bg-accent/10 rounded-full border border-accent/20 flex items-center justify-center mb-8">
+                        <ShieldCheck className="w-12 h-12 text-accent" />
                       </div>
-                      <h2 className="text-white font-heading font-bold text-3xl mb-4">¡Sesión Bloqueada!</h2>
-                      <p className="font-mono text-sm text-text/60 mb-10 max-w-[280px]">Hemos recibido tu reserva. Recibirás un correo con los detalles en unos minutos.</p>
-                      <button
-                        onClick={() => navigate('/')}
-                        className="w-full py-4 rounded-xl border border-white/10 text-white font-mono text-xs font-bold uppercase tracking-widest hover:border-accent transition-colors"
-                      >
+                      <h2 className="text-white font-heading font-bold text-3xl mb-4">¡Solicitud enviada!</h2>
+                      <p className="font-mono text-sm text-text/60 mb-10 max-w-[280px]">El estudio confirmará tu reserva en breve. Recibirás un correo con los siguientes pasos.</p>
+                      <button onClick={() => navigate('/')} className="w-full py-4 rounded-xl border border-white/10 text-white font-mono text-xs font-bold uppercase tracking-widest hover:border-accent transition-colors">
                         Volver al Inicio
                       </button>
                     </div>
@@ -1153,6 +1210,58 @@ export default function BookStudio() {
       `}</style>
         </div>
       )}
+
+      {/* Lightbox */}
+      {lightbox && selectedStudio && (() => {
+        const photos = selectedStudio.photos?.length > 0 ? selectedStudio.photos : [selectedStudio.image_url ?? ''];
+        const total = photos.length;
+        return (
+          <div
+            className="fixed inset-0 z-[300] bg-black/95 backdrop-blur-sm flex items-center justify-center"
+            onClick={() => setLightbox(false)}
+          >
+            <button
+              onClick={() => setLightbox(false)}
+              className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors z-10"
+            >
+              <X className="w-5 h-5 text-white" />
+            </button>
+            {total > 1 && (
+              <>
+                <button
+                  onClick={e => { e.stopPropagation(); setPhotoIndex(i => (i - 1 + total) % total); }}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors z-10"
+                >
+                  <ChevronLeft className="w-6 h-6 text-white" />
+                </button>
+                <button
+                  onClick={e => { e.stopPropagation(); setPhotoIndex(i => (i + 1) % total); }}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors z-10"
+                >
+                  <ChevronRight className="w-6 h-6 text-white" />
+                </button>
+              </>
+            )}
+            <img
+              src={photos[photoIndex]}
+              alt={selectedStudio.name}
+              onClick={e => e.stopPropagation()}
+              className="max-w-[90vw] max-h-[90vh] object-contain rounded-xl shadow-2xl"
+            />
+            {total > 1 && (
+              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2">
+                {photos.map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={e => { e.stopPropagation(); setPhotoIndex(i); }}
+                    className={`rounded-full transition-all ${i === photoIndex ? 'bg-white w-5 h-1.5' : 'bg-white/40 w-1.5 h-1.5'}`}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })()}
     </>
   );
 }
