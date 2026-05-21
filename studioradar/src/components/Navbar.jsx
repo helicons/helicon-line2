@@ -1,14 +1,14 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { Activity, MapPin, ShoppingCart, Menu, X, ArrowRight, LogOut, User, LayoutDashboard } from 'lucide-react'
+import { Activity, ShoppingCart, Menu, X, ArrowRight, LogOut, User, LayoutDashboard } from 'lucide-react'
 import { gsap } from 'gsap'
 import { supabase } from '../lib/supabase'
 
 const NAV_LINKS = [
-  { label: 'Estudios', to: '/book-studio', Icon: MapPin, },
   /*   { label: 'Artistas',     to: '/artists',         Icon: Mic,          }, */
   /*   { label: 'Productores', to: '/producers', Icon: Headphones, }, */
   { label: 'Beats Market', to: '/beats', Icon: ShoppingCart, },
+  { label: 'Vocal Try', to: '/vocal-try', Icon: Activity, },
 ]
 
 export default function Navbar() {

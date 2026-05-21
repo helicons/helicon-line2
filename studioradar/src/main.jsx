@@ -20,6 +20,7 @@ import UserOnboarding from './UserOnboarding.jsx'
 import Sorteo from './Sorteo.jsx'
 import Sorteo2 from './Sorteo2.jsx'
 import BookingPage from './BookingPage.jsx'
+import VocalTry from './VocalTry.jsx'
 import './index.css'
 
 createRoot(document.getElementById('root')).render(
@@ -46,6 +47,7 @@ createRoot(document.getElementById('root')).render(
         <Route path="/sorteo" element={<Sorteo />} />
         <Route path="/sorteo2" element={<Sorteo2 />} />
         <Route path="/booking/:id" element={<BookingPage />} />
+        <Route path="/vocal-try" element={<VocalTry />} />
       </Routes>
     </BrowserRouter>
   </StrictMode>,

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Play, Pause, Search, Filter, SlidersHorizontal, ShoppingCart, Heart, MoreHorizontal, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, SkipBack, SkipForward, Volume2, Activity, ArrowLeft, TrendingUp, Music, Keyboard, Zap, Pencil, X, Eye, Repeat, Shuffle, List, User, Trash2 } from 'lucide-react';
+import { Play, Pause, Search, Filter, SlidersHorizontal, ShoppingCart, Heart, MoreHorizontal, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, SkipBack, SkipForward, Volume2, Activity, ArrowLeft, TrendingUp, Music, Keyboard, Zap, Pencil, X, Eye, Repeat, Shuffle, List, User, Trash2, Mic } from 'lucide-react';
 import { PRODUCERS, PokemonCard } from './ProducerProfiles';
 import { supabase } from './lib/supabase';
 
@@ -138,7 +138,13 @@ export default function BeatMarketplace() {
   const [isFocusMode, setIsFocusMode] = useState(false);
 
 
+  const [isVocalTry, setIsVocalTry] = useState(false);
+  const [vocalObjectUrl, setVocalObjectUrl] = useState(null);
+  const [vocalFileName, setVocalFileName] = useState(null);
+
   const audioRef = useRef(null);
+  const vocalAudioRef = useRef(null);
+  const vocalInputRef = useRef(null);
   const seekingRef = useRef(false);
 
   // helpers para skip
@@ -215,9 +221,73 @@ export default function BeatMarketplace() {
     if (audioRef.current) audioRef.current.volume = volume;
   }, [volume]);
 
+  // Vocal try: el usuario sube su propio vocal y se mezcla con el beat
+  useEffect(() => {
+    if (!vocalAudioRef.current) vocalAudioRef.current = new Audio();
+    const vocal = vocalAudioRef.current;
+
+    if (!vocalObjectUrl || !isVocalTry) {
+      vocal.pause();
+      return;
+    }
+
+    if (vocal.src !== vocalObjectUrl) {
+      vocal.src = vocalObjectUrl;
+      vocal.load();
+    }
+    vocal.volume = volume;
+    vocal.loop = true;
+
+    if (isPlaying) {
+      vocal.play().catch(() => {});
+    } else {
+      vocal.pause();
+    }
+  }, [isPlaying, isVocalTry, vocalObjectUrl, volume]);
+
+  // Limpiar object URL al desmontar para evitar memory leaks
+  useEffect(() => {
+    return () => {
+      audioRef.current?.pause();
+      vocalAudioRef.current?.pause();
+      if (vocalObjectUrl) URL.revokeObjectURL(vocalObjectUrl);
+    };
+  }, []);
+
+  const handleVocalFileSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (vocalObjectUrl) URL.revokeObjectURL(vocalObjectUrl);
+    const url = URL.createObjectURL(file);
+    setVocalObjectUrl(url);
+    setVocalFileName(file.name.replace(/\.[^.]+$/, ''));
+    setIsVocalTry(true);
+    // Reiniciar el audio vocal con el nuevo archivo
+    if (vocalAudioRef.current) {
+      vocalAudioRef.current.pause();
+      vocalAudioRef.current.currentTime = 0;
+    }
+    e.target.value = '';
+  };
+
+  const removeVocal = () => {
+    setIsVocalTry(false);
+    setVocalFileName(null);
+    if (vocalObjectUrl) {
+      URL.revokeObjectURL(vocalObjectUrl);
+      setVocalObjectUrl(null);
+    }
+    if (vocalAudioRef.current) {
+      vocalAudioRef.current.pause();
+      vocalAudioRef.current.src = '';
+    }
+  };
+
   // Limpiar al desmontar
   useEffect(() => {
-    return () => { audioRef.current?.pause(); };
+    return () => {
+      audioRef.current?.pause();
+    };
   }, []);
 
   const toggleWishlist = async (id) => {
@@ -1130,14 +1200,75 @@ export default function BeatMarketplace() {
             <div className="flex flex-col md:flex-row items-center md:items-stretch gap-6 md:gap-12 p-6 md:p-12 relative z-10">
 
               {/* Left Model: Big 3D Album */}
-              <div className="w-40 md:w-72 shrink-0 perspective-[1000px] group z-20">
-                <div
-                  className="relative w-full aspect-square rounded-[1.5rem] md:rounded-[2rem] shadow-[0_30px_60px_rgba(0,0,0,0.8)] overflow-hidden transition-transform duration-700 ease-out preserve-3d group-hover:rotate-y-[8deg] group-hover:-rotate-x-[5deg] ring-1 ring-white/10 group-hover:ring-accent/50 group-hover:shadow-[0_0_50px_rgba(138,43,226,0.3)]"
-                >
-                  <img src={currentTrack?.image} className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-[3s] ease-out" />
-                  <div className="absolute inset-0 ring-1 ring-inset ring-white/20 rounded-[1.5rem] md:rounded-[2rem] mix-blend-overlay"></div>
-                  <div className="absolute inset-0 bg-gradient-to-tr from-black/80 via-transparent to-white/10 pointer-events-none"></div>
+              <div className="w-40 md:w-72 shrink-0 flex flex-col items-center gap-4 z-20">
+                <div className="w-full perspective-[1000px] group">
+                  <div
+                    className="relative w-full aspect-square rounded-[1.5rem] md:rounded-[2rem] shadow-[0_30px_60px_rgba(0,0,0,0.8)] overflow-hidden transition-transform duration-700 ease-out preserve-3d group-hover:rotate-y-[8deg] group-hover:-rotate-x-[5deg] ring-1 ring-white/10 group-hover:ring-accent/50 group-hover:shadow-[0_0_50px_rgba(138,43,226,0.3)]"
+                  >
+                    <img src={currentTrack?.image} className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-[3s] ease-out" />
+                    <div className="absolute inset-0 ring-1 ring-inset ring-white/20 rounded-[1.5rem] md:rounded-[2rem] mix-blend-overlay"></div>
+                    <div className="absolute inset-0 bg-gradient-to-tr from-black/80 via-transparent to-white/10 pointer-events-none"></div>
+                  </div>
                 </div>
+
+                {/* Vocal Try */}
+                <input
+                  ref={vocalInputRef}
+                  type="file"
+                  accept="audio/*"
+                  className="hidden"
+                  onChange={handleVocalFileSelect}
+                />
+                {!vocalObjectUrl ? (
+                  <button
+                    onClick={() => vocalInputRef.current?.click()}
+                    className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-2xl border border-white/10 bg-white/4 hover:bg-white/8 hover:border-white/20 transition-all duration-200 font-ui text-xs font-bold tracking-wide text-white/50 hover:text-white/80"
+                  >
+                    <Mic className="w-3.5 h-3.5" />
+                    Vocal Try
+                  </button>
+                ) : (
+                  <div className="w-full flex flex-col gap-1.5">
+                    <div
+                      className="w-full flex items-center gap-2 py-2 px-3 rounded-2xl border transition-all duration-300"
+                      style={{
+                        background: isVocalTry ? `rgba(${currentTrack.colors[0].join(',')},0.12)` : 'rgba(255,255,255,0.04)',
+                        borderColor: isVocalTry ? `rgba(${currentTrack.colors[0].join(',')},0.4)` : 'rgba(255,255,255,0.1)',
+                        boxShadow: isVocalTry && isPlaying ? `0 0 16px rgba(${currentTrack.colors[0].join(',')},0.2)` : 'none',
+                      }}
+                    >
+                      <button
+                        onClick={() => setIsVocalTry(v => !v)}
+                        className="flex items-center gap-1.5 flex-1 min-w-0"
+                        style={{ color: isVocalTry ? `rgb(${currentTrack.colors[0].join(',')})` : 'rgba(255,255,255,0.5)' }}
+                      >
+                        {isVocalTry && isPlaying ? (
+                          <span className="flex gap-[2px] items-end h-3 shrink-0">
+                            {[3, 5, 4, 6, 3].map((h, k) => (
+                              <span key={k} className="w-[2px] rounded-full" style={{ height: `${h * 2}px`, background: `rgb(${currentTrack.colors[0].join(',')})`, animation: `waveform ${0.3 + k * 0.1}s ease-in-out infinite alternate` }} />
+                            ))}
+                          </span>
+                        ) : (
+                          <Mic className="w-3.5 h-3.5 shrink-0" />
+                        )}
+                        <span className="font-ui text-xs font-bold truncate">{vocalFileName || 'Mi vocal'}</span>
+                      </button>
+                      <button
+                        onClick={removeVocal}
+                        className="shrink-0 text-white/20 hover:text-red-400 transition-colors"
+                        title="Eliminar vocal"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                    <button
+                      onClick={() => vocalInputRef.current?.click()}
+                      className="font-ui text-[10px] text-white/20 hover:text-white/40 transition-colors text-center"
+                    >
+                      Cambiar archivo
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Right Model: Console interface */}
