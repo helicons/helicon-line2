@@ -8,7 +8,7 @@ const NAV_LINKS = [
   { label: 'Estudios', to: '/book-studio', Icon: MapPin, },
   /*   { label: 'Artistas',     to: '/artists',         Icon: Mic,          }, */
   /*   { label: 'Productores', to: '/producers', Icon: Headphones, }, */
-  { label: 'Beats Market', to: '/beats', Icon: ShoppingCart, },
+  /* { label: 'Beats Market', to: '/beats', Icon: ShoppingCart, }, */
 ]
 
 export default function Navbar() {

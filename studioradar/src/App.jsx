@@ -679,59 +679,7 @@ const Credits = () => {
 
 
 
-  return (
-    <section ref={sectionRef} className="py-24 relative overflow-hidden" style={{ background: 'linear-gradient(180deg, #050505 0%, #0a0a0a 50%, #050505 100%)' }}>
-      {/* Top accent line */}
-      <div className="absolute top-0 left-0 right-0 h-px" style={{ background: 'linear-gradient(90deg, transparent, #8A2BE2 50%, transparent)' }} />
 
-      {/* Background blobs */}
-      <div className="absolute top-1/2 left-1/4 w-96 h-96 rounded-full blur-[120px] pointer-events-none" style={{ background: '#8A2BE210', transform: 'translateY(-50%)' }} />
-      <div className="absolute top-1/2 right-1/4 w-64 h-64 rounded-full blur-[100px] pointer-events-none" style={{ background: '#00c2ff08', transform: 'translateY(-50%)' }} />
-
-      <div className="max-w-6xl mx-auto px-6">
-        {/* Header */}
-        <div className="credits-headline flex flex-col md:flex-row md:items-end md:justify-between mb-16 gap-6">
-          <div>
-            <p className="font-ui text-[11px] tracking-[0.3em] text-accent mb-3 uppercase">Nuestros Productores</p>
-            <h2 className="font-heading font-bold text-4xl lg:text-5xl text-white leading-tight">
-              Beats que ya suenan<br className="hidden md:block" />
-              <span style={{ color: '#8A2BE2' }}> en el circuito.</span>
-            </h2>
-            <p className="font-ui text-text/50 text-sm mt-3">
-              Productores con historial real. Escucha en qué canciones han trabajado.
-            </p>
-          </div>
-          <div className="flex gap-6 shrink-0">
-            <div className="text-center">
-              <p className="font-heading font-bold text-3xl text-white">+300M</p>
-              <p className="font-ui text-[10px] text-text/40 tracking-widest mt-1">STREAMS TOTALES</p>
-            </div>
-            <div className="w-px bg-white/10 self-stretch" />
-            <div className="text-center">
-              <p className="font-heading font-bold text-3xl text-white">20+</p>
-              <p className="font-ui text-[10px] text-text/40 tracking-widest mt-1">ARTISTAS TOP</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Producer cards */}
-        <div className="flex flex-wrap justify-center gap-10 lg:gap-16">
-          {PRODUCERS_CREDITS.map((producer, i) => (
-            <ProducerVinylCard key={i} producer={producer} index={i} />
-          ))}
-        </div>
-      </div>
-
-      <style>{`
-        @keyframes vinylSpin {
-          from { transform: rotate(0deg); }
-          to   { transform: rotate(360deg); }
-        }
-      `}</style>
-
-      <div className="absolute bottom-0 left-0 right-0 h-px" style={{ background: 'linear-gradient(90deg, transparent, #8A2BE220 50%, transparent)' }} />
-    </section>
-  );
 };
 
 const Commerce = () => {

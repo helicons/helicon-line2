@@ -117,7 +117,7 @@ function HeliconStats() {
           style={{ background: "rgba(124,58,237,0.3)" }}>
           <Disc3 className="w-3 h-3 text-violet-300" />
         </div>
-        <span className="text-violet-300/80 text-xs font-bold uppercase tracking-widest">Helicon Radar</span>
+        <span className="text-violet-300/80 text-xs font-bold uppercase tracking-widest">Studio Radar</span>
       </div>
       <div className="px-5 py-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
         {HELICON_STATS.map((s, i) => (
@@ -158,7 +158,7 @@ function LoadingScreen() {
         <div className="absolute inset-0 rounded-full pointer-events-none"
           style={{ boxShadow: "0 0 28px rgba(167,139,250,0.4)" }} />
       </div>
-      <p className="text-white/20 text-xs tracking-[0.3em] uppercase">Helicon Radar</p>
+      <p className="text-white/20 text-xs tracking-[0.3em] uppercase">Studio Radar</p>
     </div>
   );
 }
@@ -236,7 +236,7 @@ function BeatCard({ beat, index, vocalFilename, activeId, onActivate, onMoreFrom
     a.currentTime = 0;
     setCurrent(0);
     onActivate(beat.id);
-    a.play().catch(() => {});
+    a.play().catch(() => { });
   }
 
   function onTimeUpdate() {
@@ -251,8 +251,8 @@ function BeatCard({ beat, index, vocalFilename, activeId, onActivate, onMoreFrom
   const progress = Math.min(current / PREVIEW_SECS, 1);
   const compatLabel =
     beat.compatScore === 4 ? "Misma key" :
-    beat.compatScore === 3 ? "Relativa"  :
-    beat.compatScore === 2 ? "Paralela"  : null;
+      beat.compatScore === 3 ? "Relativa" :
+        beat.compatScore === 2 ? "Paralela" : null;
 
   return (
     <div className="w-full rounded-3xl overflow-hidden"
@@ -495,7 +495,7 @@ function ProducerView() {
             Nuestro equipo revisará tu perfil y se pondrá en contacto contigo pronto.
           </p>
         </div>
-        <p className="text-violet-400/60 text-xs tracking-widest uppercase">Helicon Radar</p>
+        <p className="text-violet-400/60 text-xs tracking-widest uppercase">Studio Radar</p>
       </div>
     );
   }
@@ -602,20 +602,20 @@ function ArtistView() {
 
       // Map FastAPI snake_case → camelCase
       const data = {
-        vocalFilename:   raw.vocal_filename,
-        detectedBpm:     raw.detected_bpm,
-        detectedKey:     raw.detected_key,
+        vocalFilename: raw.vocal_filename,
+        detectedBpm: raw.detected_bpm,
+        detectedKey: raw.detected_key,
         detectedCamelot: raw.detected_camelot,
-        detectedMode:    raw.detected_mode,
+        detectedMode: raw.detected_mode,
         availableGenres: raw.available_genres,
         beats: (raw.beats ?? []).map(b => ({
-          id:          b.id,
-          name:        b.name,
-          bpm:         b.bpm,
-          key:         b.key,
-          camelot:     b.camelot,
-          tags:        b.tags,
-          producer:    b.producer,
+          id: b.id,
+          name: b.name,
+          bpm: b.bpm,
+          key: b.key,
+          camelot: b.camelot,
+          tags: b.tags,
+          producer: b.producer,
           compatScore: b.compat_score,
         })),
       };
